@@ -1,0 +1,39 @@
+@* Dispensing a controlled drug: a witness confirms, stock comes off and the register gets an entry. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Record controlled drug" Subtitle="A second member of staff must witness the amount." OnClose="OnClose">
+    <ChildContent>
+        <dl style="display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:0">
+            <dt class="vd-muted">Drug</dt><dd style="margin:0" class="vd-strong">@Item.ProductName <span class="vd-cd">CD</span></dd>
+            <dt class="vd-muted">Amount</dt><dd style="margin:0" class="vd-mono">@Fmt.Qty(Item.Quantity) @Item.Unit <span class="vd-muted">(@Fmt.Qty(Item.OnHand) in stock)</span></dd>
+            <dt class="vd-muted">Patient</dt><dd style="margin:0">@Item.PatientName · @Item.OwnerName</dd>
+            <dt class="vd-muted">Prescriber</dt><dd style="margin:0">@Item.PrescribedBy</dd>
+        </dl>
+        <WitnessPicker @bind-WitnessId="_witnessId" @bind-Password="_password" />
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(_witnessId is null || string.IsNullOrEmpty(_password) || _saving)" @onclick="Save">Record and dispense</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public DispenseRow Item { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    private int? _witnessId;
+    private string? _password;
+    private bool _saving;
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new DispenseItemCommand { Id = Item.Id, WitnessId = _witnessId, WitnessPassword = _password });
+        _saving = false;
+        _password = null;
+        if (Toasts.Check(result, $"{Item.ProductName} dispensed and entered in the register"))
+            await OnDone.InvokeAsync();
+    }
+}

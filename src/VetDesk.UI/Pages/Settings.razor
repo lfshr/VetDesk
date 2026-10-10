@@ -1,0 +1,57 @@
+@page "/settings"
+@page "/settings/{Section}"
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<ScreenTitle Text="@($"Settings › {Current.Label}")" />
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Settings</h1>
+            <div class="vd-page-sub">Practice configuration</div>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start">
+        <nav aria-label="Settings sections" class="vd-card" style="padding:6px">
+            @foreach (var s in Visible)
+            {
+                <a href="settings/@s.Key" class="vd-dropdown-item" aria-current="@(s.Key == Current.Key ? "page" : "false")"
+                   style="border-radius:6px;text-decoration:none;@(s.Key == Current.Key ? "background:var(--vd-accent-wash);color:var(--vd-accent);font-weight:600" : "")">@s.Label</a>
+            }
+        </nav>
+        <div>
+            @switch (Current.Key)
+            {
+                case "clinic": <ClinicSection /> break;
+                case "users": <UsersSection /> break;
+                case "types": <AppointmentTypesSection /> break;
+                case "prices": <PriceListSection /> break;
+                case "reminders": <RemindersSection /> break;
+                case "backup": <BackupSection /> break;
+                default: <PasswordSection /> break;
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Section { get; set; }
+
+    private record Entry(string Key, string Label, Permission? Needs);
+
+    private static readonly Entry[] All =
+    [
+        new("clinic", "Clinic details", Permission.ManageSettings),
+        new("users", "Users and roles", Permission.ManageSettings),
+        new("types", "Appointment types", Permission.ManageSettings),
+        new("prices", "Price list", Permission.EditPriceList),
+        new("reminders", "Reminders and integrations", null),
+        new("backup", "Backup and data", Permission.ManageSettings),
+        new("password", "My password", null),
+    ];
+
+    private IEnumerable<Entry> Visible => All.Where(e => e.Needs is not { } p || Session.Can(p));
+
+    private Entry Current => Visible.FirstOrDefault(e => e.Key == Section) ?? Visible.First();
+}

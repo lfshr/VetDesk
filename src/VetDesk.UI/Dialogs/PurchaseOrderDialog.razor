@@ -1,0 +1,112 @@
+@* A purchase order, pre-filled with everything at or below its reorder level. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Create purchase order" Subtitle="Pre-filled with items at or below their reorder level" OnClose="OnClose" Size="xwide">
+    <ChildContent>
+        <div class="vd-form-grid">
+            <div class="vd-field" style="margin-top:0"><label for="po-supplier">Supplier</label><input id="po-supplier" @bind="_supplier" @bind:event="oninput" maxlength="200" placeholder="e.g. your wholesaler" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="po-by">Deliver by</label><input id="po-by" type="date" @bind="_deliverBy" /></div>
+        </div>
+        @if (_lines is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <table class="vd-table vd-table-compact" style="margin-top:12px">
+                <thead><tr><th><span class="vd-sr-only">Include</span></th><th>Product</th><th>On hand / reorder</th><th>Order qty</th><th class="vd-num">After delivery</th></tr></thead>
+                <tbody>
+                    @foreach (var l in _lines)
+                    {
+                        <tr>
+                            <td><input type="checkbox" aria-label="Include @l.Name" @bind="l.Include" /></td>
+                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub">@l.Unit</span></td>
+                            <td class="vd-mono">@Fmt.Qty(l.OnHand) <span class="vd-muted">/ @Fmt.Qty(l.Reorder)</span></td>
+                            <td>
+                                <div class="vd-stepper">
+                                    <button type="button" aria-label="Decrease @l.Name" @onclick="() => l.Quantity = Math.Max(1, l.Quantity - 1)"><Icon Name="minus" Size="14" /></button>
+                                    <input type="number" min="1" aria-label="Order quantity @l.Name" @bind="l.Quantity" />
+                                    <button type="button" aria-label="Increase @l.Name" @onclick="() => l.Quantity++"><Icon Name="plus" Size="14" /></button>
+                                </div>
+                            </td>
+                            <td class="vd-num vd-mono">@(l.Include ? Fmt.Qty(l.OnHand + l.Quantity) : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (_lines.Count == 0)
+            {
+                <div class="vd-empty" style="padding:16px">Nothing is below its reorder level. Add products below.</div>
+            }
+            <div style="margin-top:12px"><ProductSearch Placeholder="Add another product from the catalogue" InputId="po-add" StockedOnly="true" OnPick="Add" /></div>
+            @if (_lines.Any(l => l.Include && l.IsControlledDrug))
+            {
+                <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> This order includes controlled drugs. Most suppliers need a separate signed requisition from a vet before they dispatch.</div>
+            }
+            <div class="vd-field"><label for="po-note">Note to supplier</label><textarea id="po-note" @bind="_note" placeholder="Optional" maxlength="1000"></textarea></div>
+        }
+    </ChildContent>
+    <Footer>
+        <span class="vd-small vd-muted" style="margin-right:auto"><strong>@Included.Count()</strong> lines · <strong>@Fmt.Qty(Included.Sum(l => l.Quantity))</strong> units. VetDesk records the order; send it to the supplier as you do now.</span>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-secondary" disabled="@(!CanSave || _saving)" @onclick="() => Save(false)">Save draft</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="() => Save(true)">Mark as sent</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private class Line
+    {
+        public int ProductId { get; init; }
+        public string Name { get; init; } = "";
+        public string Unit { get; init; } = "";
+        public bool IsControlledDrug { get; init; }
+        public decimal OnHand { get; init; }
+        public decimal Reorder { get; init; }
+        public bool Include { get; set; } = true;
+        public decimal Quantity { get; set; }
+    }
+
+    private List<Line>? _lines;
+    private string _supplier = "";
+    private DateOnly? _deliverBy;
+    private string? _note;
+    private bool _saving;
+
+    private IEnumerable<Line> Included => (_lines ?? []).Where(l => l.Include && l.Quantity > 0);
+    private bool CanSave => !string.IsNullOrWhiteSpace(_supplier) && Included.Any();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deliverBy = ClinicTime.Today(DateTime.UtcNow).AddDays(2);
+        var suggestions = await Backend.Send(new GetReorderSuggestionsQuery());
+        if (Toasts.Check(suggestions))
+            _lines = suggestions.Value.Select(s => new Line
+            {
+                ProductId = s.ProductId, Name = s.Name, Unit = s.Unit, IsControlledDrug = s.IsControlledDrug, OnHand = s.OnHand, Reorder = s.ReorderLevel, Quantity = s.SuggestedQuantity
+            }).ToList();
+    }
+
+    private void Add(ProductDto p)
+    {
+        if (_lines is not null && _lines.All(l => l.ProductId != p.Id))
+            _lines.Add(new Line { ProductId = p.Id, Name = p.Name, Unit = p.Unit, IsControlledDrug = p.IsControlledDrug, OnHand = p.OnHand, Reorder = p.ReorderLevel, Quantity = 1 });
+    }
+
+    private async Task Save(bool send)
+    {
+        _saving = true;
+        var result = await Backend.Send(new SavePurchaseOrderCommand
+        {
+            Supplier = _supplier, DeliverBy = _deliverBy, Note = _note, Send = send,
+            Lines = Included.Select(l => new OrderLine(l.ProductId, l.Quantity)).ToList()
+        });
+        _saving = false;
+        if (Toasts.Check(result, result.IsSuccess ? $"Order {result.Value} {(send ? "marked as sent" : "saved as a draft")}" : null))
+            await OnSaved.InvokeAsync();
+    }
+}

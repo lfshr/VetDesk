@@ -1,0 +1,181 @@
+@page "/reports"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject IJSRuntime JS
+
+<ScreenTitle Text="Reports" />
+
+<div class="vd-toolbar">
+    <div class="vd-segmented" role="group" aria-label="Period">
+        @foreach (var p in Enum.GetValues<ReportPeriod>())
+        {
+            <button type="button" aria-pressed="@(_period == p)" @onclick="() => SetPeriod(p)">@p</button>
+        }
+    </div>
+    @if (_s is not null)
+    {
+        <span class="vd-small vd-muted">@Fmt.Date(_s.From) – @Fmt.Date(_s.To)</span>
+    }
+    <span class="vd-spacer"></span>
+    <button type="button" class="vd-btn vd-btn-secondary" @onclick="ExportSummary" disabled="@(_s is null)"><Icon Name="download" Size="16" /> Export CSV</button>
+</div>
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Reports</h1>
+            <div class="vd-page-sub">Practice performance, compared with the previous @_period.ToString().ToLowerInvariant()</div>
+        </div>
+    </div>
+
+    @if (_s is null)
+    {
+        <div class="vd-loading">Loading…</div>
+    }
+    else
+    {
+        <div class="vd-kpis">
+            <Kpi Label="Revenue (net)" Value="@Fmt.Money(_s.Revenue)" Change="_s.RevenueChange" />
+            <Kpi Label="Consultations" Value="@_s.Consultations.ToString()" Change="_s.ConsultationsChange" />
+            <Kpi Label="New clients" Value="@_s.NewClients.ToString()" Change="_s.NewClientsChange" />
+            <Kpi Label="Average invoice" Value="@Fmt.Money(_s.AverageInvoice)" Change="_s.AverageInvoiceChange" />
+        </div>
+
+        <div class="vd-grid-main">
+            <section class="vd-card" aria-labelledby="rev-title">
+                <div class="vd-card-head"><h2 id="rev-title" class="vd-section-title">Revenue by @BarUnit</h2><span class="vd-small vd-muted">Net of VAT</span></div>
+                <div class="vd-card-body">
+                    @{ var max = Math.Max(1, _s.RevenueBars.Select(b => b.Value).DefaultIfEmpty(0).Max()); }
+                    <div class="vd-bars" role="img" aria-label="@($"Revenue by {BarUnit}: " + string.Join(", ", _s.RevenueBars.Select(b => $"{b.Label} {Fmt.Money(b.Value)}")))">
+                        @for (var i = 0; i < _s.RevenueBars.Count; i++)
+                        {
+                            var b = _s.RevenueBars[i];
+                            <div class="vd-bar">
+                                <span class="vd-bar-value">@ShortMoney(b.Value)</span>
+                                <span class="vd-bar-fill" style="height:@((int)(b.Value / max * 150))px;@(i == _s.RevenueBars.Count - 1 ? "" : "background:#9FCFC5")"></span>
+                                <span class="vd-bar-label">@b.Label</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+            <section class="vd-card" aria-labelledby="mix-title">
+                <div class="vd-card-head"><h2 id="mix-title" class="vd-section-title">Appointments by type</h2></div>
+                <div class="vd-card-body">
+                    @{ var top = Math.Max(1, _s.AppointmentsByType.Select(b => b.Value).DefaultIfEmpty(0).Max()); }
+                    @foreach (var m in _s.AppointmentsByType)
+                    {
+                        <div class="vd-hbar">
+                            <span>@m.Label</span>
+                            <span class="vd-hbar-track"><span style="width:@((int)(m.Value / top * 100))%"></span></span>
+                            <span class="vd-mono vd-num">@m.Value.ToString("0")</span>
+                        </div>
+                    }
+                    @if (_s.AppointmentsByType.Count == 0) { <div class="vd-muted">No appointments in this period.</div> }
+                </div>
+            </section>
+        </div>
+
+        <div class="vd-grid-2" style="margin-top:16px">
+            <section class="vd-card" aria-labelledby="std-title">
+                <div class="vd-card-head"><h2 id="std-title" class="vd-section-title">Standard reports</h2></div>
+                <ul class="vd-list">
+                    @foreach (var r in Enum.GetValues<StandardReport>())
+                    {
+                        <li>
+                            <button type="button" class="vd-btn-link" style="text-decoration:none;text-align:left;width:100%;display:flex;justify-content:space-between;align-items:center" aria-haspopup="dialog" @onclick="() => _report = r">
+                                <span><span class="vd-strong" style="color:var(--vd-text)">@r.Title()</span><span class="vd-cell-sub" style="display:block">@r.Description()</span></span>
+                                <Icon Name="chevron-right" Size="16" />
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </section>
+            <section class="vd-card" aria-labelledby="rem-title">
+                <div class="vd-card-head">
+                    <h2 id="rem-title" class="vd-section-title">Reminders due next 30 days</h2>
+                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" disabled="@(_reminders.Count == 0)" @onclick="ExportReminders"><Icon Name="download" Size="14" /> Export list</button>
+                </div>
+                <ul class="vd-list">
+                    @foreach (var r in _reminders.Take(8))
+                    {
+                        <li class="vd-row-between">
+                            <span><a class="vd-strong" href="patients/@r.PatientId">@r.PatientName</a> <span class="vd-small vd-muted">· @r.Vaccine · @r.OwnerName</span>@if (!r.OwnerOptedIn) { <span class="vd-chip" style="height:18px;font-size:11px;margin-left:6px">Opted out</span> }</span>
+                            <span class="vd-small vd-nowrap @(r.DueDate < _today ? "vd-down" : "vd-muted")">@(r.DueDate < _today ? "Overdue " : "Due ")@Fmt.Date(r.DueDate)</span>
+                        </li>
+                    }
+                    @if (_reminders.Count == 0) { <li class="vd-muted">No vaccinations due.</li> }
+                    @if (_reminders.Count > 8) { <li class="vd-small vd-muted">and @(_reminders.Count - 8) more in the exported list</li> }
+                </ul>
+                <div class="vd-card-foot vd-small vd-muted">VetDesk doesn't send texts or emails yet. Export the list for your messaging service; owners who opted out are marked.</div>
+            </section>
+        </div>
+    }
+</div>
+
+@if (_report is { } report)
+{
+    <ReportDialog Report="report" OnClose="() => _report = null" />
+}
+
+@code {
+    private ReportPeriod _period = ReportPeriod.Month;
+    private ReportSummary? _s;
+    private IReadOnlyList<ReminderDue> _reminders = [];
+    private StandardReport? _report;
+    private DateOnly _today;
+
+    private string BarUnit => _period switch
+    {
+        ReportPeriod.Week => "day",
+        ReportPeriod.Month => "week",
+        _ => "month"
+    };
+
+    private static string ShortMoney(decimal v) => v == 0 ? "" : v >= 10000 ? $"£{v / 1000:0.0}k" : $"£{v:N0}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = ClinicTime.Today(DateTime.UtcNow);
+        await LoadAsync();
+        var reminders = await Backend.Send(new GetRemindersDueQuery());
+        if (reminders.IsSuccess)
+            _reminders = reminders.Value;
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetReportSummaryQuery { Period = _period });
+        if (Toasts.Check(result))
+            _s = result.Value;
+    }
+
+    private async Task SetPeriod(ReportPeriod p)
+    {
+        _period = p;
+        await LoadAsync();
+    }
+
+    private async Task ExportSummary()
+    {
+        var rows = new List<IReadOnlyList<string>>
+        {
+            new[] { "Revenue (net)", _s!.Revenue.ToString("0.00"), _s.RevenueChange?.ToString("0.0") ?? "" },
+            new[] { "Consultations", _s.Consultations.ToString(), _s.ConsultationsChange?.ToString("0.0") ?? "" },
+            new[] { "New clients", _s.NewClients.ToString(), _s.NewClientsChange?.ToString("0.0") ?? "" },
+            new[] { "Average invoice", _s.AverageInvoice.ToString("0.00"), _s.AverageInvoiceChange?.ToString("0.0") ?? "" }
+        };
+        rows.AddRange(_s.RevenueBars.Select(b => (IReadOnlyList<string>)new[] { $"Revenue {b.Label}", b.Value.ToString("0.00"), "" }));
+        rows.AddRange(_s.AppointmentsByType.Select(b => (IReadOnlyList<string>)new[] { $"Appointments: {b.Label}", b.Value.ToString("0"), "" }));
+        var csv = Csv.From(["Measure", "Value", "Change %"], rows);
+        await JS.InvokeVoidAsync("vetdesk.download", $"vetdesk-summary-{_s.From:yyyy-MM-dd}-to-{_s.To:yyyy-MM-dd}.csv", "text/csv", csv);
+    }
+
+    private async Task ExportReminders()
+    {
+        var csv = Csv.From(["Patient", "Owner", "Phone", "Email", "Vaccine", "Due", "Owner opted in"],
+            _reminders.Select(r => (IReadOnlyList<string>)new[] { r.PatientName, r.OwnerName, r.Phone ?? "", r.Email ?? "", r.Vaccine, r.DueDate.ToString("yyyy-MM-dd"), r.OwnerOptedIn ? "Yes" : "No" }));
+        await JS.InvokeVoidAsync("vetdesk.download", $"vetdesk-reminders-{_today:yyyy-MM-dd}.csv", "text/csv", csv);
+        Toasts.Success($"{_reminders.Count} reminders exported");
+    }
+}

@@ -1,0 +1,120 @@
+@using VetDesk.Application.Staff.Commands
+@using VetDesk.Application.Staff.Queries
+@inject Backend Backend
+@inject UserSession Session
+
+<div class="vd-signin">
+    <div class="vd-signin-card">
+        <div class="vd-signin-brand"><Icon Name="paw" Size="22" /> VetDesk</div>
+
+        @if (_needsSetup is null)
+        {
+            <div class="vd-loading">Connecting to the database…</div>
+        }
+        else if (_needsSetup == true)
+        {
+            <h1 style="font-size:20px">Set up VetDesk</h1>
+            <p class="vd-muted" style="margin:6px 0 4px">There are no accounts yet. Create the first one; it will be a practice administrator who can add everyone else.</p>
+            <form @onsubmit="CreateFirstAdmin" @onsubmit:preventDefault>
+                <div class="vd-form-grid">
+                    <div class="vd-field"><label for="su-first">First name</label><input id="su-first" @bind="_first" autocomplete="given-name" /></div>
+                    <div class="vd-field"><label for="su-last">Surname</label><input id="su-last" @bind="_last" autocomplete="family-name" /></div>
+                </div>
+                <div class="vd-field"><label for="su-role">Role</label>
+                    <select id="su-role" @bind="_role">
+                        <option value="@StaffRole.Admin">Practice administrator</option>
+                        <option value="@StaffRole.Vet">Vet (and administrator)</option>
+                        <option value="@StaffRole.Nurse">Nurse (and administrator)</option>
+                    </select>
+                </div>
+                <div class="vd-field"><label for="su-email">Email</label><input id="su-email" type="email" @bind="_email" autocomplete="username" /></div>
+                <div class="vd-field"><label for="su-pw">Password</label><input id="su-pw" type="password" @bind="_password" autocomplete="new-password" />
+                    <span class="vd-hint">At least 10 characters.</span></div>
+                @if (_error is not null)
+                {
+                    <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="warning" Size="16" /> @_error</div>
+                }
+                <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Create account and sign in</button>
+            </form>
+        }
+        else if (_forgot)
+        {
+            <h1 style="font-size:20px">Forgot your password?</h1>
+            <p class="vd-muted">Ask a practice administrator to set a temporary password for you in Settings › Users and roles. You can change it after you sign in.</p>
+            <button type="button" class="vd-btn vd-btn-secondary" style="width:100%;margin-top:8px" @onclick="() => _forgot = false">Back to sign in</button>
+        }
+        else
+        {
+            <h1 style="font-size:20px">Sign in</h1>
+            <form @onsubmit="SignIn" @onsubmit:preventDefault>
+                <div class="vd-field"><label for="si-email">Email</label><input id="si-email" type="email" @bind="_email" autocomplete="username" autofocus /></div>
+                <div class="vd-field"><label for="si-pw">Password</label><input id="si-pw" type="password" @bind="_password" autocomplete="current-password" /></div>
+                @if (_error is not null)
+                {
+                    <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="warning" Size="16" /> @_error</div>
+                }
+                <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Sign in</button>
+            </form>
+            <div class="vd-row-between" style="margin-top:14px">
+                <button type="button" class="vd-btn-link" @onclick="() => _forgot = true">Forgot password?</button>
+            </div>
+            <p class="vd-small vd-muted" style="margin:16px 0 0">On shared computers VetDesk locks itself after a few minutes without use. Sign out when you leave the desk.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private bool? _needsSetup;
+    private bool _forgot;
+    private bool _busy;
+    private string? _error;
+    private string _email = "";
+    private string _password = "";
+    private string _first = "";
+    private string _last = "";
+    private StaffRole _role = StaffRole.Admin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Backend.Send(new GetSetupStateQuery());
+        if (state.IsFailure)
+        {
+            _error = state.ToString();
+            _needsSetup = false;
+            return;
+        }
+
+        _needsSetup = !state.Value;
+    }
+
+    private async Task SignIn()
+    {
+        _busy = true;
+        _error = null;
+        var result = await Backend.Send(new SignInCommand { Email = _email, Password = _password });
+        _busy = false;
+        _password = "";
+        if (result.IsFailure)
+        {
+            _error = result.ToString();
+            return;
+        }
+
+        Session.SignIn(result.Value, _email.Trim());
+    }
+
+    private async Task CreateFirstAdmin()
+    {
+        _busy = true;
+        _error = null;
+        var result = await Backend.Send(new CreateFirstAdministratorCommand { FirstName = _first, LastName = _last, Email = _email, Password = _password, Role = _role });
+        _busy = false;
+        if (result.IsFailure)
+        {
+            _error = result.ToString();
+            return;
+        }
+
+        Session.SignIn(result.Value, _email.Trim());
+    }
+}

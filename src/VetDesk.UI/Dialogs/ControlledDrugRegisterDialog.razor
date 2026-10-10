@@ -1,0 +1,125 @@
+@* The controlled drugs register, per drug, with the witnessed balance check. Entries are permanent. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+
+<Modal Title="Controlled drugs register" Subtitle="Every entry is permanent. Corrections are added as new entries." OnClose="OnClose" Size="xwide">
+    <ChildContent>
+        <div class="vd-row" style="flex-wrap:wrap">
+            <select class="vd-input" style="width:320px" aria-label="Drug" value="@(_productId?.ToString() ?? "")" @onchange="PickDrug">
+                <option value="">All controlled drugs</option>
+                @foreach (var d in _drugs)
+                {
+                    <option value="@d.ProductId">@d.Name (@Fmt.Qty(d.OnHand) @d.Unit)</option>
+                }
+            </select>
+            <span class="vd-spacer"></span>
+            @if (Session.Can(Permission.WitnessControlledDrugs) && _productId is not null)
+            {
+                <button type="button" class="vd-btn vd-btn-secondary" aria-expanded="@_checking" @onclick="() => _checking = !_checking">Record balance check</button>
+            }
+        </div>
+        @if (_checking && Selected is { } drug)
+        {
+            <div class="vd-card vd-card-body" style="margin-top:12px;background:var(--vd-surface-muted)">
+                <div class="vd-strong">Balance check: @drug.Name</div>
+                <div class="vd-small vd-muted">The register says @Fmt.Qty(drug.OnHand) @drug.Unit. Count what is in the cabinet.</div>
+                <div class="vd-form-grid">
+                    <div class="vd-field"><label for="bc-count">Counted (@drug.Unit)</label><input id="bc-count" type="number" min="0" step="any" @bind="_counted" @bind:event="oninput" /></div>
+                    @if (_counted is { } c && c != drug.OnHand)
+                    {
+                        <div class="vd-field"><label for="bc-reason">Reason for the difference</label><input id="bc-reason" @bind="_reason" @bind:event="oninput" maxlength="400" /></div>
+                    }
+                </div>
+                @if (_counted is { } c2 && c2 != drug.OnHand)
+                {
+                    <div class="vd-banner vd-banner-warning" style="margin-top:10px"><Icon Name="warning" Size="18" /> That's @Fmt.Qty(c2 - drug.OnHand) @drug.Unit different from the register. The difference is recorded with your reason.</div>
+                }
+                <WitnessPicker Id="bc-witness" @bind-WitnessId="_witnessId" @bind-Password="_password" />
+                <div class="vd-actions vd-actions-end" style="margin-top:12px">
+                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _checking = false">Cancel</button>
+                    <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(!CanCheck || _saving)" @onclick="SaveCheck">Record check</button>
+                </div>
+            </div>
+        }
+        <div class="vd-table-scroll" style="max-height:50vh;margin-top:12px">
+            <table class="vd-table vd-table-compact">
+                <thead><tr><th>When</th><th>Drug</th><th class="vd-num">Amount</th><th class="vd-num">Balance</th><th>Patient / reason</th><th>By</th><th>Witness</th></tr></thead>
+                <tbody>
+                    @foreach (var e in _entries)
+                    {
+                        <tr>
+                            <td class="vd-nowrap">@Fmt.DateTime(e.Utc)</td>
+                            <td>@e.ProductName</td>
+                            <td class="vd-num vd-mono">@(e.Change > 0 ? "+" : "")@Fmt.Qty(e.Change)</td>
+                            <td class="vd-num vd-mono">@Fmt.Qty(e.Balance)</td>
+                            <td>@e.Reason</td>
+                            <td>@e.By</td>
+                            <td>@(e.Witness ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (_entries.Count == 0) { <div class="vd-empty">No entries.</div> }
+        </div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyList<StockRow> _drugs = [];
+    private IReadOnlyList<ControlledDrugEntryDto> _entries = [];
+    private int? _productId;
+    private bool _checking, _saving;
+    private decimal? _counted;
+    private string? _reason, _password;
+    private int? _witnessId;
+
+    private StockRow? Selected => _drugs.FirstOrDefault(d => d.ProductId == _productId);
+
+    private bool CanCheck => _counted is >= 0 && _witnessId is not null && !string.IsNullOrEmpty(_password)
+                             && (_counted == Selected?.OnHand || !string.IsNullOrWhiteSpace(_reason));
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var drugs = await Backend.Send(new GetStockQuery { Filter = StockFilter.ControlledDrugs });
+        if (drugs.IsSuccess)
+            _drugs = drugs.Value;
+        var entries = await Backend.Send(new GetControlledDrugRegisterQuery { ProductId = _productId, Take = 200 });
+        if (Toasts.Check(entries))
+            _entries = entries.Value;
+    }
+
+    private async Task PickDrug(ChangeEventArgs e)
+    {
+        _productId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        _checking = false;
+        await LoadAsync();
+    }
+
+    private async Task SaveCheck()
+    {
+        _saving = true;
+        var result = await Backend.Send(new RecordBalanceCheckCommand
+        {
+            ProductId = _productId!.Value, Counted = _counted!.Value, WitnessId = _witnessId, WitnessPassword = _password,
+            DiscrepancyReason = string.IsNullOrWhiteSpace(_reason) ? null : _reason
+        });
+        _saving = false;
+        _password = null;
+        if (!Toasts.Check(result, "Balance check recorded"))
+            return;
+        _checking = false;
+        _counted = null;
+        _reason = null;
+        await LoadAsync();
+        await OnChanged.InvokeAsync();
+    }
+}

@@ -1,0 +1,61 @@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="@($"Refund {Invoice.Number}?")" Subtitle="Give the money back the same way it was paid, then record it here." OnClose="OnClose" Size="narrow">
+    <ChildContent>
+        <div class="vd-field" style="margin-top:0"><label for="rf-amount">Amount (£)</label><input id="rf-amount" class="vd-mono" type="number" step="0.01" min="0.01" @bind="_amount" @bind:event="oninput" /></div>
+        <div class="vd-field">
+            <label for="rf-method">Refunded by</label>
+            <select id="rf-method" @bind="_method">
+                @foreach (var m in Enum.GetValues<PaymentMethod>())
+                {
+                    <option value="@m">@m</option>
+                }
+            </select>
+        </div>
+        <div class="vd-field">
+            <label for="rf-reason">Reason</label>
+            <select id="rf-reason" @bind="_reason">
+                <option value="">Choose a reason</option>
+                <option>Charged in error</option>
+                <option>Goodwill</option>
+                <option>Treatment cancelled</option>
+                <option>Overpaid</option>
+            </select>
+        </div>
+        @if (_amount > Invoice.Paid)
+        {
+            <div class="vd-error-text">Only @Fmt.Money(Invoice.Paid) has been paid on this invoice.</div>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-danger" disabled="@(_amount <= 0 || _amount > Invoice.Paid || string.IsNullOrEmpty(_reason) || _saving)" @onclick="Save">Refund @Fmt.Money(_amount)</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public InvoiceDetail Invoice { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private decimal _amount;
+    private PaymentMethod _method;
+    private string _reason = "";
+    private bool _saving;
+
+    protected override void OnInitialized()
+    {
+        _amount = Invoice.Paid;
+        _method = Invoice.Payments.LastOrDefault(p => !p.IsRefund)?.Method ?? PaymentMethod.Card;
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new RefundPaymentCommand { InvoiceId = Invoice.Id, Amount = _amount, Method = _method, Reason = _reason });
+        _saving = false;
+        if (Toasts.Check(result, $"{Fmt.Money(_amount)} refunded on {Invoice.Number}"))
+            await OnSaved.InvokeAsync();
+    }
+}

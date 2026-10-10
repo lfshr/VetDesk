@@ -1,0 +1,298 @@
+@* New or edit appointment: patient, type and length, date with slot grid, reason. Matches the schedule design. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject DialogService Dialogs
+@inject NavigationManager Nav
+
+<Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="wide">
+    <ChildContent>
+        @if (_loading)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <div class="vd-field" style="margin-top:0">
+                <span class="vd-label">Patient</span>
+                <PatientPicker @bind-Selected="_patient" Locked="IsEdit" InputId="appt-patient" />
+            </div>
+
+            <div class="vd-form-grid-3">
+                <div class="vd-field">
+                    <label for="appt-type">Type</label>
+                    <select id="appt-type" value="@_typeId" @onchange="OnTypeChanged">
+                        @foreach (var t in _types)
+                        {
+                            <option value="@t.Id">@t.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="vd-field">
+                    <label for="appt-length">Length</label>
+                    <select id="appt-length" value="@_minutes" @onchange="OnLengthChanged">
+                        @foreach (var m in Lengths)
+                        {
+                            <option value="@m">@LengthLabel(m)</option>
+                        }
+                    </select>
+                </div>
+                <div class="vd-field">
+                    <label for="appt-clinician">Seen by</label>
+                    <select id="appt-clinician" @bind="_clinicianId">
+                        <option value="">Anyone</option>
+                        @foreach (var s in _staff)
+                        {
+                            <option value="@s.Id">@s.ShortName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="vd-field">
+                <span class="vd-label">Date</span>
+                <div class="vd-row" style="flex-wrap:wrap">
+                    <div class="vd-row" style="gap:4px">
+                        <button type="button" class="vd-icon-btn" aria-label="Previous day" disabled="@(_date <= _today)" @onclick="() => SetDate(_date.AddDays(-1))"><Icon Name="chevron-left" Size="18" /></button>
+                        <input class="vd-input" type="date" aria-label="Appointment date" min="@_today.ToString("yyyy-MM-dd")" value="@_date.ToString("yyyy-MM-dd")" @onchange="OnDateInput" style="width:170px" />
+                        <button type="button" class="vd-icon-btn" aria-label="Next day" @onclick="() => SetDate(_date.AddDays(1))"><Icon Name="chevron-right" Size="18" /></button>
+                    </div>
+                    <div class="vd-segmented" role="group" aria-label="Quick dates">
+                        @foreach (var (label, date) in QuickDates)
+                        {
+                            <button type="button" aria-pressed="@(_date == date)" @onclick="() => SetDate(date)">@label</button>
+                        }
+                    </div>
+                </div>
+                @if (_day?.IsClosed == true)
+                {
+                    <div class="vd-hint"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
+                }
+            </div>
+
+            <div class="vd-field">
+                <div class="vd-row-between"><span class="vd-label">Time</span><span class="vd-hint" style="margin:0">@SlotHint</span></div>
+                @if (_day is not null)
+                {
+                    <div class="vd-slots" role="group" aria-label="Start time">
+                        @foreach (var s in _day.Slots)
+                        {
+                            <button type="button" class="vd-slot @(s.State == SlotState.Booked ? "vd-slot-busy" : "")" aria-pressed="@(_startUtc == s.StartUtc)"
+                                    disabled="@(s.State == SlotState.Past && _startUtc != s.StartUtc)" @onclick="() => _startUtc = s.StartUtc">
+                                <strong>@s.Time.ToString("HH:mm")</strong>
+                                <span>@SlotNote(s)</span>
+                            </button>
+                        }
+                    </div>
+                    @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
+                    {
+                        <div class="vd-hint">Currently booked at @Fmt.Time(start), outside the usual slots.</div>
+                    }
+                }
+            </div>
+
+            <div class="vd-field">
+                <label for="appt-reason">Reason</label>
+                <input id="appt-reason" @bind="_reason" placeholder="e.g. Limping on back left leg" maxlength="400" />
+            </div>
+            <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
+            <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
+        }
+    </ChildContent>
+    <Footer>
+        @if (IsEdit && _existing is not null)
+        {
+            <div class="vd-row" style="margin-right:auto;gap:14px">
+                <a href="patients/@_existing.PatientId" @onclick="OnClose">Open record</a>
+                @if (_existing.Status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn)
+                {
+                    <button type="button" class="vd-btn-link" style="color:var(--vd-danger-text)" @onclick="CancelAppointment">Cancel appointment</button>
+                }
+                <AppointmentStatusChip Status="_existing.Status" Kind="_existing.Kind" />
+            </div>
+        }
+        else
+        {
+            <span class="vd-small vd-muted" style="margin-right:auto">@Summary</span>
+        }
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanBook || _saving)" @onclick="Save">@(IsEdit ? "Save changes" : "Book appointment")</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public int? AppointmentId { get; set; }
+    [Parameter] public DateOnly? Date { get; set; }
+    [Parameter] public DateTime? StartUtc { get; set; }
+    [Parameter] public PatientRow? Patient { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private static readonly int[] Lengths = [15, 30, 45, 60, 90, 120];
+
+    private bool IsEdit => AppointmentId is not null;
+    private bool _loading = true;
+    private bool _saving;
+    private AppointmentDto? _existing;
+    private IReadOnlyList<AppointmentTypeDto> _types = [];
+    private IReadOnlyList<StaffDto> _staff = [];
+    private PatientRow? _patient;
+    private int _typeId;
+    private int _minutes = 15;
+    private int? _clinicianId;
+    private DateOnly _today;
+    private DateOnly _date;
+    private DateTime? _startUtc;
+    private string _reason = "";
+    private bool _sms = true;
+    private BookingDay? _day;
+
+    private bool CanBook => _patient is not null && _typeId > 0 && _startUtc is not null && !string.IsNullOrWhiteSpace(_reason);
+
+    private IEnumerable<(string, DateOnly)> QuickDates =>
+    [
+        ("Today", _today),
+        ("Tomorrow", _today.AddDays(1)),
+        ("Next week", _today.AddDays(7)),
+    ];
+
+    private string SlotHint => _day is null ? "" : _day.IsClosed ? "Closed" : $"{_day.Slots.Count(s => s.State == SlotState.Free)} free";
+
+    private string Summary => _patient is null ? "Pick a patient to book." :
+        _startUtc is null ? $"{_patient.Name}: pick a time." :
+        $"{_patient.Name}, {Fmt.Time(_startUtc.Value)} for {LengthLabel(_minutes)}";
+
+    private static string LengthLabel(int minutes) =>
+        minutes % 60 == 0 && minutes >= 60 ? (minutes == 60 ? "1 hour" : $"{minutes / 60} hours")
+        : minutes > 60 ? $"{minutes / 60} h {minutes % 60} min"
+        : $"{minutes} min";
+
+    private static string SlotNote(BookingSlot s) => s.State switch
+    {
+        SlotState.Booked => s.BookedCount == 1 ? "1 booked" : $"{s.BookedCount} booked",
+        SlotState.Lunch => "Lunch",
+        SlotState.Past => "Past",
+        _ => "Free"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = ClinicTime.Today(DateTime.UtcNow);
+        var types = await Backend.Send(new GetAppointmentTypesQuery());
+        var staff = await Backend.Send(new GetStaffQuery());
+        if (!Toasts.Check(types) || !Toasts.Check(staff))
+        {
+            await OnClose.InvokeAsync();
+            return;
+        }
+
+        _types = types.Value;
+        _staff = staff.Value.Where(s => s.Role is StaffRole.Vet or StaffRole.Nurse).ToList();
+
+        if (AppointmentId is { } id)
+        {
+            var found = await Backend.Send(new GetAppointmentQuery { Id = id });
+            if (!Toasts.Check(found))
+            {
+                await OnClose.InvokeAsync();
+                return;
+            }
+
+            var a = _existing = found.Value;
+            var patient = await Backend.Send(new GetPatientQuery { Id = a.PatientId });
+            if (patient.IsSuccess)
+                _patient = PatientPicker.PatientRowFrom(patient.Value);
+            _typeId = a.TypeId;
+            _minutes = a.Minutes;
+            _clinicianId = a.ClinicianId;
+            _date = DateOnly.FromDateTime(Fmt.Local(a.StartUtc));
+            _startUtc = a.StartUtc;
+            _reason = a.Reason;
+            _sms = a.SmsReminder;
+        }
+        else
+        {
+            _patient = Patient;
+            var first = _types.FirstOrDefault();
+            _typeId = first?.Id ?? 0;
+            _minutes = first?.Minutes ?? 15;
+            _date = StartUtc is { } s ? DateOnly.FromDateTime(Fmt.Local(s)) : Date is { } d && d >= _today ? d : _today;
+            _startUtc = StartUtc;
+        }
+
+        await LoadSlots();
+        _loading = false;
+    }
+
+    private async Task LoadSlots()
+    {
+        var day = await Backend.Send(new GetBookingSlotsQuery { Date = _date, Minutes = _minutes, IgnoreAppointmentId = AppointmentId });
+        _day = day.IsSuccess ? day.Value : null;
+    }
+
+    private async Task SetDate(DateOnly date)
+    {
+        if (date == _date)
+            return;
+        _date = date;
+        // A different day means a different time; keep the choice only when editing within the same day.
+        _startUtc = _existing is not null && DateOnly.FromDateTime(Fmt.Local(_existing.StartUtc)) == date ? _existing.StartUtc : null;
+        await LoadSlots();
+    }
+
+    private async Task OnDateInput(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var date))
+            await SetDate(date);
+    }
+
+    private async Task OnTypeChanged(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id))
+            return;
+        _typeId = id;
+        if (_types.FirstOrDefault(t => t.Id == id) is { } type)
+        {
+            _minutes = type.Minutes;
+            await LoadSlots();
+        }
+    }
+
+    private async Task OnLengthChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var m))
+        {
+            _minutes = m;
+            await LoadSlots();
+        }
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new SaveAppointmentCommand
+        {
+            Id = AppointmentId,
+            PatientId = _patient!.Id,
+            TypeId = _typeId,
+            ClinicianId = _clinicianId,
+            StartUtc = _startUtc!.Value,
+            Minutes = _minutes,
+            Reason = _reason,
+            SmsReminder = _sms,
+            Version = _existing?.Version
+        });
+        _saving = false;
+        if (Toasts.Check(result, IsEdit ? "Appointment updated" : $"{_patient.Name} booked for {Fmt.Time(_startUtc.Value)}, {Fmt.Date(_date)}"))
+            await OnSaved.InvokeAsync();
+    }
+
+    private async Task CancelAppointment()
+    {
+        if (!await Dialogs.ConfirmAsync($"Cancel {_existing!.PatientName}'s appointment?",
+                $"{Fmt.Time(_existing.StartUtc)} on {Fmt.Date(_date)}. The slot becomes free again.", "Cancel appointment", "Keep it", isDanger: true))
+            return;
+        var result = await Backend.Send(new ChangeAppointmentStatusCommand { Id = _existing.Id, Status = AppointmentStatus.Cancelled });
+        if (Toasts.Check(result, "Appointment cancelled"))
+            await OnSaved.InvokeAsync();
+    }
+}

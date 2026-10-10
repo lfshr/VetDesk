@@ -1,0 +1,27 @@
+@using VetDesk.Domain.Entities.Appointments
+
+<span class="vd-chip @Css">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public AppointmentStatus Status { get; set; }
+    [Parameter] public AppointmentKind Kind { get; set; }
+
+    private string Css => Status switch
+    {
+        AppointmentStatus.Done => "",
+        AppointmentStatus.InConsult => "vd-chip-info",
+        AppointmentStatus.CheckedIn => "vd-chip-warning",
+        AppointmentStatus.Cancelled or AppointmentStatus.NoShow => "vd-chip-danger",
+        _ when Kind == AppointmentKind.Surgery => "vd-chip-surgery",
+        _ => "vd-chip-success"
+    };
+
+    private string Label => Status switch
+    {
+        AppointmentStatus.InConsult => Kind == AppointmentKind.Surgery ? "In theatre" : "In consult",
+        AppointmentStatus.CheckedIn => Kind == AppointmentKind.Surgery ? "Admitted" : "Waiting",
+        AppointmentStatus.NoShow => "No-show",
+        AppointmentStatus.Booked when Kind == AppointmentKind.Surgery => "Surgery",
+        _ => Status.ToString()
+    };
+}

@@ -1,0 +1,356 @@
+@page "/schedule"
+@inject Backend Backend
+@inject ToastService Toasts
+
+<ScreenTitle Text="Schedule" />
+
+<div class="vd-toolbar">
+    <div class="vd-row" style="gap:6px">
+        <button type="button" class="vd-icon-btn" style="border:1px solid var(--vd-border-strong)" aria-label="@($"Previous {_view.ToString().ToLowerInvariant()}")" @onclick="() => Move(-1)"><Icon Name="chevron-left" Size="18" /></button>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="GoToday">Today</button>
+        <button type="button" class="vd-icon-btn" style="border:1px solid var(--vd-border-strong)" aria-label="@($"Next {_view.ToString().ToLowerInvariant()}")" @onclick="() => Move(1)"><Icon Name="chevron-right" Size="18" /></button>
+    </div>
+    <h1 class="vd-section-title" style="font-size:18px;margin:0 8px">@ViewTitle</h1>
+    <span class="vd-spacer"></span>
+    <div class="vd-segmented" role="group" aria-label="View">
+        @foreach (var v in Enum.GetValues<View>())
+        {
+            <button type="button" aria-pressed="@(_view == v)" @onclick="() => SetView(v)">@v</button>
+        }
+    </div>
+    <button type="button" class="vd-btn vd-btn-primary" @onclick="() => OpenNew(null)"><Icon Name="plus" Size="18" /> New appointment</button>
+</div>
+
+<div class="vd-page">
+    @if (_appointments is null)
+    {
+        <div class="vd-loading">Loading…</div>
+    }
+    else if (_view == View.Day)
+    {
+        <section class="vd-card" aria-label="Day schedule">
+            <div class="vd-card-head">
+                <span class="vd-strong">@DayCountLabel</span>
+                <div class="vd-legend">
+                    <span><i style="background:var(--vd-accent)"></i>Consultation</span>
+                    <span><i style="background:#6A2E8A"></i>Surgery</span>
+                    <span><i style="background:#1D3F9E"></i>Vaccination</span>
+                    <span><i style="background:var(--vd-text-faint)"></i>Done</span>
+                </div>
+            </div>
+            @if (_day?.IsClosed == true)
+            {
+                <div class="vd-banner vd-banner-info" style="margin:12px 16px 0"><Icon Name="info" Size="18" /> The practice is closed on this day. You can still book an appointment.</div>
+            }
+            <div class="vd-sched" style="padding:12px 16px 16px 0">
+                <div class="vd-sched-times">
+                    @foreach (var t in _grid)
+                    {
+                        <div>@(t.Minute == 0 || t.Minute == 30 ? t.ToString("HH:mm") : "")</div>
+                    }
+                </div>
+                <div class="vd-sched-col">
+                    @foreach (var t in _grid)
+                    {
+                        <button type="button" class="vd-sched-slot" aria-label="@($"Book at {t:HH:mm}")" @onclick="() => OpenNew(ClinicTime.ToUtc(_date, t))"></button>
+                    }
+                    @if (_day?.Slots.Where(s => s.State == SlotState.Lunch).ToList() is { Count: > 0 } lunch)
+                    {
+                        <div class="vd-sched-lunch" style="top:@Px(lunch[0].Time);height:@(lunch.Count * SlotHeight)px">Lunch @lunch[0].Time.ToString("HH:mm") – @lunch[^1].Time.AddMinutes(15).ToString("HH:mm")</div>
+                    }
+                    @foreach (var p in _placed)
+                    {
+                        var a = p.Appointment;
+                        <button type="button" class="vd-appt @ColourCss(a)" aria-haspopup="dialog"
+                                style="top:@Px(Local(a.StartUtc));height:@(Math.Max(SlotHeight, a.Minutes / 15.0 * SlotHeight) - 2)px;left:calc(@(p.Lane * LaneWidth)% + 4px);width:calc(@LaneWidth% - 8px)"
+                                @onclick="() => OpenEdit(a.Id)">
+                            @if (a.Minutes <= 15)
+                            {
+                                <span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span class="vd-strong">@Fmt.Time(a.StartUtc) · @a.PatientName</span> · @a.Reason</span>
+                            }
+                            else
+                            {
+                                <span class="vd-strong" style="display:block">@Fmt.Time(a.StartUtc) · @a.PatientName</span>
+                                <span>@a.Reason</span>
+                                @if (a.ClinicianName is not null) { <span class="vd-small" style="display:block;opacity:.8">@a.ClinicianName</span> }
+                            }
+                        </button>
+                    }
+                    @foreach (var group in _overflow)
+                    {
+                        <button type="button" class="vd-appt-more" style="top:@Px(group.Key);right:4px" aria-haspopup="menu" @onclick="() => _moreAt = _moreAt == group.Key ? null : group.Key">+@group.Count() more</button>
+                        @if (_moreAt == group.Key)
+                        {
+                            <div class="vd-dropdown" style="top:calc(@Px(group.Key) + 26px);left:auto;right:4px;width:280px" role="menu">
+                                <div class="vd-dropdown-item vd-small vd-muted">Also at @group.Key.ToString("HH:mm")</div>
+                                @foreach (var a in group)
+                                {
+                                    <button type="button" class="vd-dropdown-item" role="menuitem" @onclick="() => OpenEdit(a.Id)">
+                                        <span class="vd-strong">@Fmt.Time(a.StartUtc)–@Fmt.Time(a.EndUtc) · @a.PatientName</span> <span class="vd-muted vd-small">@a.Reason</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    }
+                    @if (NowTop is { } now)
+                    {
+                        <div class="vd-sched-now" style="top:@(now)px" aria-hidden="true"></div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (_view == View.Week)
+    {
+        <section class="vd-card vd-week" aria-label="Week">
+            @for (var i = 0; i < 7; i++)
+            {
+                var day = WeekStart.AddDays(i);
+                var items = OnDay(day).ToList();
+                <button type="button" class="vd-week-day @(day == _today ? "today" : "")" style="text-align:left;border-top:none;border-right:none;border-bottom:none;font:inherit;color:inherit;cursor:pointer" @onclick="() => OpenDay(day)" aria-label="@($"{Fmt.LongDate(day)}, {items.Count} appointments")">
+                    <div class="vd-row-between"><span class="vd-strong">@day.ToString("ddd", Fmt.Uk)</span><span class="vd-small vd-muted vd-mono">@day.ToString("d MMM", Fmt.Uk)</span></div>
+                    <div style="font-size:24px;font-weight:600;margin-top:6px">@items.Count</div>
+                    <div class="vd-small vd-muted" style="margin-bottom:8px">@(items.Count == 1 ? "appointment" : "appointments")</div>
+                    @foreach (var a in items.Take(7))
+                    {
+                        <div class="vd-small" style="margin-top:3px"><span class="vd-mono vd-muted">@Fmt.Time(a.StartUtc)</span> @a.PatientName</div>
+                    }
+                    @if (items.Count > 7) { <div class="vd-small" style="color:var(--vd-accent);margin-top:4px">+@(items.Count - 7) more</div> }
+                </button>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="vd-card" aria-label="Month">
+            <div class="vd-month" style="border-top:none">
+                @foreach (var name in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })
+                {
+                    <div class="vd-small vd-muted" style="padding:8px;border-right:1px solid var(--vd-border)">@name</div>
+                }
+                @for (var d = MonthGridStart; d < MonthGridStart.AddDays(42); d = d.AddDays(1))
+                {
+                    var day = d;
+                    var count = OnDay(day).Count();
+                    <button type="button" class="vd-month-cell @(day.Month != _date.Month ? "other" : "") @(day == _today ? "today" : "")"
+                            style="text-align:left;border-top:none;border-left:none;font:inherit;color:inherit" @onclick="() => OpenDay(day)"
+                            aria-label="@($"{Fmt.LongDate(day)}, {count} appointments")">
+                        <span class="vd-month-num">@day.Day</span>
+                        @if (count > 0) { <div class="vd-small" style="margin-top:6px;color:var(--vd-accent);font-weight:500">@count appt@(count == 1 ? "" : "s")</div> }
+                    </button>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@if (_dialog)
+{
+    <AppointmentDialog AppointmentId="_editId" Date="_date" StartUtc="_newStart" OnClose="() => _dialog = false" OnSaved="Saved" />
+}
+
+@code {
+    private enum View { Day, Week, Month }
+
+    private const int SlotHeight = 30;
+
+    private record Placed(AppointmentDto Appointment, int Lane);
+
+    private View _view = View.Day;
+    private DateOnly _today;
+    private DateOnly _date;
+    private IReadOnlyList<AppointmentDto>? _appointments;
+    private BookingDay? _day;
+    private List<TimeOnly> _grid = new();
+    private List<Placed> _placed = new();
+    private List<IGrouping<TimeOnly, AppointmentDto>> _overflow = new();
+    private TimeOnly? _moreAt;
+    private int _lanes = 1;
+    private bool _dialog;
+    private int? _editId;
+    private DateTime? _newStart;
+
+    private double LaneWidth => 100.0 / _lanes;
+
+    private DateOnly WeekStart => _date.AddDays(-(((int)_date.DayOfWeek + 6) % 7));
+
+    private DateOnly MonthGridStart
+    {
+        get
+        {
+            var first = new DateOnly(_date.Year, _date.Month, 1);
+            return first.AddDays(-(((int)first.DayOfWeek + 6) % 7));
+        }
+    }
+
+    private string ViewTitle => _view switch
+    {
+        View.Day => Fmt.LongDate(_date),
+        View.Week => $"Week of {WeekStart.ToString("d MMMM yyyy", Fmt.Uk)}",
+        _ => _date.ToString("MMMM yyyy", Fmt.Uk)
+    };
+
+    private string DayCountLabel
+    {
+        get
+        {
+            var n = _appointments!.Count(a => a.Status != AppointmentStatus.NoShow);
+            return n == 1 ? "1 appointment" : $"{n} appointments";
+        }
+    }
+
+    private double? NowTop
+    {
+        get
+        {
+            if (_date != _today || _grid.Count == 0)
+                return null;
+            var now = TimeOnly.FromDateTime(Fmt.Local(DateTime.UtcNow));
+            if (now < _grid[0] || now > _grid[^1].AddMinutes(15))
+                return null;
+            return (now - _grid[0]).TotalMinutes / 15 * SlotHeight;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = _date = ClinicTime.Today(DateTime.UtcNow);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _moreAt = null;
+        var (from, to) = _view switch
+        {
+            View.Day => (_date, _date),
+            View.Week => (WeekStart, WeekStart.AddDays(6)),
+            _ => (MonthGridStart, MonthGridStart.AddDays(41))
+        };
+        var result = await Backend.Send(new GetAppointmentsQuery { From = from, To = to });
+        if (!Toasts.Check(result))
+            return;
+        _appointments = result.Value;
+
+        if (_view == View.Day)
+        {
+            var day = await Backend.Send(new GetBookingSlotsQuery { Date = _date });
+            _day = day.IsSuccess ? day.Value : null;
+            Layout();
+        }
+    }
+
+    // Overlapping appointments sit side by side in lanes (several vets work at once). Beyond three lanes the
+    // rest collapse into a "+n more" menu so the day stays readable.
+    private void Layout()
+    {
+        var shown = _appointments!.Where(a => a.Status != AppointmentStatus.Cancelled).ToList();
+        var open = _day?.Open ?? new TimeOnly(8, 0);
+        var close = _day?.Close ?? new TimeOnly(19, 0);
+        if (shown.Count > 0)
+        {
+            var first = Local(shown.Min(a => a.StartUtc));
+            var last = Local(shown.Max(a => a.EndUtc));
+            if (first < open) open = new TimeOnly(first.Hour, 0);
+            if (last > close) close = last.Minute == 0 ? last : new TimeOnly(Math.Min(23, last.Hour + 1), 0);
+        }
+
+        _grid = new();
+        for (var t = open; t < close && _grid.Count < 96; t = t.AddMinutes(15))
+            _grid.Add(t);
+
+        const int maxLanes = 3;
+        var laneEnds = new List<DateTime>();
+        var placed = new List<Placed>();
+        var hidden = new List<AppointmentDto>();
+        foreach (var a in shown.OrderBy(a => a.StartUtc).ThenByDescending(a => a.Minutes))
+        {
+            var lane = laneEnds.FindIndex(end => end <= a.StartUtc);
+            if (lane < 0 && laneEnds.Count < maxLanes)
+            {
+                laneEnds.Add(default);
+                lane = laneEnds.Count - 1;
+            }
+
+            if (lane < 0)
+            {
+                hidden.Add(a);
+                continue;
+            }
+
+            laneEnds[lane] = a.EndUtc;
+            placed.Add(new Placed(a, lane));
+        }
+
+        _lanes = Math.Max(1, laneEnds.Count);
+        _placed = placed;
+        _overflow = hidden.GroupBy(a => Local(a.StartUtc)).ToList();
+    }
+
+    private static TimeOnly Local(DateTime utc) => TimeOnly.FromDateTime(Fmt.Local(utc));
+
+    private string Px(TimeOnly time) =>
+        _grid.Count == 0 ? "0px" : $"{((time - _grid[0]).TotalMinutes / 15 * SlotHeight).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}px";
+
+    private static string ColourCss(AppointmentDto a) => a.Status == AppointmentStatus.Done || a.Status == AppointmentStatus.NoShow ? "vd-appt-done" : a.Colour switch
+    {
+        AppointmentColour.Blue => "vd-appt-blue",
+        AppointmentColour.Purple => "vd-appt-purple",
+        AppointmentColour.Amber => "vd-appt-amber",
+        _ => "vd-appt-teal"
+    };
+
+    private IEnumerable<AppointmentDto> OnDay(DateOnly day) =>
+        _appointments!.Where(a => a.Status != AppointmentStatus.Cancelled && DateOnly.FromDateTime(Fmt.Local(a.StartUtc)) == day);
+
+    private async Task Move(int direction)
+    {
+        _date = _view switch
+        {
+            View.Day => _date.AddDays(direction),
+            View.Week => _date.AddDays(7 * direction),
+            _ => _date.AddMonths(direction)
+        };
+        await LoadAsync();
+    }
+
+    private async Task GoToday()
+    {
+        _date = _today;
+        await LoadAsync();
+    }
+
+    private async Task SetView(View view)
+    {
+        _view = view;
+        await LoadAsync();
+    }
+
+    private async Task OpenDay(DateOnly day)
+    {
+        _date = day;
+        _view = View.Day;
+        await LoadAsync();
+    }
+
+    private void OpenNew(DateTime? startUtc)
+    {
+        _editId = null;
+        _newStart = startUtc;
+        _dialog = true;
+    }
+
+    private void OpenEdit(int id)
+    {
+        _moreAt = null;
+        _editId = id;
+        _newStart = null;
+        _dialog = true;
+    }
+
+    private async Task Saved()
+    {
+        _dialog = false;
+        await LoadAsync();
+    }
+}

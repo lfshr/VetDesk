@@ -1,0 +1,111 @@
+@* The quick patient search with a dropdown of the top five matches (Today screen, Ctrl K). *@
+@using VetDesk.Application.Patients
+@using VetDesk.Application.Patients.Queries
+@inject Backend Backend
+@inject NavigationManager Nav
+
+<div class="vd-search-box">
+    <Icon Name="search" Size="18" />
+    <input id="vd-patient-search" type="search" autocomplete="off" placeholder="Search patients by name, owner, phone or microchip"
+           aria-label="Search patients" value="@_query" @oninput="OnInput" @onkeydown="OnKeyDown" @onfocus="() => _open = true"
+           @onblur="CloseSoon" />
+    <kbd>Ctrl K</kbd>
+    @if (_open && _query.Trim().Length >= 2)
+    {
+        <div class="vd-dropdown" role="listbox">
+            @if (_results.Count == 0 && !_searching)
+            {
+                <div class="vd-dropdown-item vd-muted">No patients match “@_query.Trim()”.</div>
+            }
+            @for (var i = 0; i < _results.Count; i++)
+            {
+                var r = _results[i];
+                var index = i;
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@(index == _active)"
+                        @onmousedown="() => Open(r.Id)">
+                    <span class="vd-avatar">@r.Name[..1]</span>
+                    <span style="flex:1;min-width:0">
+                        <span class="vd-strong">@r.Name</span> <span class="vd-muted">· @r.Species</span>
+                        <span class="vd-cell-sub" style="display:block">@r.OwnerName · @r.OwnerPhone</span>
+                    </span>
+                    <span class="vd-mono vd-small vd-muted">@r.PatientNumber</span>
+                </button>
+            }
+            <button type="button" class="vd-dropdown-foot" @onmousedown="SearchAll">Search all patients <Icon Name="chevron-right" Size="16" /></button>
+        </div>
+    }
+</div>
+
+@code {
+    private string _query = "";
+    private bool _open;
+    private bool _searching;
+    private int _active = -1;
+    private List<PatientRow> _results = new();
+    private CancellationTokenSource? _debounce;
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? "";
+        _open = true;
+        _active = -1;
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        var token = _debounce.Token;
+        try
+        {
+            await Task.Delay(180, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        var text = _query.Trim();
+        if (text.Length < 2)
+        {
+            _results.Clear();
+            return;
+        }
+
+        _searching = true;
+        var result = await Backend.Send(new SearchPatientsQuery { Text = text, Take = 5, IncludeDeceased = false });
+        _searching = false;
+        if (!token.IsCancellationRequested)
+            _results = result.IsSuccess ? result.Value.ToList() : new();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when _results.Count > 0:
+                _active = (_active + 1) % _results.Count;
+                break;
+            case "ArrowUp" when _results.Count > 0:
+                _active = _active <= 0 ? _results.Count - 1 : _active - 1;
+                break;
+            case "Enter":
+                if (_active >= 0 && _active < _results.Count)
+                    Open(_results[_active].Id);
+                else if (_results.Count == 1)
+                    Open(_results[0].Id);
+                else
+                    SearchAll();
+                break;
+            case "Escape":
+                _open = false;
+                break;
+        }
+    }
+
+    private async Task CloseSoon()
+    {
+        await Task.Delay(150);
+        _open = false;
+    }
+
+    private void Open(int id) => Nav.NavigateTo($"patients/{id}");
+
+    private void SearchAll() => Nav.NavigateTo($"patients?q={Uri.EscapeDataString(_query.Trim())}");
+}

@@ -1,0 +1,8 @@
+@* Sets the breadcrumb shown in the dark header bar. *@
+@inject Crumbs Crumbs
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+
+    protected override void OnParametersSet() => Crumbs.Set(Text);
+}

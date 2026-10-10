@@ -1,0 +1,224 @@
+@page "/clients"
+@page "/clients/{Id:int}"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<ScreenTitle Text="@(_selected is null ? "Clients" : $"Clients › {_selected.FullName}")" />
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Clients</h1>
+            <div class="vd-page-sub">@CountLabel</div>
+        </div>
+        <button type="button" class="vd-btn vd-btn-primary" @onclick="() => _dialog = Dialog.New" aria-haspopup="dialog"><Icon Name="plus" Size="18" /> New client</button>
+    </div>
+
+    <div class="vd-row" style="margin-bottom:16px;flex-wrap:wrap">
+        <div class="vd-search-box">
+            <Icon Name="search" Size="18" />
+            <input type="search" aria-label="Search clients" placeholder="Client name, phone, postcode, email, pet name or client number" value="@_text" @oninput="OnSearch" style="padding-right:12px" />
+        </div>
+        <div class="vd-segmented" role="group" aria-label="Show">
+            @foreach (var f in Enum.GetValues<ClientFilter>())
+            {
+                <button type="button" aria-pressed="@(_filter == f)" @onclick="() => SetFilter(f)">@FilterLabel(f)</button>
+            }
+        </div>
+        <span class="vd-spacer"></span>
+        <label class="vd-small vd-muted" for="cl-sort">Sort</label>
+        <select id="cl-sort" class="vd-input" style="width:170px" value="@_sort" @onchange="OnSort">
+            <option value="@ClientSort.Surname">Surname A–Z</option>
+            <option value="@ClientSort.LastVisit">Last visit</option>
+            <option value="@ClientSort.Balance">Balance due</option>
+        </select>
+    </div>
+
+    <div class="vd-grid-main">
+        <section class="vd-card" aria-label="Results">
+            @if (_rows is null)
+            {
+                <div class="vd-loading">Loading…</div>
+            }
+            else if (_rows.Count == 0)
+            {
+                <div class="vd-empty">
+                    <div class="vd-strong">No clients match “@_text.Trim()”</div>
+                    <div>Try their phone number, email or a pet's name, or add them as a new client.</div>
+                    <div style="margin-top:12px"><button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _dialog = Dialog.New">New client</button></div>
+                </div>
+            }
+            else
+            {
+                <table class="vd-table">
+                    <thead><tr><th>Client</th><th>Contact</th><th>Pets</th><th>Last visit</th><th class="vd-num">Balance</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in _rows)
+                        {
+                            <tr class="vd-clickable @(c.Id == _selected?.Id ? "selected" : "")" @onclick="() => Open(c.Id)">
+                                <td>
+                                    <div class="vd-row" style="gap:10px">
+                                        <span class="vd-avatar">@c.Initials</span>
+                                        <div><div class="vd-cell-primary">@c.FullName</div><div class="vd-cell-sub vd-mono">@c.ClientNumber</div></div>
+                                    </div>
+                                </td>
+                                <td><div>@c.Phone</div><div class="vd-cell-sub">@(c.Email ?? "—")</div></td>
+                                <td>@(c.PetNames.Count == 0 ? "—" : string.Join(", ", c.PetNames))</td>
+                                <td>@(c.LastVisitUtc is { } v ? Fmt.Date(v) : "—")</td>
+                                <td class="vd-num vd-mono @(c.Balance > 0 ? "vd-strong" : "vd-muted")">@(c.Balance > 0 ? Fmt.Money(c.Balance) : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </section>
+
+        <aside class="vd-card" aria-labelledby="cl-name">
+            @if (_selected is not { } s)
+            {
+                <div class="vd-empty">Pick a client to see their details.</div>
+            }
+            else
+            {
+                <div class="vd-card-head">
+                    <h2 id="cl-name" class="vd-section-title">@s.FullName</h2>
+                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _dialog = Dialog.Edit" aria-haspopup="dialog"><Icon Name="edit" Size="14" /> Edit</button>
+                </div>
+                <div class="vd-card-body">
+                    <div class="vd-small vd-muted"><span class="vd-mono">@s.ClientNumber</span></div>
+                    <dl style="display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:12px 0 0">
+                        <dt class="vd-muted">Mobile</dt><dd style="margin:0"><a href="tel:@s.Phone">@s.Phone</a></dd>
+                        <dt class="vd-muted">Email</dt><dd style="margin:0;overflow-wrap:anywhere">@(s.Email ?? "—")</dd>
+                        <dt class="vd-muted">Address</dt><dd style="margin:0">@(string.Join(", ", new[] { s.Address, s.Postcode }.Where(x => !string.IsNullOrWhiteSpace(x))) is { Length: > 0 } a ? a : "—")</dd>
+                        <dt class="vd-muted">Reminders</dt><dd style="margin:0">@(s.RemindersOptIn ? "Text and email" : "Opted out")</dd>
+                    </dl>
+                </div>
+                <div class="vd-card-head" style="border-top:1px solid var(--vd-border)">
+                    <span class="vd-strong">Pets</span>
+                    <button type="button" class="vd-btn-link" @onclick="() => _dialog = Dialog.AddPet" aria-haspopup="dialog">+ Add pet</button>
+                </div>
+                <ul class="vd-list">
+                    @foreach (var p in s.Pets)
+                    {
+                        <li><a class="vd-strong" href="patients/@p.Id">@p.Name</a> <span class="vd-small vd-muted">@p.SpeciesAndBreed · @p.Age@(p.IsDeceased ? " · deceased" : "")</span></li>
+                    }
+                    @if (s.Pets.Count == 0) { <li class="vd-muted">No pets yet.</li> }
+                </ul>
+                <div class="vd-card-foot">
+                    <div class="vd-row-between"><span>Balance</span><span class="vd-mono vd-strong">@(s.Balance > 0 ? $"{Fmt.Money(s.Balance)} due" : "Nothing due")</span></div>
+                    @if (s.Balance > 0 && Session.Can(Permission.TakePayments))
+                    {
+                        <div style="margin-top:10px"><a href="billing">Open billing</a></div>
+                    }
+                </div>
+            }
+        </aside>
+    </div>
+</div>
+
+@switch (_dialog)
+{
+    case Dialog.New:
+        <ClientDialog OnClose="Close" OnSaved="Saved" />
+        break;
+    case Dialog.Edit when _selected is not null:
+        <ClientDialog Client="_selected" OnClose="Close" OnSaved="Saved" />
+        break;
+    case Dialog.AddPet when _selected is not null:
+        <PatientDialog ClientId="_selected.Id" OnClose="Close" OnSaved="() => Saved(_selected.Id)" />
+        break;
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private enum Dialog { None, New, Edit, AddPet }
+
+    private const int Limit = 200;
+    private string _text = "";
+    private ClientFilter _filter;
+    private ClientSort _sort;
+    private List<ClientRow>? _rows;
+    private ClientDetail? _selected;
+    private Dialog _dialog;
+    private CancellationTokenSource? _debounce;
+
+    private string CountLabel => _rows is null ? "" : _rows.Count >= Limit ? $"Showing the first {Limit}" : _rows.Count == 1 ? "1 client" : $"{_rows.Count} clients";
+
+    private static string FilterLabel(ClientFilter f) => f switch
+    {
+        ClientFilter.BalanceDue => "Balance due",
+        ClientFilter.NewThisYear => "New this year",
+        _ => "All"
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is { } id)
+            await Select(id);
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new SearchClientsQuery { Text = _text, Filter = _filter, Sort = _sort, Take = Limit });
+        if (Toasts.Check(result))
+            _rows = result.Value.ToList();
+    }
+
+    private async Task Select(int id)
+    {
+        var result = await Backend.Send(new GetClientQuery { Id = id });
+        if (Toasts.Check(result))
+            _selected = result.Value;
+    }
+
+    private void Open(int id) => Nav.NavigateTo($"clients/{id}");
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? "";
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(200, _debounce.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SetFilter(ClientFilter f)
+    {
+        _filter = f;
+        await LoadAsync();
+    }
+
+    private async Task OnSort(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<ClientSort>(e.Value?.ToString(), out var sort))
+        {
+            _sort = sort;
+            await LoadAsync();
+        }
+    }
+
+    private void Close() => _dialog = Dialog.None;
+
+    private async Task Saved(int id)
+    {
+        _dialog = Dialog.None;
+        await LoadAsync();
+        if (id == Id)
+            await Select(id);
+        else
+            Open(id);
+    }
+}

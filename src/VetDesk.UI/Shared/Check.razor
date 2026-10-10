@@ -1,0 +1,9 @@
+<li class="vd-row" style="gap:8px;padding:6px 0;border:none">
+    <span style="color:@(Ok ? "var(--vd-success-text)" : "var(--vd-danger-text)")"><Icon Name="@(Ok ? "check" : "alert")" Size="16" /></span>
+    <span class="@(Ok ? "" : "vd-strong")">@Text</span>
+</li>
+
+@code {
+    [Parameter] public bool Ok { get; set; }
+    [Parameter] public string Text { get; set; } = "";
+}

@@ -1,0 +1,123 @@
+@* Final checks, the invoice preview and completion. Once done the consultation is locked. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<Modal Title="@(_done is null ? "Complete consultation and invoice" : "Consultation completed")" Subtitle="@($"{Consultation.PatientName} · {Consultation.OwnerName} · {Consultation.ClinicianName}")" OnClose="Close">
+    <ChildContent>
+        @if (_done is null)
+        {
+            <div class="vd-label">Checks</div>
+            <ul class="vd-list" style="margin-bottom:12px">
+                <Check Ok="Consultation.SoapComplete" Text="@(Consultation.SoapComplete ? "Clinical note has all four sections filled in" : "Fill in all four SOAP sections first")" />
+                <Check Ok="!Consultation.HasUnresolvedAllergyConflict" Text="@AllergyText" />
+                @if (Vaccines > 0)
+                {
+                    <Check Ok="true" Text="@($"{Plural(Vaccines, "vaccine")} will be added to the vaccination record")" />
+                }
+                @if (ToDispense > 0)
+                {
+                    <Check Ok="true" Text="@($"{Plural(ToDispense, "item")} will go to the pharmacy queue to dispense")" />
+                }
+            </ul>
+            <table class="vd-table vd-table-compact">
+                <tbody>
+                    @foreach (var ch in Consultation.Charges)
+                    {
+                        <tr><td>@ch.Description <span class="vd-cell-sub">qty @Fmt.Qty(ch.Quantity)</span></td><td class="vd-num vd-mono">@Fmt.Money(ch.Net)</td></tr>
+                    }
+                </tbody>
+            </table>
+            <dl class="vd-small" style="display:grid;grid-template-columns:1fr auto;gap:4px 16px;margin:12px 0 0">
+                <dt class="vd-muted">Subtotal</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(Consultation.Net)</dd>
+                <dt class="vd-muted">VAT</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(Consultation.Vat)</dd>
+                <dt class="vd-strong" style="font-size:15px">Total</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right;font-size:15px">@Fmt.Money(Consultation.Total)</dd>
+            </dl>
+            @if (Consultation.Charges.Count == 0)
+            {
+                <div class="vd-hint">There are no charges, so no invoice will be created.</div>
+            }
+            <div class="vd-field">
+                <label for="cc-recheck">Recheck follow-up</label>
+                <select id="cc-recheck" @bind="_recheckDays">
+                    <option value="0">None</option>
+                    <option value="3">In 3 days</option>
+                    <option value="7">In 1 week</option>
+                    <option value="14">In 2 weeks</option>
+                    <option value="28">In 4 weeks</option>
+                    <option value="182">In 6 months</option>
+                </select>
+                <div class="vd-hint">Adds a follow-up on the Today screen for that day.</div>
+            </div>
+        }
+        else
+        {
+            <div style="text-align:center;padding:12px 0">
+                <span style="display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--vd-success-bg);color:var(--vd-success-text)"><Icon Name="check" Size="26" /></span>
+                @if (_done.InvoiceNumber is not null)
+                {
+                    <h3 style="margin:12px 0 4px">Invoice <span class="vd-mono">@_done.InvoiceNumber</span> created</h3>
+                }
+                <div class="vd-muted">Consultation completed and locked. @DoneDetail</div>
+                @if (_done.InvoiceNumber is not null)
+                {
+                    <div class="vd-mono" style="font-size:28px;font-weight:700;margin-top:12px">@Fmt.Money(_done.Total)</div>
+                    <div class="vd-small vd-muted">due from @Consultation.OwnerName</div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        @if (_done is null)
+        {
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="Close">Back to note</button>
+            <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanComplete || _saving)" @onclick="Complete">@(Consultation.Charges.Count == 0 ? "Complete" : "Complete and create invoice")</button>
+        }
+        else
+        {
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="Close">@(_done.InvoiceId is null ? "Close" : "Pay later")</button>
+            @if (_done.InvoiceId is { } id && Session.Can(Permission.TakePayments))
+            {
+                <button type="button" class="vd-btn vd-btn-primary" @onclick="@(() => Nav.NavigateTo($"billing?invoice={id}"))">Take payment now</button>
+            }
+        }
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public ConsultationDetail Consultation { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    private int _recheckDays;
+    private bool _saving;
+    private CompletedConsultation? _done;
+
+    private int Vaccines => Consultation.Charges.Count(c => c.Category == ProductCategory.Vaccine);
+    private int ToDispense => Consultation.Charges.Count(c => c.Category == ProductCategory.Medicine);
+    private bool CanComplete => Consultation.SoapComplete && !Consultation.HasUnresolvedAllergyConflict;
+
+    private string AllergyText => Consultation.Allergies.Count == 0 ? "No drug allergies recorded"
+        : Consultation.HasUnresolvedAllergyConflict ? "A charged product conflicts with an allergy and has no override reason"
+        : $"No unexplained conflicts with the {string.Join(", ", Consultation.Allergies)} allergy";
+
+    private string DoneDetail => string.Join(" ", new[]
+    {
+        _done!.VaccinationsRecorded > 0 ? $"{Plural(_done.VaccinationsRecorded, "vaccination")} recorded." : null,
+        _done.ItemsToDispense > 0 ? $"{Plural(_done.ItemsToDispense, "item")} sent to the pharmacy." : null
+    }.Where(s => s is not null));
+
+    private static string Plural(int n, string word) => n == 1 ? $"1 {word}" : $"{n} {word}s";
+
+    private async Task Complete()
+    {
+        _saving = true;
+        var result = await Backend.Send(new CompleteConsultationCommand { Id = Consultation.Id, Version = Consultation.Version, RecheckInDays = _recheckDays > 0 ? _recheckDays : null });
+        _saving = false;
+        if (Toasts.Check(result))
+            _done = result.Value;
+    }
+
+    private Task Close() => _done is null ? OnClose.InvokeAsync() : OnCompleted.InvokeAsync();
+}

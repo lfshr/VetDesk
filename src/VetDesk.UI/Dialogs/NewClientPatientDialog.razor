@@ -1,0 +1,82 @@
+@* Adds an owner and their first pet in one step; warns when the phone number already belongs to a client. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="New client and patient" Subtitle="Add the owner and their pet. You can add more pets from the owner card." OnClose="OnClose" Size="wide">
+    <ChildContent>
+        <div class="vd-form-grid-3">
+            <div class="vd-field"><label for="nc-owner">Owner full name</label><input id="nc-owner" @bind="_owner" maxlength="200" /></div>
+            <div class="vd-field"><label for="nc-phone">Mobile</label><input id="nc-phone" type="tel" value="@_phone" @onchange="OnPhone" maxlength="40" /></div>
+            <div class="vd-field"><label for="nc-email">Email</label><input id="nc-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
+            <div class="vd-field"><label for="nc-pet">Pet name</label><input id="nc-pet" @bind="_pet" maxlength="100" /></div>
+            <div class="vd-field">
+                <label for="nc-species">Species</label>
+                <select id="nc-species" @bind="_species">
+                    @foreach (var s in Patient.SpeciesOptions)
+                    {
+                        <option>@s</option>
+                    }
+                </select>
+            </div>
+            <div class="vd-field"><label for="nc-breed">Breed</label><input id="nc-breed" @bind="_breed" maxlength="100" /></div>
+            <div class="vd-field">
+                <label for="nc-sex">Sex</label>
+                <select id="nc-sex" @bind="_sex">
+                    @foreach (var s in Enum.GetValues<Sex>())
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="vd-field"><label for="nc-dob">Date of birth</label><input id="nc-dob" type="date" @bind="_dob" /></div>
+            <div class="vd-field"><label for="nc-chip">Microchip</label><input id="nc-chip" class="vd-mono" @bind="_chip" maxlength="40" /></div>
+        </div>
+        @if (_match is not null)
+        {
+            <div class="vd-banner vd-banner-warning" style="margin-top:16px">
+                <Icon Name="warning" Size="18" />
+                <span>That number belongs to <strong>@_match.FullName</strong> (@_match.ClientNumber@(_match.PetNames.Count > 0 ? ", " + string.Join(", ", _match.PetNames) : "")). The pet will be added to their record.</span>
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">Add patient</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<CreatedClientAndPatient> OnCreated { get; set; }
+
+    private string _owner = "", _phone = "", _pet = "", _species = "Dog";
+    private string? _email, _breed, _chip;
+    private Sex _sex;
+    private DateOnly? _dob;
+    private ClientMatch? _match;
+    private bool _saving;
+
+    private bool CanSave => !string.IsNullOrWhiteSpace(_owner) && !string.IsNullOrWhiteSpace(_phone) && !string.IsNullOrWhiteSpace(_pet);
+
+    private async Task OnPhone(ChangeEventArgs e)
+    {
+        _phone = e.Value?.ToString() ?? "";
+        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = _phone });
+        _match = found.IsSuccess ? found.Value : null;
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new CreateClientAndPatientCommand
+        {
+            OwnerName = _owner, Phone = _phone, Email = _email, PetName = _pet, Species = _species, Breed = _breed,
+            Sex = _sex, DateOfBirth = _dob, Microchip = _chip
+        });
+        _saving = false;
+        if (!Toasts.Check(result))
+            return;
+        Toasts.Success(result.Value.AddedToExistingClient ? $"{_pet.Trim()} added to {result.Value.ClientName}'s record" : $"{result.Value.ClientName} and {_pet.Trim()} added");
+        await OnCreated.InvokeAsync(result.Value);
+    }
+}

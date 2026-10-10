@@ -1,0 +1,16 @@
+@using VetDesk.Domain.Entities.Patients
+
+<span class="vd-chip @Css" title="@Title">
+    <Icon Name="@(Severity == AlertSeverity.Note ? "info" : "alert")" Size="13" /> @Text
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    [Parameter] public AlertSeverity Severity { get; set; }
+    [Parameter] public bool IsAllergy { get; set; }
+
+    private string Css => IsAllergy || Severity == AlertSeverity.Alert ? "vd-chip-danger"
+        : Severity == AlertSeverity.Warning ? "vd-chip-warning" : "vd-chip-info";
+
+    private string Title => IsAllergy ? "Drug allergy" : Severity.ToString();
+}

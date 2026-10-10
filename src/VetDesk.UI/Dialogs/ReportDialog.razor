@@ -1,0 +1,89 @@
+@* One standard report for a date range, with print and CSV. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject IJSRuntime JS
+
+<Modal Title="@Report.Title()" Subtitle="@(_table?.Subtitle ?? Report.Description())" OnClose="OnClose" Size="xwide">
+    <ChildContent>
+        <div class="vd-row vd-no-print" style="flex-wrap:wrap;margin-bottom:12px">
+            <label class="vd-small vd-muted" for="rp-from">@(SingleDay ? "Day" : "From")</label>
+            <input id="rp-from" class="vd-input" style="width:170px" type="date" value="@_from.ToString("yyyy-MM-dd")" @onchange="e => SetDate(e, true)" />
+            @if (!SingleDay)
+            {
+                <label class="vd-small vd-muted" for="rp-to">To</label>
+                <input id="rp-to" class="vd-input" style="width:170px" type="date" value="@_to.ToString("yyyy-MM-dd")" @onchange="e => SetDate(e, false)" />
+            }
+        </div>
+        @if (_table is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <div class="vd-printable">
+                <h3 class="vd-print-only" style="display:none">@_table.Title · @_table.Subtitle</h3>
+                <div class="vd-table-scroll" style="max-height:55vh">
+                    <table class="vd-table vd-table-compact">
+                        <thead><tr>@foreach (var c in _table.Columns) { <th>@c</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var row in _table.Rows)
+                            {
+                                <tr>@foreach (var cell in row) { <td>@cell</td> }</tr>
+                            }
+                        </tbody>
+                        @if (_table.Totals is { } totals)
+                        {
+                            <tfoot><tr>@foreach (var cell in totals) { <td class="vd-strong">@cell</td> }</tr></tfoot>
+                        }
+                    </table>
+                </div>
+                @if (_table.Rows.Count == 0) { <div class="vd-empty">Nothing to report for this period.</div> }
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-secondary" disabled="@(_table is null)" @onclick="Print"><Icon Name="print" Size="16" /> Print</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(_table is null)" @onclick="Download"><Icon Name="download" Size="16" /> Download CSV</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public StandardReport Report { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private DateOnly _from, _to;
+    private ReportTable? _table;
+
+    private bool SingleDay => Report == StandardReport.DaySheet;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _to = ClinicTime.Today(DateTime.UtcNow);
+        _from = SingleDay ? _to : Report == StandardReport.VatSummary ? new DateOnly(_to.Year, (_to.Month - 1) / 3 * 3 + 1, 1) : new DateOnly(_to.Year, _to.Month, 1);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetStandardReportQuery { Report = Report, From = _from, To = SingleDay ? _from : _to });
+        if (Toasts.Check(result))
+            _table = result.Value;
+    }
+
+    private async Task SetDate(ChangeEventArgs e, bool from)
+    {
+        if (!DateOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var d))
+            return;
+        if (from) _from = d; else _to = d;
+        await LoadAsync();
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("vetdesk.print");
+
+    private async Task Download()
+    {
+        var name = $"vetdesk-{Report.Title().ToLowerInvariant().Replace(' ', '-')}-{_from:yyyy-MM-dd}.csv";
+        await JS.InvokeVoidAsync("vetdesk.download", name, "text/csv", Csv.From(_table!));
+    }
+}

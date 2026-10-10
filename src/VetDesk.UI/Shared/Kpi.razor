@@ -1,0 +1,19 @@
+<div class="vd-card vd-kpi">
+    <div class="vd-kpi-label">@Label</div>
+    <div class="vd-kpi-value">@Value</div>
+    <div class="vd-kpi-change @(Change > 0 ? "vd-up" : Change < 0 ? "vd-down" : "vd-muted")">@ChangeText</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter] public decimal? Change { get; set; }
+
+    private string ChangeText => Change switch
+    {
+        null => "No earlier figures to compare",
+        > 0 => $"+{Change:0.#}% vs previous",
+        < 0 => $"−{Math.Abs(Change.Value):0.#}% vs previous",
+        _ => "No change"
+    };
+}

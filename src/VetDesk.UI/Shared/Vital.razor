@@ -1,0 +1,22 @@
+@* One vital sign box on the consultation note: label, value, unit. *@
+<div class="vd-field">
+    <label for="@Id">@Label</label>
+    <div style="position:relative">
+        <input id="@Id" class="vd-mono" style="width:100%;padding-right:@(string.IsNullOrEmpty(Unit) ? "12px" : "40px")" inputmode="@(Text ? "text" : "decimal")"
+               value="@Value" @onchange="e => Changed.InvokeAsync(e.Value?.ToString())" disabled="@Disabled" maxlength="40" />
+        @if (!string.IsNullOrEmpty(Unit))
+        {
+            <span class="vd-small vd-muted" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none">@Unit</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Text { get; set; }
+    [Parameter] public EventCallback<string?> Changed { get; set; }
+}

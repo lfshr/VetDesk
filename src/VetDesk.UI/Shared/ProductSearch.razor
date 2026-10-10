@@ -1,0 +1,117 @@
+@* Searches the price list. With a patient, each match shows any conflict with that patient's allergies. *@
+@inject Backend Backend
+
+<div style="position:relative">
+    <div class="vd-search-box" style="max-width:none">
+        <Icon Name="search" Size="18" />
+        <input id="@InputId" type="search" autocomplete="off" placeholder="@Placeholder" aria-label="@Placeholder" value="@_query"
+               @oninput="OnInput" @onkeydown="OnKeyDown" @onblur="CloseSoon" style="padding-right:12px" />
+    </div>
+    @if (_open && _query.Trim().Length >= 2)
+    {
+        <div class="vd-dropdown" role="listbox" style="max-height:320px;overflow-y:auto">
+            @for (var i = 0; i < _results.Count; i++)
+            {
+                var p = _results[i];
+                var index = i;
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@(index == _active)" @onmousedown="() => Pick(p)">
+                    <span style="flex:1;min-width:0">
+                        <span class="vd-strong">@p.Name</span>
+                        @if (p.IsControlledDrug) { <span class="vd-cd">CD</span> }
+                        <span class="vd-cell-sub" style="display:block">
+                            <span class="vd-mono">@p.Code</span> · @p.Category@(p.IsStocked ? $" · {Fmt.Qty(p.OnHand)} {p.Unit} in stock" : "")
+                        </span>
+                        @if (p.AllergyConflicts.Count > 0)
+                        {
+                            <span class="vd-chip vd-chip-danger" style="margin-top:4px"><Icon Name="alert" Size="13" /> Conflicts with the @string.Join(", ", p.AllergyConflicts) allergy</span>
+                        }
+                    </span>
+                    <span class="vd-mono vd-small">@Fmt.Money(p.GrossPrice)</span>
+                </button>
+            }
+            @if (_results.Count == 0 && !_searching)
+            {
+                <div class="vd-dropdown-item vd-muted">Nothing on the price list matches.</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int? PatientId { get; set; }
+    [Parameter] public IReadOnlyCollection<ProductCategory>? Categories { get; set; }
+    [Parameter] public bool StockedOnly { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Search the price list";
+    [Parameter] public string InputId { get; set; } = "product-search";
+    [Parameter] public EventCallback<ProductDto> OnPick { get; set; }
+
+    private string _query = "";
+    private bool _open;
+    private bool _searching;
+    private int _active = -1;
+    private List<ProductDto> _results = new();
+    private CancellationTokenSource? _debounce;
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? "";
+        _open = true;
+        _active = -1;
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        var token = _debounce.Token;
+        try
+        {
+            await Task.Delay(180, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (_query.Trim().Length < 2)
+        {
+            _results.Clear();
+            return;
+        }
+
+        _searching = true;
+        var result = await Backend.Send(new SearchProductsQuery { Text = _query.Trim(), Categories = Categories, PatientId = PatientId, Take = 12 });
+        _searching = false;
+        if (!token.IsCancellationRequested)
+            _results = result.IsSuccess ? result.Value.Where(p => !StockedOnly || p.IsStocked).ToList() : new();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when _results.Count > 0:
+                _active = (_active + 1) % _results.Count;
+                break;
+            case "ArrowUp" when _results.Count > 0:
+                _active = _active <= 0 ? _results.Count - 1 : _active - 1;
+                break;
+            case "Enter" when _results.Count > 0:
+                await Pick(_results[Math.Max(0, _active)]);
+                break;
+            case "Escape":
+                _open = false;
+                break;
+        }
+    }
+
+    private async Task CloseSoon()
+    {
+        await Task.Delay(150);
+        _open = false;
+    }
+
+    private async Task Pick(ProductDto product)
+    {
+        _open = false;
+        _query = "";
+        _results.Clear();
+        await OnPick.InvokeAsync(product);
+    }
+}

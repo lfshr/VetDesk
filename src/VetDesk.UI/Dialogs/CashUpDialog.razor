@@ -1,0 +1,93 @@
+@* End-of-day cash-up: takings by method, the counted drawer and the variance. A variance needs a note. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="End-of-day cash-up" Subtitle="Today's takings by payment method. Count the cash drawer and record it." OnClose="OnClose" Size="narrow">
+    <ChildContent>
+        @if (_c is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <div class="vd-field" style="margin-top:0">
+                <label for="cu-date">Day</label>
+                <input id="cu-date" type="date" value="@_date.ToString("yyyy-MM-dd")" max="@_today.ToString("yyyy-MM-dd")" @onchange="PickDate" />
+            </div>
+            <dl style="display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin:16px 0 0">
+                <dt>Card</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(_c.Card)</dd>
+                <dt>Cash</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(_c.Cash)</dd>
+                <dt>Bank transfer</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(_c.Transfer)</dd>
+                <dt class="vd-strong" style="border-top:1px solid var(--vd-border);padding-top:6px">Total (@_c.PaymentCount payments)</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right;border-top:1px solid var(--vd-border);padding-top:6px">@Fmt.Money(_c.Total)</dd>
+                <dt class="vd-muted">Opening float</dt><dd class="vd-mono vd-muted" style="margin:0;text-align:right">@Fmt.Money(_c.OpeningFloat)</dd>
+                <dt class="vd-muted">Expected in drawer</dt><dd class="vd-mono vd-muted" style="margin:0;text-align:right">@Fmt.Money(_c.ExpectedCash)</dd>
+            </dl>
+            @if (_c.IsClosed)
+            {
+                <div class="vd-banner vd-banner-success" style="margin-top:16px"><Icon Name="check" Size="18" /> Closed by @_c.ClosedBy at @Fmt.Time(_c.ClosedUtc!.Value). Counted @Fmt.Money(_c.CashCounted ?? 0), variance @Fmt.Money((_c.CashCounted ?? 0) - _c.ExpectedCash).</div>
+            }
+            else
+            {
+                <div class="vd-field"><label for="cu-counted">Cash counted in drawer (£)</label><input id="cu-counted" class="vd-mono" type="number" step="0.01" min="0" @bind="_counted" @bind:event="oninput" /></div>
+                <div class="vd-row-between" style="margin-top:10px"><span>Variance</span><span class="vd-mono vd-strong @(Variance < 0 ? "vd-down" : Variance > 0 ? "vd-up" : "")">@(Variance > 0 ? "+" : "")@Fmt.Money(Variance)</span></div>
+                @if (Variance != 0)
+                {
+                    <div class="vd-field"><label for="cu-note">Note on the difference</label><input id="cu-note" @bind="_note" @bind:event="oninput" maxlength="400" placeholder="e.g. £5 change given from petty cash" /></div>
+                }
+            }
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">@(_c?.IsClosed == true ? "Close" : "Cancel")</button>
+        @if (_c is { IsClosed: false })
+        {
+            <button type="button" class="vd-btn vd-btn-primary" disabled="@(_counted < 0 || (Variance != 0 && string.IsNullOrWhiteSpace(_note)) || _saving)" @onclick="Save">Close the day</button>
+        }
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private DateOnly _today, _date;
+    private CashUp? _c;
+    private decimal _counted;
+    private string? _note;
+    private bool _saving;
+
+    private decimal Variance => _c is null ? 0 : _counted - _c.ExpectedCash;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = _date = ClinicTime.Today(DateTime.UtcNow);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetCashUpQuery { Date = _date });
+        if (!Toasts.Check(result))
+            return;
+        _c = result.Value;
+        _counted = _c.ExpectedCash;
+    }
+
+    private async Task PickDate(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var d))
+        {
+            _date = d;
+            await LoadAsync();
+        }
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new CloseDayCommand { Date = _date, CashCounted = _counted, Note = _note });
+        _saving = false;
+        if (Toasts.Check(result, $"{Fmt.LongDate(_date)} closed"))
+            await OnSaved.InvokeAsync();
+    }
+}

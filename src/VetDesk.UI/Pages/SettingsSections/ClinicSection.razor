@@ -1,0 +1,87 @@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<section class="vd-card" aria-labelledby="clinic-title">
+    <div class="vd-card-head"><h2 id="clinic-title" class="vd-section-title">Clinic details</h2></div>
+    @if (_s is null)
+    {
+        <div class="vd-loading">Loading…</div>
+    }
+    else
+    {
+        <div class="vd-card-body">
+            <div class="vd-form-grid">
+                <div class="vd-field" style="margin-top:0"><label for="cs-name">Practice name</label><input id="cs-name" @bind="_name" maxlength="200" /></div>
+                <div class="vd-field" style="margin-top:0"><label for="cs-vat">VAT number</label><input id="cs-vat" @bind="_vat" maxlength="40" /></div>
+                <div class="vd-field vd-field-wide"><label for="cs-address">Address</label><input id="cs-address" @bind="_address" maxlength="400" /></div>
+                <div class="vd-field"><label for="cs-phone">Phone</label><input id="cs-phone" @bind="_phone" maxlength="40" /></div>
+                <div class="vd-field"><label for="cs-email">Email</label><input id="cs-email" type="email" @bind="_email" maxlength="200" /></div>
+            </div>
+            <h3 class="vd-section-title" style="margin:20px 0 0">Opening hours</h3>
+            <div class="vd-form-grid-4">
+                <div class="vd-field"><label for="cs-wo">Mon – Fri opens</label><input id="cs-wo" type="time" @bind="_weekdayOpen" /></div>
+                <div class="vd-field"><label for="cs-wc">Mon – Fri closes</label><input id="cs-wc" type="time" @bind="_weekdayClose" /></div>
+                <div class="vd-field"><label for="cs-so">Saturday opens</label><input id="cs-so" type="time" @bind="_satOpen" /></div>
+                <div class="vd-field"><label for="cs-sc">Saturday closes</label><input id="cs-sc" type="time" @bind="_satClose" /></div>
+                <div class="vd-field"><label for="cs-ls">Lunch from (weekdays)</label><input id="cs-ls" type="time" @bind="_lunchStart" /></div>
+                <div class="vd-field"><label for="cs-le">Lunch until</label><input id="cs-le" type="time" @bind="_lunchEnd" /></div>
+            </div>
+            <div class="vd-hint">Leave Saturday blank if you're closed. Sunday is always closed. Clear the lunch times if you don't close for lunch.</div>
+            <h3 class="vd-section-title" style="margin:20px 0 0">Money and security</h3>
+            <div class="vd-form-grid-3">
+                <div class="vd-field"><label for="cs-terms">Payment terms (days)</label><input id="cs-terms" type="number" min="0" max="120" @bind="_terms" /></div>
+                <div class="vd-field"><label for="cs-float">Cash drawer float (£)</label><input id="cs-float" type="number" min="0" step="0.01" @bind="_float" /></div>
+                <div class="vd-field"><label for="cs-lock">Lock screen after (minutes idle)</label><input id="cs-lock" type="number" min="1" max="120" @bind="_lock" /></div>
+            </div>
+            <div class="vd-actions" style="margin-top:20px">
+                <button type="button" class="vd-btn vd-btn-primary" disabled="@_saving" @onclick="Save">Save changes</button>
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="Fill">Discard</button>
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    private ClinicSettingsDto? _s;
+    private string _name = "";
+    private string? _address, _phone, _email, _vat;
+    private TimeOnly _weekdayOpen, _weekdayClose;
+    private TimeOnly? _satOpen, _satClose, _lunchStart, _lunchEnd;
+    private int _terms, _lock;
+    private decimal _float;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetClinicSettingsQuery());
+        if (!Toasts.Check(result))
+            return;
+        _s = result.Value;
+        Fill();
+    }
+
+    private void Fill()
+    {
+        var s = _s!;
+        (_name, _address, _phone, _email, _vat) = (s.Name, s.Address, s.Phone, s.Email, s.VatNumber);
+        (_weekdayOpen, _weekdayClose, _satOpen, _satClose, _lunchStart, _lunchEnd) = (s.WeekdayOpen, s.WeekdayClose, s.SaturdayOpen, s.SaturdayClose, s.LunchStart, s.LunchEnd);
+        (_terms, _float, _lock) = (s.PaymentTermsDays, s.OpeningFloat, s.AutoLockMinutes);
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new UpdateClinicSettingsCommand
+        {
+            Name = _name, Address = _address, Phone = _phone, Email = _email, VatNumber = _vat,
+            WeekdayOpen = _weekdayOpen, WeekdayClose = _weekdayClose, SaturdayOpen = _satOpen, SaturdayClose = _satClose,
+            LunchStart = _lunchStart, LunchEnd = _lunchEnd, PaymentTermsDays = _terms, OpeningFloat = _float, AutoLockMinutes = _lock,
+            BackupFolder = _s!.BackupFolder, BackupTime = _s.BackupTime, Version = _s.Version
+        });
+        _saving = false;
+        if (Toasts.Check(result, "Clinic details saved"))
+            await LoadAsync();
+    }
+}

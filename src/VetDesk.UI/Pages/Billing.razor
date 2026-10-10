@@ -1,0 +1,268 @@
+@page "/billing"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject IJSRuntime JS
+
+<ScreenTitle Text="Billing" />
+
+<div class="vd-toolbar">
+    <div class="vd-search-box">
+        <Icon Name="search" Size="18" />
+        <input type="search" aria-label="Search invoices" placeholder="Search invoice number, owner, patient" value="@_text" @oninput="OnSearch" style="padding-right:12px" />
+    </div>
+    <span class="vd-spacer"></span>
+    <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _dialog = Dialog.CashUp" aria-haspopup="dialog"><Icon Name="cash" Size="16" /> End-of-day cash-up</button>
+    <button type="button" class="vd-btn vd-btn-primary" @onclick="() => _dialog = Dialog.NewInvoice" aria-haspopup="dialog"><Icon Name="plus" Size="16" /> New invoice</button>
+</div>
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Billing</h1>
+            <div class="vd-page-sub">Invoices, payments and insurance claims</div>
+        </div>
+        <div class="vd-pills" role="group" aria-label="Filter invoices">
+            @foreach (var f in Enum.GetValues<InvoiceFilter>())
+            {
+                <button type="button" class="vd-pill" aria-pressed="@(_filter == f)" @onclick="() => _filter = f">@f <span class="vd-pill-count">@Filtered(f).Count()</span></button>
+            }
+        </div>
+    </div>
+
+    <div class="vd-grid-main">
+        <section class="vd-card" aria-labelledby="inv-title">
+            <div class="vd-card-head"><h2 id="inv-title" class="vd-section-title">Invoices</h2><span class="vd-small vd-muted">Outstanding <span class="vd-mono vd-strong">@Fmt.Money((_rows ?? []).Sum(r => r.AmountDue))</span></span></div>
+            @if (_rows is null)
+            {
+                <div class="vd-loading">Loading…</div>
+            }
+            else
+            {
+                <table class="vd-table">
+                    <thead><tr><th>Invoice</th><th>Date</th><th>Owner · patient</th><th class="vd-num">Total</th><th class="vd-num">Due</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var i in Filtered(_filter))
+                        {
+                            <tr class="vd-clickable @(i.Id == _selected?.Id ? "selected" : "")" @onclick="() => Select(i.Id)" tabindex="0" @onkeydown="e => OnRowKey(e, i.Id)">
+                                <td class="vd-mono">@i.Number</td>
+                                <td>@Fmt.Date(i.IssuedUtc)</td>
+                                <td><div class="vd-cell-primary">@i.ClientName</div><div class="vd-cell-sub">@(i.PatientName ?? "—")</div></td>
+                                <td class="vd-num vd-mono">@Fmt.Money(i.Total)</td>
+                                <td class="vd-num vd-mono">@(i.AmountDue > 0 ? Fmt.Money(i.AmountDue) : "—")</td>
+                                <td><InvoiceStatusChip Status="i.Status" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (!Filtered(_filter).Any())
+                {
+                    <div class="vd-empty">No invoices match.</div>
+                }
+            }
+        </section>
+
+        <aside class="vd-card" aria-labelledby="detail-title">
+            @if (_selected is not { } s)
+            {
+                <div class="vd-empty">Pick an invoice to see it here.</div>
+            }
+            else
+            {
+                <div class="vd-printable">
+                    <div class="vd-card-head">
+                        <h2 id="detail-title" class="vd-section-title vd-mono">@s.Number</h2>
+                        <InvoiceStatusChip Status="s.Status" />
+                    </div>
+                    <div class="vd-card-body" style="padding-bottom:8px">
+                        <div class="vd-print-only" style="display:none;margin-bottom:12px"><strong>@_clinic?.Name</strong><br />@_clinic?.Address<br />@(_clinic?.VatNumber is { } vat ? $"VAT no. {vat}" : "")</div>
+                        <div class="vd-strong"><a href="clients/@s.ClientId">@s.ClientName</a>@(s.PatientName is null ? "" : $" · {s.PatientName}")</div>
+                        <div class="vd-small vd-muted">Issued @Fmt.Date(s.IssuedUtc) · due @Fmt.Date(s.DueDate)</div>
+                    </div>
+                    <table class="vd-table vd-table-compact">
+                        <tbody>
+                            @foreach (var l in s.Lines)
+                            {
+                                <tr><td>@l.Description <span class="vd-cell-sub">Qty @Fmt.Qty(l.Quantity)@(l.VatRate == VatRate.Standard ? "" : $" · {l.VatRate.Label()}")</span></td><td class="vd-num vd-mono">@(l.Net == 0 ? "Included" : Fmt.Money(l.Net))</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                    <dl class="vd-card-body vd-small" style="display:grid;grid-template-columns:1fr auto;gap:4px 16px;margin:0">
+                        <dt class="vd-muted">Subtotal</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Net)</dd>
+                        <dt class="vd-muted">VAT</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Vat)</dd>
+                        <dt class="vd-strong">Total</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right">@Fmt.Money(s.Total)</dd>
+                        <dt class="vd-muted">Paid</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Paid)</dd>
+                        <dt class="vd-strong" style="font-size:15px">Amount due</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right;font-size:15px">@Fmt.Money(s.AmountDue)</dd>
+                    </dl>
+                    @if (s.Payments.Count > 0)
+                    {
+                        <ul class="vd-list vd-small" style="border-top:1px solid var(--vd-border)">
+                            @foreach (var p in s.Payments)
+                            {
+                                <li class="vd-row-between">
+                                    <span>@(p.IsRefund ? "Refund" : p.Method.ToString()) · @Fmt.DateTime(p.TakenUtc) · @p.TakenBy@(p.Reference is null ? "" : $" · {p.Reference}")</span>
+                                    <span class="vd-mono @(p.IsRefund ? "vd-down" : "")">@Fmt.Money(p.Amount)</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    @if (s.Claim is { } c)
+                    {
+                        <div class="vd-banner vd-banner-info" style="margin:0 16px 12px"><Icon Name="shield" Size="18" /> Claim to @c.Insurer (@c.PolicyNumber) for @c.Condition, excess @Fmt.Money(c.Excess). Recorded @Fmt.Date(c.CreatedUtc).</div>
+                    }
+                </div>
+                <div class="vd-card-foot vd-stack-sm vd-no-print">
+                    @if (s.AmountDue > 0)
+                    {
+                        <span class="vd-label">Take payment</span>
+                        <div class="vd-actions">
+                            @foreach (var m in Enum.GetValues<PaymentMethod>())
+                            {
+                                <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" aria-haspopup="dialog" @onclick="() => Pay(m)"><Icon Name="@MethodIcon(m)" Size="16" /> @m</button>
+                            }
+                        </div>
+                    }
+                    <div class="vd-actions">
+                        @if (s.AmountDue > 0 && s.Claim is null)
+                        {
+                            <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _dialog = Dialog.Insurer"><Icon Name="shield" Size="16" /> Bill insurer</button>
+                        }
+                        @if (s.Paid > 0)
+                        {
+                            <button type="button" class="vd-btn vd-btn-danger-outline vd-btn-sm" @onclick="() => _dialog = Dialog.Refund">Refund</button>
+                        }
+                        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="Print"><Icon Name="print" Size="16" /> Print</button>
+                    </div>
+                </div>
+            }
+        </aside>
+    </div>
+</div>
+
+@if (_selected is { } sel)
+{
+    switch (_dialog)
+    {
+        case Dialog.Payment:
+            <PaymentDialog Invoice="sel" Method="_method" OnClose="Close" OnSaved="Changed" />
+            break;
+        case Dialog.Refund:
+            <RefundDialog Invoice="sel" OnClose="Close" OnSaved="Changed" />
+            break;
+        case Dialog.Insurer:
+            <InsurerDialog Invoice="sel" OnClose="Close" OnSaved="Changed" />
+            break;
+    }
+}
+@if (_dialog == Dialog.CashUp)
+{
+    <CashUpDialog OnClose="Close" OnSaved="Changed" />
+}
+@if (_dialog == Dialog.NewInvoice)
+{
+    <NewInvoiceDialog OnClose="Close" OnCreated="Created" />
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "invoice")] public int? InvoiceId { get; set; }
+
+    private enum Dialog { None, Payment, Refund, Insurer, CashUp, NewInvoice }
+
+    private string _text = "";
+    private InvoiceFilter _filter;
+    private List<InvoiceRow>? _rows;
+    private InvoiceDetail? _selected;
+    private ClinicSettingsDto? _clinic;
+    private Dialog _dialog;
+    private PaymentMethod _method;
+    private CancellationTokenSource? _debounce;
+
+    // Same rules as the invoice search, applied here so each pill shows its count from one load.
+    private IEnumerable<InvoiceRow> Filtered(InvoiceFilter f) => (_rows ?? []).Where(r => f switch
+    {
+        InvoiceFilter.Unpaid => r.AmountDue > 0 && r.Status != InvoiceStatus.ClaimSent,
+        InvoiceFilter.Insurance => r.Status == InvoiceStatus.ClaimSent,
+        InvoiceFilter.Paid => r.Status == InvoiceStatus.Paid,
+        _ => true
+    });
+
+    private static string MethodIcon(PaymentMethod m) => m switch
+    {
+        PaymentMethod.Card => "card",
+        PaymentMethod.Cash => "cash",
+        _ => "bank"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var clinic = await Backend.Send(new GetClinicSettingsQuery());
+        _clinic = clinic.IsSuccess ? clinic.Value : null;
+        await LoadAsync();
+        if (InvoiceId is { } id)
+            await Select(id);
+        else if (_rows?.FirstOrDefault(r => r.AmountDue > 0) is { } first)
+            await Select(first.Id);
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new SearchInvoicesQuery { Text = _text });
+        if (Toasts.Check(result))
+            _rows = result.Value.ToList();
+    }
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? "";
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(200, _debounce.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task Select(int id)
+    {
+        var result = await Backend.Send(new GetInvoiceQuery { Id = id });
+        if (Toasts.Check(result))
+            _selected = result.Value;
+    }
+
+    private async Task OnRowKey(KeyboardEventArgs e, int id)
+    {
+        if (e.Key == "Enter")
+            await Select(id);
+    }
+
+    private void Pay(PaymentMethod method)
+    {
+        _method = method;
+        _dialog = Dialog.Payment;
+    }
+
+    private void Close() => _dialog = Dialog.None;
+
+    private async Task Changed()
+    {
+        _dialog = Dialog.None;
+        await LoadAsync();
+        if (_selected is { } s)
+            await Select(s.Id);
+    }
+
+    private async Task Created(int id)
+    {
+        _dialog = Dialog.None;
+        await LoadAsync();
+        await Select(id);
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("vetdesk.print");
+}

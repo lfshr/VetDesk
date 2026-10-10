@@ -1,0 +1,339 @@
+@page "/consultations/{Id:int}"
+@implements IDisposable
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject Hotkeys Hotkeys
+@inject NavigationManager Nav
+
+<ScreenTitle Text="@($"Patients › {_c?.PatientName} › Consultation")" />
+
+@if (_c is null)
+{
+    <div class="vd-page"><div class="vd-loading">@(_missing ? "That consultation doesn't exist." : "Loading…")</div></div>
+}
+else
+{
+    <NavigationLock OnBeforeInternalNavigation="SaveBeforeLeaving" ConfirmExternalNavigation="_dirty" />
+
+    <div class="vd-toolbar" style="flex-wrap:wrap">
+        <span class="vd-avatar">@_c.PatientName[..1]</span>
+        <div>
+            <a class="vd-strong" href="patients/@_c.PatientId" style="font-size:16px">@_c.PatientName</a>
+            <div class="vd-small vd-muted">@_c.SpeciesAndBreed · @_c.Age@(_c.WeightKg is { } w ? $" · {w:0.0#} kg" : "") · @_c.OwnerName</div>
+        </div>
+        @foreach (var a in _c.Allergies)
+        {
+            <span class="vd-chip vd-chip-danger"><Icon Name="alert" Size="13" /> Allergy: @a</span>
+        }
+        @foreach (var (text, severity) in _c.Alerts)
+        {
+            <AlertChip Text="@text" Severity="severity" />
+        }
+        <span class="vd-spacer"></span>
+        @if (_c.IsLocked)
+        {
+            <span class="vd-chip vd-chip-success"><Icon Name="check" Size="13" /> Completed @Fmt.Time(_c.CompletedUtc!.Value)@(_c.InvoiceNumber is null ? "" : $" · {_c.InvoiceNumber}")</span>
+            @if (_c.InvoiceId is { } inv && Session.Can(Permission.TakePayments))
+            {
+                <a class="vd-btn vd-btn-primary" href="billing?invoice=@inv">Take payment</a>
+            }
+        }
+        else
+        {
+            <span class="vd-small vd-muted vd-mono">Started @Fmt.Time(_c.StartedUtc) · @((int)(DateTime.UtcNow - _c.StartedUtc).TotalMinutes) min · @_c.ClinicianName</span>
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_dirty ? "Save draft" : "Saved")</button>
+            <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenComplete" aria-haspopup="dialog" title="Ctrl+Enter">Complete and invoice</button>
+        }
+    </div>
+
+    <div class="vd-page">
+        @if (_c.IsLocked)
+        {
+            <div class="vd-banner vd-banner-info" style="margin-bottom:16px"><Icon Name="lock" Size="18" /> This consultation is completed and locked. Add anything new as a clinical note on the patient record.</div>
+        }
+        <div class="vd-grid-main">
+            <form aria-label="Consultation note" class="vd-stack" @onsubmit:preventDefault>
+                <section class="vd-card vd-card-body">
+                    <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><input id="c-reason" value="@_n.Reason" @oninput="e => Edit(() => _n.Reason = Str(e))" disabled="@_c.IsLocked" maxlength="400" /></div>
+                </section>
+                <section class="vd-card vd-card-body">
+                    <label for="c-subj" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="S" /><span class="vd-section-title" style="margin:0">Subjective</span><span class="vd-small vd-muted">History from owner</span></label>
+                    <textarea id="c-subj" class="vd-input" rows="3" value="@_n.Subjective" @oninput="e => Edit(() => _n.Subjective = Str(e))" disabled="@_c.IsLocked"></textarea>
+                </section>
+                <section class="vd-card vd-card-body">
+                    <div class="vd-row" style="gap:10px;margin-bottom:4px"><SoapLetter L="O" /><h2 class="vd-section-title" style="margin:0">Objective</h2><span class="vd-small vd-muted">Examination</span></div>
+                    <div class="vd-form-grid-3" style="grid-template-columns:repeat(6,minmax(0,1fr))">
+                        <Vital Label="Temperature" Unit="°C" Id="v-temp" Value="@Num(_n.TemperatureC)" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.TemperatureC = Dec(v))" />
+                        <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Value="@_n.HeartRate?.ToString()" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.HeartRate = Int(v))" />
+                        <Vital Label="Resp. rate" Unit="/min" Id="v-rr" Value="@_n.RespiratoryRate?.ToString()" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.RespiratoryRate = Int(v))" />
+                        <Vital Label="Weight" Unit="kg" Id="v-wt" Value="@Num(_n.WeightKg)" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.WeightKg = Dec(v))" />
+                        <Vital Label="Mucous membr." Unit="" Id="v-mm" Value="@_n.MucousMembranes" Disabled="_c.IsLocked" Text="true" Changed="v => Edit(() => _n.MucousMembranes = v)" />
+                        <Vital Label="CRT" Unit="sec" Id="v-crt" Value="@_n.CapillaryRefill" Disabled="_c.IsLocked" Text="true" Changed="v => Edit(() => _n.CapillaryRefill = v)" />
+                    </div>
+                    @if (_vitalsError is not null)
+                    {
+                        <div class="vd-error-text">@_vitalsError</div>
+                    }
+                    <label for="c-obj" class="vd-label" style="display:block;margin-top:12px">Findings</label>
+                    <textarea id="c-obj" class="vd-input" rows="3" value="@_n.Objective" @oninput="e => Edit(() => _n.Objective = Str(e))" disabled="@_c.IsLocked"></textarea>
+                </section>
+                <section class="vd-card vd-card-body">
+                    <label for="c-assess" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="A" /><span class="vd-section-title" style="margin:0">Assessment</span></label>
+                    <textarea id="c-assess" class="vd-input" rows="2" value="@_n.Assessment" @oninput="e => Edit(() => _n.Assessment = Str(e))" disabled="@_c.IsLocked"></textarea>
+                </section>
+                <section class="vd-card vd-card-body">
+                    <label for="c-plan" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="P" /><span class="vd-section-title" style="margin:0">Plan</span></label>
+                    <textarea id="c-plan" class="vd-input" rows="3" value="@_n.Plan" @oninput="e => Edit(() => _n.Plan = Str(e))" disabled="@_c.IsLocked"></textarea>
+                    <div class="vd-actions" style="margin-top:12px">
+                        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _summaryOpen = true" aria-haspopup="dialog"><Icon Name="print" Size="16" /> Print owner summary</button>
+                    </div>
+                </section>
+            </form>
+
+            <aside class="vd-stack" aria-labelledby="charges-title">
+                <section class="vd-card">
+                    <div class="vd-card-head">
+                        <h2 id="charges-title" class="vd-section-title">Charges</h2>
+                        @if (!_c.IsLocked)
+                        {
+                            <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" aria-expanded="@_addOpen" @onclick="() => _addOpen = !_addOpen"><Icon Name="plus" Size="16" /> Add item</button>
+                        }
+                    </div>
+                    @if (_addOpen && !_c.IsLocked)
+                    {
+                        <div class="vd-card-body" style="border-bottom:1px solid var(--vd-border)">
+                            <ProductSearch PatientId="_c.PatientId" Categories="ChargeCategories" Placeholder="Search services, vaccines and products" InputId="add-item" OnPick="PickCharge" />
+                            @if (_pending is { IsPrescription: false } pending)
+                            {
+                                <ChargeForm Pending="pending" OnCancel="() => _pending = null" OnAdd="AddCharge" />
+                            }
+                        </div>
+                    }
+                    @foreach (var ch in _c.Charges)
+                    {
+                        <div class="vd-row" style="padding:10px 16px;border-bottom:1px solid var(--vd-border);align-items:flex-start">
+                            <div style="flex:1;min-width:0">
+                                <div class="vd-strong">@ch.Description @if (ch.IsControlledDrug) { <span class="vd-cd">CD</span> } @if (ch.IsPrescription) { <span class="vd-chip vd-chip-info" style="height:18px;font-size:11px">Rx</span> }</div>
+                                <div class="vd-cell-sub">qty @Fmt.Qty(ch.Quantity) @ch.Unit@(ch.Directions is null ? "" : $" · {ch.Directions}")</div>
+                                @if (ch.AllergyConflicts.Count > 0)
+                                {
+                                    <div class="vd-small" style="color:var(--vd-danger-text);margin-top:2px"><Icon Name="alert" Size="13" /> Allergy override: @(ch.AllergyOverrideReason ?? "no reason given")</div>
+                                }
+                            </div>
+                            <span class="vd-mono">@Fmt.Money(ch.Net)</span>
+                            @if (!_c.IsLocked)
+                            {
+                                <button type="button" class="vd-icon-btn" aria-label="Remove @ch.Description" title="Remove" @onclick="() => RemoveCharge(ch)"><Icon Name="close" Size="16" /></button>
+                            }
+                        </div>
+                    }
+                    @if (_c.Charges.Count == 0)
+                    {
+                        <div class="vd-empty" style="padding:20px">No charges yet.</div>
+                    }
+                    <div class="vd-card-body vd-small">
+                        <div class="vd-row-between"><span class="vd-muted">Net</span><span class="vd-mono">@Fmt.Money(_c.Net)</span></div>
+                        <div class="vd-row-between"><span class="vd-muted">VAT</span><span class="vd-mono">@Fmt.Money(_c.Vat)</span></div>
+                        <div class="vd-row-between" style="font-size:15px;margin-top:6px"><span class="vd-strong">Total incl. VAT</span><span class="vd-mono vd-strong">@Fmt.Money(_c.Total)</span></div>
+                    </div>
+                </section>
+
+                @if (!_c.IsLocked && Session.Can(Permission.Prescribe))
+                {
+                    <section class="vd-card vd-card-body" aria-labelledby="rx-title">
+                        <h2 id="rx-title" class="vd-section-title" style="margin:0 0 10px">Prescribe</h2>
+                        <ProductSearch PatientId="_c.PatientId" Categories="MedicineOnly" Placeholder="Search formulary" InputId="rx-search" OnPick="PickPrescription" />
+                        @if (_pending is { IsPrescription: true } rx)
+                        {
+                            <ChargeForm Pending="rx" OnCancel="() => _pending = null" OnAdd="AddCharge" />
+                        }
+                        <p class="vd-hint">
+                            @if (_c.Allergies.Count > 0)
+                            {
+                                @($"Products that conflict with {_c.PatientName}'s {string.Join(", ", _c.Allergies)} allergy are flagged and need a reason to override.")
+                            }
+                            else
+                            {
+                                @("No drug allergies recorded for this patient.")
+                            }
+                        </p>
+                    </section>
+                }
+            </aside>
+        </div>
+    </div>
+
+    @if (_completeOpen)
+    {
+        <CompleteConsultationDialog Consultation="_c" OnClose="() => _completeOpen = false" OnCompleted="Completed" />
+    }
+    @if (_summaryOpen)
+    {
+        <OwnerSummaryDialog Consultation="_c" Notes="_n" OnClose="() => _summaryOpen = false" />
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private static readonly ProductCategory[] ChargeCategories = [ProductCategory.Service, ProductCategory.Vaccine, ProductCategory.Retail, ProductCategory.Medicine];
+    private static readonly ProductCategory[] MedicineOnly = [ProductCategory.Medicine];
+
+    private ConsultationDetail? _c;
+    private NoteDraft _n = new();
+    private bool _missing, _dirty, _saving, _addOpen, _completeOpen, _summaryOpen;
+    private string? _vitalsError;
+    private ChargeForm.PendingCharge? _pending;
+
+    /// <summary>What the vet has typed, kept apart from the loaded record so reloading charges never loses it.</summary>
+    public class NoteDraft
+    {
+        public string? Reason, Subjective, Objective, Assessment, Plan, MucousMembranes, CapillaryRefill;
+        public decimal? TemperatureC, WeightKg;
+        public int? HeartRate, RespiratoryRate;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hotkeys.Pressed += OnHotkey;
+        await LoadAsync(keepNotes: false);
+    }
+
+    private async Task LoadAsync(bool keepNotes)
+    {
+        var result = await Backend.Send(new GetConsultationQuery { Id = Id });
+        if (!result.IsSuccess)
+        {
+            _missing = Equals(result.ErrorCode, GetConsultationError.NotFound);
+            if (!_missing)
+                Toasts.Check(result);
+            return;
+        }
+
+        _c = result.Value;
+        if (keepNotes && _dirty)
+            return;
+        _n = new NoteDraft
+        {
+            Reason = _c.Reason, Subjective = _c.Subjective, Objective = _c.Objective, Assessment = _c.Assessment, Plan = _c.Plan,
+            TemperatureC = _c.TemperatureC, HeartRate = _c.HeartRate, RespiratoryRate = _c.RespiratoryRate, WeightKg = _c.WeightKg,
+            MucousMembranes = _c.MucousMembranes, CapillaryRefill = _c.CapillaryRefill
+        };
+        _dirty = false;
+    }
+
+    private static string Str(ChangeEventArgs e) => e.Value?.ToString() ?? "";
+    private static string? Num(decimal? v) => v?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private decimal? Dec(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        if (decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var v))
+        {
+            _vitalsError = null;
+            return v;
+        }
+
+        _vitalsError = $"“{text}” isn't a number.";
+        return null;
+    }
+
+    private int? Int(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+        if (int.TryParse(text, out var v))
+        {
+            _vitalsError = null;
+            return v;
+        }
+
+        _vitalsError = $"“{text}” isn't a whole number.";
+        return null;
+    }
+
+    private void Edit(Action change)
+    {
+        change();
+        _dirty = true;
+    }
+
+    private async Task<bool> SaveNotesAsync(bool quiet)
+    {
+        if (_c is null || _c.IsLocked || !_dirty)
+            return true;
+        _saving = true;
+        var result = await Backend.Send(new SaveConsultationNotesCommand
+        {
+            Id = _c.Id, Reason = _n.Reason, Subjective = _n.Subjective, Objective = _n.Objective, Assessment = _n.Assessment, Plan = _n.Plan,
+            TemperatureC = _n.TemperatureC, HeartRate = _n.HeartRate, RespiratoryRate = _n.RespiratoryRate, WeightKg = _n.WeightKg,
+            MucousMembranes = _n.MucousMembranes, CapillaryRefill = _n.CapillaryRefill, Version = _c.Version
+        });
+        _saving = false;
+        if (!Toasts.Check(result, quiet ? null : "Draft saved"))
+            return false;
+        _dirty = false;
+        await LoadAsync(keepNotes: true);
+        return true;
+    }
+
+    private Task SaveDraft() => SaveNotesAsync(quiet: false);
+
+    // Leaving the screen saves the draft rather than asking; only a failed save stops the navigation.
+    private async Task SaveBeforeLeaving(LocationChangingContext context)
+    {
+        if (_dirty && !await SaveNotesAsync(quiet: true))
+            context.PreventNavigation();
+    }
+
+    private async Task OnHotkey(string combo)
+    {
+        if (_c is null || _c.IsLocked || _completeOpen)
+            return;
+        if (combo == "Ctrl+s")
+            await SaveDraft();
+        else if (combo == "Ctrl+Enter")
+            await OpenComplete();
+        else
+            return;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenComplete()
+    {
+        if (await SaveNotesAsync(quiet: true))
+            _completeOpen = true;
+    }
+
+    private void PickCharge(ProductDto p) => _pending = new ChargeForm.PendingCharge(p, false, p.AllergyConflicts);
+
+    private void PickPrescription(ProductDto p) => _pending = new ChargeForm.PendingCharge(p, true, p.AllergyConflicts);
+
+    private async Task AddCharge(ChargeForm.ChargeInput input)
+    {
+        var result = await Backend.Send(new AddChargeCommand
+        {
+            ConsultationId = Id, ProductId = input.Product.Id, Quantity = input.Quantity, IsPrescription = input.IsPrescription,
+            Directions = input.Directions, AllergyOverrideReason = input.OverrideReason
+        });
+        if (!Toasts.Check(result, $"{input.Product.Name} added"))
+            return;
+        _pending = null;
+        await LoadAsync(keepNotes: true);
+    }
+
+    private async Task RemoveCharge(ChargeDto charge)
+    {
+        if (Toasts.Check(await Backend.Send(new RemoveChargeCommand { ChargeId = charge.Id })))
+            await LoadAsync(keepNotes: true);
+    }
+
+    private async Task Completed()
+    {
+        await LoadAsync(keepNotes: false);
+    }
+
+    public void Dispose() => Hotkeys.Pressed -= OnHotkey;
+}

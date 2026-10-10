@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Runs the VetDesk screens (VetDesk.UI) in a browser. Used for development and for screenshots on machines that
+       can't run the Windows desktop app. The practice uses VetDesk.Desktop. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VetDesk.UI\VetDesk.UI.csproj" />
+    <ProjectReference Include="..\VetDesk.Infrastructure\VetDesk.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,57 @@
+@implements IDisposable
+@inject DialogService Dialogs
+
+@if (Dialogs.Current is { } dialog)
+{
+    <div class="vd-overlay vd-overlay-top" @onkeydown="OnKeyDown">
+        <div class="vd-modal vd-modal-narrow" role="alertdialog" aria-modal="true" aria-labelledby="vd-confirm-title">
+            <div class="vd-confirm">
+                <span class="vd-confirm-icon @(dialog.IsDanger ? "" : "vd-confirm-icon-info")"><Icon Name="@(dialog.IsDanger ? "trash" : "info")" Size="18" /></span>
+                <div>
+                    <h2 id="vd-confirm-title">@dialog.Title</h2>
+                    @if (dialog.Message is not null)
+                    {
+                        <p>@dialog.Message</p>
+                    }
+                </div>
+            </div>
+            <div class="vd-modal-foot">
+                @if (dialog.CancelLabel is { } cancel)
+                {
+                    <button class="vd-btn vd-btn-secondary" @onclick="() => Dialogs.Close(false)">@cancel</button>
+                }
+                <button class="vd-btn @(dialog.IsDanger ? "vd-btn-danger" : "vd-btn-primary")" @onclick="() => Dialogs.Close(true)" @ref="_confirm">@dialog.ConfirmLabel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private ElementReference _confirm;
+    private bool _focusPending;
+
+    protected override void OnInitialized() => Dialogs.Changed += OnChanged;
+
+    private void OnChanged()
+    {
+        _focusPending = Dialogs.Current is not null;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusPending)
+        {
+            _focusPending = false;
+            await _confirm.FocusAsync();
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            Dialogs.Close(false);
+    }
+
+    public void Dispose() => Dialogs.Changed -= OnChanged;
+}

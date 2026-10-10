@@ -1,0 +1,92 @@
+@* An invoice outside a consultation, e.g. retail or food. Allergy conflicts are checked against the patient. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+
+<Modal Title="New invoice" Subtitle="For items not charged through a consultation, such as retail or repeat prescriptions." OnClose="OnClose" Size="wide">
+    <ChildContent>
+        <div class="vd-field" style="margin-top:0"><span class="vd-label">Client and patient</span><PatientPicker @bind-Selected="_patient" InputId="ni-patient" /></div>
+        <div class="vd-field">
+            <span class="vd-label">Items</span>
+            <ProductSearch PatientId="_patient?.Id" Placeholder="Search the price list" InputId="ni-product" OnPick="Add" />
+        </div>
+        @if (_lines.Count > 0)
+        {
+            <table class="vd-table vd-table-compact" style="margin-top:10px">
+                <thead><tr><th>Item</th><th>Qty</th><th class="vd-num">Each incl. VAT</th><th class="vd-num">Total</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var l in _lines)
+                    {
+                        <tr>
+                            <td>@l.Product.Name @if (l.Product.AllergyConflicts.Count > 0) { <span class="vd-chip vd-chip-danger"><Icon Name="alert" Size="13" /> @string.Join(", ", l.Product.AllergyConflicts) allergy</span> }</td>
+                            <td><input class="vd-input vd-input-sm vd-mono" style="width:80px" type="number" min="0.01" step="any" aria-label="Quantity @l.Product.Name" @bind="l.Quantity" /></td>
+                            <td class="vd-num vd-mono">@Fmt.Money(l.Product.GrossPrice)</td>
+                            <td class="vd-num vd-mono">@Fmt.Money(Money.Round(l.Product.GrossPrice * l.Quantity))</td>
+                            <td class="vd-num"><button type="button" class="vd-icon-btn" aria-label="Remove @l.Product.Name" @onclick="() => _lines.Remove(l)"><Icon Name="close" Size="16" /></button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="vd-hint">VAT is worked out once per rate on the invoice, so the final total can differ from these line totals by a penny.</div>
+        }
+        @if (HasConflict)
+        {
+            @if (Session.Can(Permission.Prescribe))
+            {
+                <div class="vd-field"><label for="ni-reason">Reason to go ahead despite the allergy</label><input id="ni-reason" @bind="_reason" @bind:event="oninput" maxlength="400" /></div>
+            }
+            else
+            {
+                <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="alert" Size="18" /> An item conflicts with the patient's allergy. Remove it, or ask a vet to create this invoice.</div>
+            }
+        }
+    </ChildContent>
+    <Footer>
+        <span class="vd-small vd-muted" style="margin-right:auto">Total incl. VAT about <span class="vd-mono vd-strong">@Fmt.Money(_lines.Sum(l => Money.Round(l.Product.GrossPrice * l.Quantity)))</span></span>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">Create invoice</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<int> OnCreated { get; set; }
+
+    private class Line(ProductDto product)
+    {
+        public ProductDto Product { get; } = product;
+        public decimal Quantity { get; set; } = 1;
+    }
+
+    private PatientRow? _patient;
+    private readonly List<Line> _lines = new();
+    private string _reason = "";
+    private bool _saving;
+
+    private bool HasConflict => _lines.Any(l => l.Product.AllergyConflicts.Count > 0);
+
+    private bool CanSave => _patient is not null && _lines.Count > 0 && _lines.All(l => l.Quantity > 0)
+                            && (!HasConflict || (Session.Can(Permission.Prescribe) && !string.IsNullOrWhiteSpace(_reason)));
+
+    private void Add(ProductDto p)
+    {
+        if (_lines.FirstOrDefault(l => l.Product.Id == p.Id) is { } existing)
+            existing.Quantity++;
+        else
+            _lines.Add(new Line(p));
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new CreateInvoiceCommand
+        {
+            ClientId = _patient!.ClientId, PatientId = _patient.Id,
+            Lines = _lines.Select(l => new NewInvoiceLine(l.Product.Id, l.Quantity)).ToList(),
+            AllergyOverrideReason = HasConflict ? _reason : null
+        });
+        _saving = false;
+        if (Toasts.Check(result, result.IsSuccess ? $"Invoice {result.Value.Number} created" : null))
+            await OnCreated.InvokeAsync(result.Value.Id);
+    }
+}

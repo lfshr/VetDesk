@@ -1,0 +1,73 @@
+@* Count what's on the shelf; differences are saved as adjustments. Controlled drugs use the witnessed balance check. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Stock take" Subtitle="Count what is on the shelf. Differences are saved as stock adjustments with your name and the time." OnClose="OnClose" Size="xwide" Flush="true">
+    <ChildContent>
+        @if (_rows is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <div class="vd-table-scroll" style="max-height:60vh">
+                <table class="vd-table vd-table-compact">
+                    <thead><tr><th>Product</th><th>Location</th><th class="vd-num">Expected</th><th>Counted</th><th class="vd-num">Difference</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in _rows)
+                        {
+                            var diff = r.Counted is { } c ? c - r.Row.OnHand : (decimal?)null;
+                            <tr>
+                                <td><span class="vd-strong">@r.Row.Name</span> <span class="vd-cell-sub">@r.Row.Unit</span></td>
+                                <td>@(r.Row.Location ?? "—")</td>
+                                <td class="vd-num vd-mono">@Fmt.Qty(r.Row.OnHand)</td>
+                                <td><input class="vd-input vd-input-sm vd-mono" style="width:100px" type="number" min="0" step="any" aria-label="Counted @r.Row.Name" @bind="r.Counted" /></td>
+                                <td class="vd-num vd-mono @(diff is < 0 ? "vd-down" : diff is > 0 ? "vd-up" : "vd-muted")">@(diff is { } d && d != 0 ? (d > 0 ? "+" : "") + Fmt.Qty(d) : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="vd-hint" style="padding:8px 16px">Controlled drugs aren't listed: record a witnessed balance check from the register instead. Leave a count blank to skip that product.</div>
+        }
+    </ChildContent>
+    <Footer>
+        <span class="vd-small vd-muted" style="margin-right:auto"><strong>@Changed</strong> products differ from expected</span>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(_saving || Counted == 0)" @onclick="Save">Save count</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private class Line(StockRow row)
+    {
+        public StockRow Row { get; } = row;
+        public decimal? Counted { get; set; }
+    }
+
+    private List<Line>? _rows;
+    private bool _saving;
+
+    private int Counted => _rows?.Count(r => r.Counted is not null) ?? 0;
+    private int Changed => _rows?.Count(r => r.Counted is { } c && c != r.Row.OnHand) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var stock = await Backend.Send(new GetStockQuery());
+        if (Toasts.Check(stock))
+            _rows = stock.Value.Where(s => !s.IsControlledDrug).OrderBy(s => s.Location).ThenBy(s => s.Name).Select(s => new Line(s)).ToList();
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var counts = _rows!.Where(r => r.Counted is not null).Select(r => new StockCount(r.Row.ProductId, r.Counted!.Value)).ToList();
+        var result = await Backend.Send(new RecordStockTakeCommand { Counts = counts });
+        _saving = false;
+        if (Toasts.Check(result, result.IsSuccess ? $"Stock take saved; {result.Value} adjustment{(result.Value == 1 ? "" : "s")}" : null))
+            await OnSaved.InvokeAsync();
+    }
+}

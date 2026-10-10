@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- The VetDesk screens. Hosted by VetDesk.Desktop (BlazorWebView in a WPF window) at the practice, and by
+       VetDesk.Web in a browser for development and screenshots. Screens call the Application layer in-process. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VetDesk.Application\VetDesk.Application.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,71 @@
+@* Add or edit a member of staff. VetDesk doesn't send email, so a new user gets a temporary password to pass on. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="@(Staff is null ? "Add user" : $"Edit {Staff.FullName}")" Subtitle="@(Staff is null ? "Give them the temporary password; they can change it under My password." : null)" OnClose="OnClose">
+    <ChildContent>
+        <div class="vd-form-grid">
+            <div class="vd-field" style="margin-top:0"><label for="sd-first">First name</label><input id="sd-first" @bind="_first" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="sd-last">Surname</label><input id="sd-last" @bind="_last" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field vd-field-wide"><label for="sd-email">Work email (used to sign in)</label><input id="sd-email" type="email" @bind="_email" @bind:event="oninput" maxlength="200" /></div>
+            <div class="vd-field">
+                <label for="sd-role">Role</label>
+                <select id="sd-role" @bind="_role">
+                    @foreach (var r in Enum.GetValues<StaffRole>())
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="vd-field"><label for="sd-reg">Registration number</label><input id="sd-reg" class="vd-mono" @bind="_reg" placeholder="Vets and nurses only" maxlength="40" /></div>
+            <div class="vd-field vd-field-wide">
+                <label for="sd-pw">@(Staff is null ? "Temporary password" : "Reset password (leave blank to keep)")</label>
+                <input id="sd-pw" type="text" autocomplete="off" class="vd-mono" @bind="_password" @bind:event="oninput" maxlength="200" />
+                <div class="vd-hint">At least 10 characters.</div>
+            </div>
+        </div>
+        <label class="vd-check"><input type="checkbox" @bind="_admin" /> Administrator (can manage users and settings)</label>
+        @if (Staff is not null)
+        {
+            <label class="vd-check" style="margin-left:24px"><input type="checkbox" @bind="_active" /> Active</label>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">@(Staff is null ? "Add user" : "Save")</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public StaffDto? Staff { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private string _first = "", _last = "", _email = "", _password = "";
+    private string? _reg;
+    private StaffRole _role = StaffRole.Reception;
+    private bool _admin, _active = true, _saving;
+
+    private bool CanSave => !string.IsNullOrWhiteSpace(_first) && !string.IsNullOrWhiteSpace(_last) && _email.Contains('@')
+                            && (Staff is not null || _password.Length >= 10);
+
+    protected override void OnInitialized()
+    {
+        if (Staff is not { } s)
+            return;
+        (_first, _last, _email, _reg, _role, _admin, _active) = (s.FirstName, s.LastName, s.Email, s.RegistrationNumber, s.Role, s.IsAdministrator, s.IsActive);
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new SaveStaffMemberCommand
+        {
+            Id = Staff?.Id, FirstName = _first, LastName = _last, Email = _email, Role = _role, IsAdministrator = _admin,
+            RegistrationNumber = _reg, IsActive = _active, TemporaryPassword = string.IsNullOrEmpty(_password) ? null : _password
+        });
+        _saving = false;
+        if (Toasts.Check(result, Staff is null ? $"{_first.Trim()} {_last.Trim()} added" : "User saved"))
+            await OnSaved.InvokeAsync();
+    }
+}

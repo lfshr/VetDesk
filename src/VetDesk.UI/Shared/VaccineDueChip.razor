@@ -1,0 +1,9 @@
+<span class="vd-chip @Css">@Text</span>
+
+@code {
+    [Parameter, EditorRequired] public VaccinationDto Vaccination { get; set; } = default!;
+
+    private string Css => Vaccination.IsOverdue ? "vd-chip-warning" : Vaccination.IsDueSoon ? "vd-chip-info" : Vaccination.DueDate is null ? "" : "vd-chip-success";
+
+    private string Text => Vaccination.DueDate is not { } due ? "No booster" : Vaccination.IsOverdue ? $"Overdue since {Fmt.Date(due)}" : $"Due {Fmt.Date(due)}";
+}

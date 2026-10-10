@@ -1,0 +1,104 @@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<section class="vd-card" aria-labelledby="types-title">
+    <div class="vd-card-head">
+        <h2 id="types-title" class="vd-section-title">Appointment types</h2>
+        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => Edit(null)" aria-haspopup="dialog"><Icon Name="plus" Size="14" /> Add type</button>
+    </div>
+    <ul class="vd-list">
+        @foreach (var t in _types)
+        {
+            <li class="vd-row">
+                <span style="width:12px;height:12px;border-radius:3px;flex:none;background:@Swatch(t.Colour)"></span>
+                <div style="flex:1"><div class="vd-strong">@t.Name @if (!t.IsActive) { <span class="vd-chip">Hidden</span> }</div><div class="vd-cell-sub">@t.Kind · seen by @t.SeenBy</div></div>
+                <span class="vd-mono vd-small">@t.Minutes min</span>
+                <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => Edit(t)" aria-haspopup="dialog">Edit</button>
+            </li>
+        }
+    </ul>
+</section>
+
+@if (_dialog)
+{
+    <Modal Title="@(_id is null ? "Add appointment type" : "Edit appointment type")" Subtitle="Shown in the new appointment dialog and on the schedule." OnClose="() => _dialog = false" Size="narrow">
+        <ChildContent>
+            <div class="vd-field" style="margin-top:0"><label for="at-name">Name</label><input id="at-name" @bind="_name" @bind:event="oninput" placeholder="e.g. Nail clip" maxlength="100" /></div>
+            <div class="vd-form-grid">
+                <div class="vd-field"><label for="at-mins">Length (minutes)</label><input id="at-mins" type="number" min="5" step="5" @bind="_minutes" /></div>
+                <div class="vd-field">
+                    <label for="at-kind">Kind</label>
+                    <select id="at-kind" @bind="_kind">
+                        @foreach (var k in Enum.GetValues<AppointmentKind>()) { <option value="@k">@k</option> }
+                    </select>
+                </div>
+                <div class="vd-field">
+                    <label for="at-who">Seen by</label>
+                    <select id="at-who" @bind="_seenBy">
+                        @foreach (var w in new[] { "Vet", "Nurse", "Vet or nurse" }.Union([_seenBy])) { <option>@w</option> }
+                    </select>
+                </div>
+            </div>
+            <div class="vd-field">
+                <span class="vd-label">Colour on the schedule</span>
+                <div class="vd-row" role="radiogroup" aria-label="Colour">
+                    @foreach (var c in Enum.GetValues<AppointmentColour>())
+                    {
+                        var colour = c;
+                        <button type="button" role="radio" aria-checked="@(_colour == colour)" aria-label="@colour" @onclick="() => _colour = colour"
+                                style="width:30px;height:30px;border-radius:50%;cursor:pointer;background:@Swatch(colour);border:3px solid @(_colour == colour ? "var(--vd-text)" : "transparent")"></button>
+                    }
+                </div>
+            </div>
+            <label class="vd-check"><input type="checkbox" @bind="_active" /> Show when booking</label>
+        </ChildContent>
+        <Footer>
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _dialog = false">Cancel</button>
+            <button type="button" class="vd-btn vd-btn-primary" disabled="@(string.IsNullOrWhiteSpace(_name) || _minutes < 5)" @onclick="Save">Save type</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    private IReadOnlyList<AppointmentTypeDto> _types = [];
+    private bool _dialog, _active = true;
+    private int? _id;
+    private string _name = "", _seenBy = "Vet";
+    private int _minutes = 15;
+    private AppointmentKind _kind;
+    private AppointmentColour _colour;
+
+    private static string Swatch(AppointmentColour c) => c switch
+    {
+        AppointmentColour.Blue => "#1D3F9E",
+        AppointmentColour.Purple => "#6A2E8A",
+        AppointmentColour.Amber => "#8A4204",
+        _ => "var(--vd-accent)"
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetAppointmentTypesQuery { IncludeInactive = true });
+        if (Toasts.Check(result))
+            _types = result.Value;
+    }
+
+    private void Edit(AppointmentTypeDto? t)
+    {
+        (_id, _name, _minutes, _kind, _seenBy, _colour, _active) = t is null
+            ? ((int?)null, "", 15, AppointmentKind.Consultation, "Vet", AppointmentColour.Teal, true)
+            : (t.Id, t.Name, t.Minutes, t.Kind, t.SeenBy, t.Colour, t.IsActive);
+        _dialog = true;
+    }
+
+    private async Task Save()
+    {
+        var result = await Backend.Send(new SaveAppointmentTypeCommand { Id = _id, Name = _name, Minutes = _minutes, Kind = _kind, SeenBy = _seenBy, Colour = _colour, IsActive = _active });
+        if (!Toasts.Check(result, "Appointment type saved"))
+            return;
+        _dialog = false;
+        await LoadAsync();
+    }
+}

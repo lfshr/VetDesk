@@ -1,0 +1,46 @@
+@* A small line chart of weights over time, oldest on the left. *@
+<svg viewBox="0 0 @W @H" width="100%" height="@H" role="img" aria-label="Weight over time" style="margin-top:8px;display:block">
+    <line x1="0" y1="@(H - 1)" x2="@W" y2="@(H - 1)" stroke="var(--vd-border)" />
+    <polyline fill="none" stroke="var(--vd-accent)" stroke-width="2" points="@Points" />
+    @if (_points.Count > 0)
+    {
+        var last = _points[^1];
+        <circle cx="@F(last.X)" cy="@F(last.Y)" r="4" fill="var(--vd-accent)" />
+    }
+</svg>
+<ul class="vd-list vd-small" style="margin-top:8px">
+    @foreach (var w in Weights.Take(5))
+    {
+        <li class="vd-row-between" style="padding:6px 0"><span class="vd-muted">@Fmt.Date(w.RecordedUtc) · @w.Context</span><span class="vd-mono vd-nowrap">@w.Kg.ToString("0.0#") kg</span></li>
+    }
+</ul>
+
+@code {
+    private const double W = 280, H = 70, Pad = 6;
+
+    [Parameter, EditorRequired] public IReadOnlyList<WeightDto> Weights { get; set; } = [];
+
+    private List<(double X, double Y)> _points = new();
+
+    private string Points => string.Join(' ', _points.Select(p => $"{F(p.X)},{F(p.Y)}"));
+
+    private static string F(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override void OnParametersSet()
+    {
+        var ordered = Weights.OrderBy(w => w.RecordedUtc).ToList();
+        _points.Clear();
+        if (ordered.Count == 0)
+            return;
+        var minT = ordered[0].RecordedUtc.Ticks;
+        var spanT = Math.Max(1, ordered[^1].RecordedUtc.Ticks - minT);
+        var minKg = (double)ordered.Min(w => w.Kg);
+        var spanKg = Math.Max(0.5, (double)ordered.Max(w => w.Kg) - minKg);
+        foreach (var w in ordered)
+        {
+            var x = ordered.Count == 1 ? W / 2 : Pad + (W - 2 * Pad) * (w.RecordedUtc.Ticks - minT) / spanT;
+            var y = H - Pad - (H - 2 * Pad) * ((double)w.Kg - minKg) / spanKg;
+            _points.Add((x, y));
+        }
+    }
+}

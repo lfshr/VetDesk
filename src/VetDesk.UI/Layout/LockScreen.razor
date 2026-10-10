@@ -1,0 +1,40 @@
+@using VetDesk.Application.Staff.Commands
+@inject Backend Backend
+@inject UserSession Session
+
+<div class="vd-overlay vd-overlay-top" style="background:rgba(14,42,42,.92)">
+    <div class="vd-signin-card" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+        <div class="vd-signin-brand"><Icon Name="lock" Size="22" /> VetDesk is locked</div>
+        <p id="lock-title" class="vd-muted" style="margin-top:0">@Session.Staff?.FullName was signed in. Enter the password to carry on where you left off.</p>
+        <form @onsubmit="Unlock" @onsubmit:preventDefault>
+            <div class="vd-field"><label for="lock-pw">Password</label><input id="lock-pw" type="password" @bind="_password" autocomplete="current-password" autofocus /></div>
+            @if (_error is not null)
+            {
+                <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="warning" Size="16" /> @_error</div>
+            }
+            <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Unlock</button>
+        </form>
+        <button type="button" class="vd-btn vd-btn-ghost" style="width:100%;margin-top:8px" @onclick="Session.SignOut">Sign in as someone else</button>
+    </div>
+</div>
+
+@code {
+    private string _password = "";
+    private string? _error;
+    private bool _busy;
+
+    private async Task Unlock()
+    {
+        _busy = true;
+        var result = await Backend.Send(new SignInCommand { Email = Session.Email ?? "", Password = _password });
+        _busy = false;
+        _password = "";
+        if (result.IsFailure)
+        {
+            _error = result.ToString();
+            return;
+        }
+
+        Session.Unlock(result.Value);
+    }
+}
