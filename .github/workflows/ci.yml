@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    # VetDesk.Desktop targets net10.0-windows (WPF), so CI runs on Windows like the practice PCs.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore VetDesk.sln
+
+      - name: Build
+        run: dotnet build VetDesk.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test VetDesk.sln --configuration Release --no-build --verbosity normal
