@@ -22,7 +22,7 @@
         <div class="vd-pills" role="group" aria-label="Species">
             @foreach (var s in Enum.GetValues<SpeciesFilter>())
             {
-                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_species == s)" @onclick="() => SetSpecies(s)">@s</button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_species == s)" @onclick="() => SetSpecies(s)">@s <span class="vd-pill-count">@_counts?.GetValueOrDefault(s)</span></button>
             }
         </div>
         <span class="vd-spacer"></span>
@@ -49,7 +49,7 @@
         else
         {
             <table class="vd-table" aria-label="Patients">
-                <thead><tr><th>Patient</th><th>Species</th><th>Age</th><th>Owner</th><th>Last visit</th><th class="vd-num">Balance</th><th><span class="vd-sr-only">Actions</span></th></tr></thead>
+                <thead><tr><th>Patient</th><th>Species · breed</th><th>Owner</th><th>Microchip</th><th>Last visit</th><th class="vd-num">Balance</th><th><span class="vd-sr-only">Actions</span></th></tr></thead>
                 <tbody>
                     @foreach (var p in _rows)
                     {
@@ -66,11 +66,11 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>@p.SpeciesAndBreed</td>
-                            <td>@p.Age</td>
-                            <td><div>@p.OwnerName</div><div class="vd-cell-sub">@p.OwnerPhone</div></td>
+                            <td><div>@p.SpeciesAndBreed</div><div class="vd-cell-sub">@p.Age</div></td>
+                            <td style="white-space:nowrap"><div>@p.OwnerName</div><div class="vd-cell-sub">@p.OwnerPhone</div></td>
+                            <td class="vd-mono" style="white-space:nowrap">@(p.Microchip is { } chip ? Chip(chip) : "—")</td>
                             <td>@(p.LastVisitUtc is { } v ? Fmt.Date(v) : "—")</td>
-                            <td class="vd-num vd-mono @(p.Balance > 0 ? "vd-due" : "vd-muted")">@(p.Balance > 0 ? $"{Fmt.Money(p.Balance)} due" : "—")</td>
+                            <td class="vd-num vd-mono @(p.Balance > 0 ? "vd-due" : "vd-muted")" style="white-space:nowrap">@(p.Balance > 0 ? $"{Fmt.Money(p.Balance)} due" : "—")</td>
                             <td class="vd-num" @onclick:stopPropagation="true">
                                 <div class="vd-actions vd-actions-end" style="flex-wrap:nowrap">
                                     @if (!p.IsDeceased)
@@ -102,6 +102,7 @@
 
     private const int Limit = 200;
     private List<PatientRow>? _rows;
+    private IReadOnlyDictionary<SpeciesFilter, int>? _counts;
     private string _text = "";
     private SpeciesFilter _species;
     private PatientSort _sort;
@@ -117,6 +118,15 @@
     {
         _text = Query ?? "";
         await LoadAsync();
+        await LoadCountsAsync();
+    }
+
+    // The counts depend only on the search text, so they reload with it but not with the filter or sort.
+    private async Task LoadCountsAsync()
+    {
+        var result = await Backend.Send(new CountPatientsQuery { Text = _text });
+        if (Toasts.Check(result))
+            _counts = result.Value;
     }
 
     private async Task LoadAsync()
@@ -141,6 +151,7 @@
         }
 
         await LoadAsync();
+        await LoadCountsAsync();
     }
 
     private async Task SetSpecies(SpeciesFilter s)
@@ -156,6 +167,14 @@
             _sort = sort;
             await LoadAsync();
         }
+    }
+
+    // A microchip number in groups of three, as the design shows it: 826 098 100 345 219. Anything that isn't all
+    // digits is shown as it was typed.
+    private static string Chip(string chip)
+    {
+        var digits = chip.Replace(" ", "");
+        return digits.All(char.IsAsciiDigit) ? string.Join(" ", digits.Chunk(3).Select(c => new string(c))) : chip;
     }
 
     private void Open(int id) => Nav.NavigateTo($"patients/{id}");

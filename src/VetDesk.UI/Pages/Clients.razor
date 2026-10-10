@@ -24,7 +24,7 @@
         <div class="vd-pills" role="group" aria-label="Show">
             @foreach (var f in Enum.GetValues<ClientFilter>())
             {
-                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == f)" @onclick="() => SetFilter(f)">@FilterLabel(f)</button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == f)" @onclick="() => SetFilter(f)">@FilterLabel(f) <span class="vd-pill-count">@_counts?.GetValueOrDefault(f)</span></button>
             }
         </div>
         <span class="vd-spacer"></span>
@@ -141,6 +141,7 @@
     private ClientFilter _filter;
     private ClientSort _sort;
     private List<ClientRow>? _rows;
+    private IReadOnlyDictionary<ClientFilter, int>? _counts;
     private ClientDetail? _selected;
     private Dialog _dialog;
     private CancellationTokenSource? _debounce;
@@ -154,7 +155,11 @@
         _ => "All"
     };
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadCountsAsync();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -167,6 +172,14 @@
         var result = await Backend.Send(new SearchClientsQuery { Text = _text, Filter = _filter, Sort = _sort, Take = Limit });
         if (Toasts.Check(result))
             _rows = result.Value.ToList();
+    }
+
+    // The counts depend on the search text and on balances, not on the filter or sort.
+    private async Task LoadCountsAsync()
+    {
+        var result = await Backend.Send(new CountClientsQuery { Text = _text });
+        if (Toasts.Check(result))
+            _counts = result.Value;
     }
 
     private async Task Select(int id)
@@ -193,6 +206,7 @@
         }
 
         await LoadAsync();
+        await LoadCountsAsync();
     }
 
     private async Task SetFilter(ClientFilter f)
@@ -216,6 +230,7 @@
     {
         _dialog = Dialog.None;
         await LoadAsync();
+        await LoadCountsAsync();
         if (id == Id)
             await Select(id);
         else

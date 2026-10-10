@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using VetDesk.Application.Clients.Queries;
 using VetDesk.Application.Patients.Queries;
 using VetDesk.Application.Reports;
 using VetDesk.Application.Reports.Queries;
@@ -97,5 +98,36 @@ public class DemoDataTests
             .Handle(new GetReportSummaryQuery { Period = period }, CancellationToken.None);
 
         result.Value.RevenueBars.Where(b => b.IsCurrent).Select(b => b.Label).ShouldBe([label]);
+    }
+
+    [TestCase(null)]
+    [TestCase("clarke")]
+    public async Task PatientCounts_MatchTheListForEachSpeciesFilter(string? text)
+    {
+        var counts = await new CountPatientsQueryHandler(_database.Db, _database.User)
+            .Handle(new CountPatientsQuery { Text = text }, CancellationToken.None);
+        var search = new SearchPatientsQueryHandler(_database.Db, _database.User, _database.Clock);
+
+        foreach (var filter in Enum.GetValues<SpeciesFilter>())
+        {
+            var rows = await search.Handle(new SearchPatientsQuery { Text = text, Species = filter }, CancellationToken.None);
+            counts.Value[filter].ShouldBe(rows.Value.Count, filter.ToString());
+        }
+        counts.Value[SpeciesFilter.Dogs].ShouldBeGreaterThan(0);
+    }
+
+    [TestCase(null)]
+    [TestCase("clarke")]
+    public async Task ClientCounts_MatchTheListForEachFilter(string? text)
+    {
+        var counts = await new CountClientsQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new CountClientsQuery { Text = text }, CancellationToken.None);
+        var search = new SearchClientsQueryHandler(_database.Db, _database.User, _database.Clock);
+
+        foreach (var filter in Enum.GetValues<ClientFilter>())
+        {
+            var rows = await search.Handle(new SearchClientsQuery { Text = text, Filter = filter }, CancellationToken.None);
+            counts.Value[filter].ShouldBe(rows.Value.Count, filter.ToString());
+        }
     }
 }
