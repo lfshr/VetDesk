@@ -1,0 +1,321 @@
+@page "/"
+@implements IAsyncDisposable
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject NavigationManager Nav
+@inject Hotkeys Hotkeys
+
+<ScreenTitle Text="Today" />
+
+<div class="vd-toolbar">
+    <PatientSearch />
+    <span class="vd-spacer"></span>
+    <div style="position:relative">
+        <button type="button" class="vd-btn vd-btn-secondary" style="width:40px;padding:0;position:relative" aria-label="Notifications" @onclick="ToggleBell">
+            <Icon Name="bell" Size="18" />
+            @if (_feed?.UnreadCount > 0)
+            {
+                <span style="position:absolute;top:-7px;right:-9px;background:var(--vd-danger-text);color:#fff;border-radius:9px;font-size:11px;font-weight:700;padding:1px 6px">@_feed.UnreadCount</span>
+            }
+        </button>
+        @if (_bellOpen && _feed is not null)
+        {
+            <div class="vd-dropdown" style="left:auto;right:0;width:360px">
+                <div class="vd-row-between" style="padding:12px 14px;border-bottom:1px solid var(--vd-border)">
+                    <span class="vd-strong">Notifications</span>
+                    <button type="button" class="vd-btn-link" style="text-decoration:none" @onclick="MarkAllRead">Mark all read</button>
+                </div>
+                @if (_feed.Items.Count == 0)
+                {
+                    <div class="vd-empty">Nothing new.</div>
+                }
+                @foreach (var n in _feed.Items.Take(8))
+                {
+                    <button type="button" class="vd-dropdown-item" style="align-items:flex-start" @onclick="() => OpenNotification(n.Link)">
+                        <span style="width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:@(n.IsUnread ? "var(--vd-accent)" : "transparent")"></span>
+                        <span style="flex:1">
+                            <span class="@(n.IsUnread ? "vd-strong" : "")">@n.Text</span>
+                        </span>
+                        <span class="vd-small vd-muted vd-nowrap">@Fmt.Ago(n.CreatedUtc, DateTime.UtcNow)</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    <button type="button" class="vd-btn vd-btn-primary" @onclick="() => OpenBooking(null)" title="Alt+N"><Icon Name="plus" Size="18" /> New appointment</button>
+</div>
+
+<div class="vd-page">
+    @if (_today is null)
+    {
+        <div class="vd-loading">Loading today…</div>
+    }
+    else
+    {
+        <div class="vd-page-head">
+            <div>
+                <h1 class="vd-page-title" tabindex="-1">@Fmt.LongDate(_today.Date)</h1>
+                <div class="vd-page-sub">@Fmt.Hours(_today.Open, _today.Close)</div>
+            </div>
+            <div class="vd-pills" role="group" aria-label="Filter appointments">
+                @foreach (var (filter, label, count) in Filters)
+                {
+                    <button type="button" class="vd-pill" aria-pressed="@(_filter == filter)" @onclick="() => _filter = filter">@label <span class="vd-pill-count">@count</span></button>
+                }
+            </div>
+        </div>
+
+        <div class="vd-kpis">
+            <div class="vd-card vd-kpi"><div class="vd-kpi-label">Appointments</div><div class="vd-kpi-value">@_today.Appointments.Count(a => a.Status != AppointmentStatus.NoShow)</div></div>
+            <div class="vd-card vd-kpi"><div class="vd-kpi-label">Still to see</div><div class="vd-kpi-value">@_today.StillToSee</div></div>
+            <div class="vd-card vd-kpi @(_today.WaitingNow > 0 ? "vd-kpi-warning" : "")"><div class="vd-kpi-label">Waiting now</div><div class="vd-kpi-value">@_today.WaitingNow</div></div>
+            <div class="vd-card vd-kpi"><div class="vd-kpi-label">Surgery</div><div class="vd-kpi-value">@_today.SurgeryCount</div></div>
+        </div>
+
+        <div class="vd-grid-main">
+            <section class="vd-card">
+                <div class="vd-card-head">
+                    <h2 class="vd-section-title">Appointments</h2>
+                    <a href="schedule">Open schedule</a>
+                </div>
+                <table class="vd-table" aria-label="Today's appointments">
+                    <thead><tr><th>Time</th><th>Patient</th><th>Owner</th><th>Reason</th><th>Status</th><th><span class="vd-sr-only">Actions</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Visible)
+                        {
+                            <tr class="vd-clickable @(a.Id == _selectedId ? "selected" : "")" @onclick="() => _selectedId = a.Id" @ondblclick="() => OpenRecord(a)">
+                                <td class="vd-mono">@Fmt.Time(a.StartUtc)</td>
+                                <td><div class="vd-cell-primary">@a.PatientName @if (a.HasAllergy) { <span class="vd-chip vd-chip-danger" style="height:18px;padding:0 6px;font-size:11px" title="Has a recorded drug allergy">Allergy</span> }</div><div class="vd-cell-sub">@(a.Breed ?? a.Species)</div></td>
+                                <td>@a.OwnerShortName</td>
+                                <td>@a.Reason</td>
+                                <td><AppointmentStatusChip Status="a.Status" Kind="a.Kind" /></td>
+                                <td class="vd-num" @onclick:stopPropagation="true">
+                                    <div class="vd-actions vd-actions-end" style="flex-wrap:nowrap">
+                                        @if (a.Status == AppointmentStatus.Booked)
+                                        {
+                                            <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => CheckIn(a)" title="Alt+C">Check in</button>
+                                        }
+                                        @if (a.Status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn or AppointmentStatus.InConsult && Session.Can(Permission.WriteClinicalNotes))
+                                        {
+                                            <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => Consult(a)">@(a.Status == AppointmentStatus.InConsult ? "Continue" : "Start")</button>
+                                        }
+                                        <button type="button" class="vd-icon-btn" aria-label="Edit appointment" title="Edit appointment" @onclick="() => OpenBooking(a.Id)"><Icon Name="edit" Size="16" /></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (!Visible.Any())
+                {
+                    <div class="vd-empty">@(_today.Appointments.Count == 0 ? "No appointments booked today." : "No appointments match this filter.")</div>
+                }
+                <div class="vd-card-foot vd-small vd-muted">Keys: ↑ ↓ to pick a row, Enter to open the record, Alt+C to check in, Alt+N for a new appointment.</div>
+            </section>
+
+            <section class="vd-card">
+                <div class="vd-card-head"><h2 class="vd-section-title">Follow-ups</h2></div>
+                <ul class="vd-list vd-checklist">
+                    @foreach (var f in _today.FollowUps)
+                    {
+                        <li>
+                            <label>
+                                <input type="checkbox" checked="@f.IsDone" @onchange="e => SetDone(f, (bool)e.Value!)" />
+                                <span>
+                                    <span class="@(f.IsDone ? "vd-done" : "")">@f.Text</span>
+                                    <span class="vd-cell-sub" style="display:block">
+                                        @(f.PatientName ?? "General")@(f.IsOverdue ? $" · due {Fmt.Date(f.DueDate)}" : "")
+                                    </span>
+                                </span>
+                            </label>
+                        </li>
+                    }
+                    @if (_today.FollowUps.Count == 0)
+                    {
+                        <li class="vd-muted">Nothing to follow up today.</li>
+                    }
+                </ul>
+                <form class="vd-card-foot vd-row" @onsubmit="AddFollowUp" @onsubmit:preventDefault>
+                    <input class="vd-input vd-input-sm" placeholder="Add a follow-up" aria-label="New follow-up" @bind="_newFollowUp" />
+                    <button type="submit" class="vd-btn vd-btn-secondary vd-btn-sm">Add</button>
+                </form>
+            </section>
+        </div>
+    }
+</div>
+
+@if (_booking)
+{
+    <AppointmentDialog AppointmentId="_bookingId" Date="_today?.Date" OnClose="CloseBooking" OnSaved="Saved" />
+}
+
+@code {
+    private enum Filter { All, ToSee, Surgery }
+
+    private TodaySummary? _today;
+    private NotificationFeed? _feed;
+    private Filter _filter;
+    private int? _selectedId;
+    private bool _bellOpen;
+    private bool _booking;
+    private int? _bookingId;
+    private string _newFollowUp = "";
+    private PeriodicTimer? _timer;
+    private Task? _poll;
+    private readonly CancellationTokenSource _stop = new();
+
+    private IEnumerable<(Filter, string, int)> Filters =>
+    [
+        (Filter.All, "All", _today!.Appointments.Count),
+        (Filter.ToSee, "To see", _today.StillToSee),
+        (Filter.Surgery, "Surgery", _today.SurgeryCount),
+    ];
+
+    private IEnumerable<AppointmentDto> Visible => _today is null ? [] : _filter switch
+    {
+        Filter.ToSee => _today.Appointments.Where(a => a.Status is AppointmentStatus.Booked or AppointmentStatus.CheckedIn),
+        Filter.Surgery => _today.Appointments.Where(a => a.Kind == AppointmentKind.Surgery),
+        _ => _today.Appointments
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hotkeys.Pressed += OnHotkey;
+        await LoadAsync();
+        // Other desks check patients in and finish consultations; refresh so this list stays current.
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+        _poll = PollAsync(_stop.Token);
+    }
+
+    private async Task PollAsync(CancellationToken token)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(token))
+            {
+                if (_booking || Session.IsLocked)
+                    continue;
+                await LoadAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        var today = await Backend.Send(new GetTodayQuery());
+        if (today.IsSuccess)
+            _today = today.Value;
+        else
+            Toasts.Error(today.ToString());
+
+        var feed = await Backend.Send(new GetNotificationsQuery());
+        if (feed.IsSuccess)
+            _feed = feed.Value;
+    }
+
+    private async Task OnHotkey(string combo)
+    {
+        if (_booking || _today is null)
+            return;
+        var list = Visible.ToList();
+        var index = list.FindIndex(a => a.Id == _selectedId);
+        switch (combo)
+        {
+            case "ArrowDown" when list.Count > 0:
+                _selectedId = list[Math.Min(index + 1, list.Count - 1)].Id;
+                break;
+            case "ArrowUp" when list.Count > 0:
+                _selectedId = list[Math.Max(index - 1, 0)].Id;
+                break;
+            case "Enter" when index >= 0:
+                OpenRecord(list[index]);
+                break;
+            case "Alt+c" when index >= 0 && list[index].Status == AppointmentStatus.Booked:
+                await CheckIn(list[index]);
+                break;
+            case "Alt+n":
+                OpenBooking(null);
+                break;
+            default:
+                return;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckIn(AppointmentDto a)
+    {
+        var result = await Backend.Send(new ChangeAppointmentStatusCommand { Id = a.Id, Status = AppointmentStatus.CheckedIn });
+        if (Toasts.Check(result, $"{a.PatientName} checked in"))
+            await LoadAsync();
+    }
+
+    private async Task Consult(AppointmentDto a)
+    {
+        var result = await Backend.Send(new StartConsultationCommand { PatientId = a.PatientId, AppointmentId = a.Id });
+        if (Toasts.Check(result))
+            Nav.NavigateTo($"consultations/{result.Value}");
+    }
+
+    private void OpenRecord(AppointmentDto a) => Nav.NavigateTo($"patients/{a.PatientId}");
+
+    private void OpenBooking(int? id)
+    {
+        _bookingId = id;
+        _booking = true;
+    }
+
+    private void CloseBooking() => _booking = false;
+
+    private async Task Saved()
+    {
+        _booking = false;
+        await LoadAsync();
+    }
+
+    private async Task SetDone(FollowUpDto f, bool done)
+    {
+        if (Toasts.Check(await Backend.Send(new SetFollowUpDoneCommand { Id = f.Id, IsDone = done })))
+            await LoadAsync();
+    }
+
+    private async Task AddFollowUp()
+    {
+        if (string.IsNullOrWhiteSpace(_newFollowUp))
+            return;
+        if (Toasts.Check(await Backend.Send(new AddFollowUpCommand { Text = _newFollowUp })))
+        {
+            _newFollowUp = "";
+            await LoadAsync();
+        }
+    }
+
+    private void ToggleBell() => _bellOpen = !_bellOpen;
+
+    private async Task MarkAllRead()
+    {
+        if (Toasts.Check(await Backend.Send(new MarkNotificationsReadCommand())))
+            await LoadAsync();
+    }
+
+    private void OpenNotification(string? link)
+    {
+        _bellOpen = false;
+        if (link is not null)
+            Nav.NavigateTo(link.TrimStart('/'));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Hotkeys.Pressed -= OnHotkey;
+        await _stop.CancelAsync();
+        if (_poll is not null)
+            await _poll;
+        _timer?.Dispose();
+    }
+}

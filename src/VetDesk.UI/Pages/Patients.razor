@@ -1,0 +1,164 @@
+@page "/patients"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject NavigationManager Nav
+
+<ScreenTitle Text="Patients" />
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Patients</h1>
+            <div class="vd-page-sub">@CountLabel</div>
+        </div>
+        <button type="button" class="vd-btn vd-btn-primary" @onclick="() => _adding = true"><Icon Name="plus" Size="18" /> New client and patient</button>
+    </div>
+
+    <div class="vd-toolbar" style="padding:0;border:none;background:none;margin-bottom:16px">
+        <div class="vd-search-box">
+            <Icon Name="search" Size="18" />
+            <input type="search" placeholder="Search by pet, owner, phone, microchip or PT number" aria-label="Search patients" value="@_text" @oninput="OnInput" style="padding-right:12px" />
+        </div>
+        <div class="vd-segmented" role="group" aria-label="Species">
+            @foreach (var s in Enum.GetValues<SpeciesFilter>())
+            {
+                <button type="button" aria-pressed="@(_species == s)" @onclick="() => SetSpecies(s)">@s</button>
+            }
+        </div>
+        <span class="vd-spacer"></span>
+        <label class="vd-small vd-muted" for="pt-sort">Sort</label>
+        <select id="pt-sort" class="vd-input" style="width:180px" value="@_sort" @onchange="OnSort">
+            <option value="@PatientSort.LastVisit">Last visit</option>
+            <option value="@PatientSort.PetName">Pet name</option>
+            <option value="@PatientSort.OwnerSurname">Owner surname</option>
+        </select>
+    </div>
+
+    <section class="vd-card">
+        @if (_rows is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else if (_rows.Count == 0)
+        {
+            <div class="vd-empty">
+                No patients match. Check the spelling, or add them as a new client.
+                <div style="margin-top:12px"><button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _adding = true">New client and patient</button></div>
+            </div>
+        }
+        else
+        {
+            <table class="vd-table" aria-label="Patients">
+                <thead><tr><th>Patient</th><th>Species</th><th>Age</th><th>Owner</th><th>Last visit</th><th class="vd-num">Balance</th><th><span class="vd-sr-only">Actions</span></th></tr></thead>
+                <tbody>
+                    @foreach (var p in _rows)
+                    {
+                        <tr class="vd-clickable" @onclick="() => Open(p.Id)">
+                            <td>
+                                <div class="vd-row" style="gap:10px">
+                                    <span class="vd-avatar">@p.Name[..1]</span>
+                                    <div>
+                                        <div class="vd-cell-primary"><a href="patients/@p.Id" @onclick:stopPropagation="true">@p.Name</a>
+                                            @if (p.IsDeceased) { <span class="vd-chip" style="height:18px;font-size:11px">Deceased</span> }
+                                            @foreach (var a in p.AllergyLabels) { <span class="vd-chip vd-chip-danger" style="height:18px;font-size:11px">@a</span> }
+                                        </div>
+                                        <div class="vd-cell-sub vd-mono">@p.PatientNumber</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@p.SpeciesAndBreed</td>
+                            <td>@p.Age</td>
+                            <td><div>@p.OwnerName</div><div class="vd-cell-sub">@p.OwnerPhone</div></td>
+                            <td>@(p.LastVisitUtc is { } v ? Fmt.Date(v) : "—")</td>
+                            <td class="vd-num vd-mono @(p.Balance > 0 ? "vd-strong" : "vd-muted")">@(p.Balance > 0 ? Fmt.Money(p.Balance) : "—")</td>
+                            <td class="vd-num" @onclick:stopPropagation="true">
+                                <div class="vd-actions vd-actions-end" style="flex-wrap:nowrap">
+                                    @if (!p.IsDeceased)
+                                    {
+                                        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _bookFor = p">Book</button>
+                                    }
+                                    <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => Open(p.Id)">Open</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+</div>
+
+@if (_adding)
+{
+    <NewClientPatientDialog OnClose="() => _adding = false" OnCreated="Created" />
+}
+@if (_bookFor is not null)
+{
+    <AppointmentDialog Patient="_bookFor" OnClose="() => _bookFor = null" OnSaved="() => _bookFor = null" />
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+
+    private const int Limit = 200;
+    private List<PatientRow>? _rows;
+    private string _text = "";
+    private SpeciesFilter _species;
+    private PatientSort _sort;
+    private bool _adding;
+    private PatientRow? _bookFor;
+    private CancellationTokenSource? _debounce;
+
+    private string CountLabel => _rows is null ? "" :
+        _rows.Count >= Limit ? $"Showing the first {Limit}. Search to narrow it down." :
+        _rows.Count == 1 ? "1 patient" : $"{_rows.Count} patients";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _text = Query ?? "";
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new SearchPatientsQuery { Text = _text, Species = _species, Sort = _sort, Take = Limit });
+        if (Toasts.Check(result))
+            _rows = result.Value.ToList();
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? "";
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(200, _debounce.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SetSpecies(SpeciesFilter s)
+    {
+        _species = s;
+        await LoadAsync();
+    }
+
+    private async Task OnSort(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<PatientSort>(e.Value?.ToString(), out var sort))
+        {
+            _sort = sort;
+            await LoadAsync();
+        }
+    }
+
+    private void Open(int id) => Nav.NavigateTo($"patients/{id}");
+
+    private void Created(CreatedClientAndPatient created) => Open(created.PatientId);
+}

@@ -1,0 +1,100 @@
+@* Edits one patient alert: pick a preset or write your own, then choose how serious it is. *@
+@inject DialogService Dialogs
+
+<div class="vd-card vd-card-body" style="margin-top:12px;max-width:520px">
+    <div class="vd-row-between"><h3 class="vd-section-title" style="margin:0">@(Alert.Id is null ? "New alert" : "Edit alert")</h3></div>
+    @if (_preset is null)
+    {
+        <div class="vd-field">
+            <label for="alert-preset">Alert</label>
+            <select id="alert-preset" @onchange="PickPreset">
+                <option value="">Choose an alert…</option>
+                @foreach (var p in PatientAlert.Presets)
+                {
+                    <option value="@p.Key">@p.Text</option>
+                }
+                <option value="custom">Something else (write your own)</option>
+            </select>
+        </div>
+    }
+    else
+    {
+        <div class="vd-field">
+            <div class="vd-row-between">
+                <label for="alert-text">Alert</label>
+                @if (Alert.Id is null)
+                {
+                    <button type="button" class="vd-btn-link vd-small" @onclick="() => _preset = null">Choose another</button>
+                }
+            </div>
+            <input id="alert-text" @bind="_text" @bind:event="oninput" maxlength="200" />
+        </div>
+        <div class="vd-field">
+            <span class="vd-label">Severity</span>
+            <div class="vd-segmented" role="group" aria-label="Severity">
+                @foreach (var s in Enum.GetValues<AlertSeverity>())
+                {
+                    <button type="button" aria-pressed="@(_severity == s)" @onclick="() => _severity = s">@s</button>
+                }
+            </div>
+        </div>
+    }
+    <div class="vd-row" style="margin-top:14px">
+        @if (Alert.Id is { } id)
+        {
+            <button type="button" class="vd-btn vd-btn-danger-outline vd-btn-sm" @onclick="() => Delete(id)"><Icon Name="trash" Size="14" /> Delete</button>
+        }
+        <span class="vd-spacer"></span>
+        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(_preset is null || string.IsNullOrWhiteSpace(_text))" @onclick="Save">@(Alert.Id is null ? "Add alert" : "Save")</button>
+    </div>
+</div>
+
+@code {
+    public record Draft(int? Id, string? PresetKey, string Text, AlertSeverity Severity);
+
+    [Parameter, EditorRequired] public Draft Alert { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Draft> OnSave { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private string? _preset;
+    private string _text = "";
+    private AlertSeverity _severity;
+    private Draft? _loaded;
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_loaded, Alert))
+            return;
+        _loaded = Alert;
+        _preset = Alert.PresetKey;
+        _text = Alert.Text;
+        _severity = Alert.Severity;
+    }
+
+    private void PickPreset(ChangeEventArgs e)
+    {
+        var key = e.Value?.ToString();
+        if (string.IsNullOrEmpty(key))
+            return;
+        _preset = key;
+        if (PatientAlert.Presets.FirstOrDefault(p => p.Key == key) is { Text: not null } preset)
+        {
+            _text = preset.Text;
+            _severity = preset.Severity;
+        }
+        else
+        {
+            _text = "";
+        }
+    }
+
+    private Task Save() => OnSave.InvokeAsync(new Draft(Alert.Id, _preset, _text, _severity));
+
+    private async Task Delete(int id)
+    {
+        if (await Dialogs.ConfirmAsync($"Are you sure you want to delete “{Alert.Text}”?", null, "Delete", isDanger: true))
+            await OnDelete.InvokeAsync(id);
+    }
+}

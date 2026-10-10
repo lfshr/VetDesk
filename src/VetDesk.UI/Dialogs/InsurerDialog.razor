@@ -1,0 +1,40 @@
+@* Records an insurance claim against the invoice. VetDesk doesn't send claims; submit it to the insurer as now. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Bill insurer" Subtitle="@($"{Invoice.Number} · {Invoice.PatientName ?? Invoice.ClientName} · claim {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose">
+    <ChildContent>
+        <div class="vd-form-grid">
+            <div class="vd-field" style="margin-top:0"><label for="ins-name">Insurer</label><input id="ins-name" @bind="_insurer" @bind:event="oninput" maxlength="200" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="ins-policy">Policy number</label><input id="ins-policy" class="vd-mono" @bind="_policy" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field"><label for="ins-excess">Excess paid by owner (£)</label><input id="ins-excess" class="vd-mono" type="number" step="0.01" min="0" @bind="_excess" /></div>
+            <div class="vd-field"><label for="ins-condition">Condition</label><input id="ins-condition" @bind="_condition" @bind:event="oninput" maxlength="200" /></div>
+        </div>
+        <div class="vd-hint">VetDesk records the claim and marks the invoice “Claim sent”. Submit the claim to the insurer through their usual portal or form.</div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">Record claim</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public InvoiceDetail Invoice { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private string _insurer = "", _policy = "", _condition = "";
+    private decimal _excess;
+    private bool _saving;
+
+    private bool CanSave => !string.IsNullOrWhiteSpace(_insurer) && !string.IsNullOrWhiteSpace(_policy) && !string.IsNullOrWhiteSpace(_condition) && _excess >= 0;
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new BillInsurerCommand { InvoiceId = Invoice.Id, Insurer = _insurer, PolicyNumber = _policy, Excess = _excess, Condition = _condition });
+        _saving = false;
+        if (Toasts.Check(result, $"Claim recorded for {Invoice.Number}"))
+            await OnSaved.InvokeAsync();
+    }
+}

@@ -1,0 +1,422 @@
+@page "/patients/{Id:int}"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject DialogService Dialogs
+@inject NavigationManager Nav
+
+<ScreenTitle Text="@($"Patients › {_p?.Name}")" />
+
+<div class="vd-page">
+    <a class="vd-back" href="patients"><Icon Name="chevron-left" Size="16" /> All patients</a>
+
+    @if (_p is null)
+    {
+        <div class="vd-loading">@(_missing ? "That patient record doesn't exist." : "Loading…")</div>
+    }
+    else
+    {
+        <div class="vd-row" style="align-items:flex-start;gap:20px;margin:12px 0 20px;flex-wrap:wrap">
+            <span class="vd-avatar vd-avatar-lg"><Icon Name="paw" Size="30" /></span>
+            <div style="flex:1;min-width:280px">
+                <div class="vd-row" style="gap:10px;align-items:baseline">
+                    <h1 class="vd-page-title" style="margin:0">@_p.Name</h1>
+                    <span class="vd-mono vd-muted">@_p.PatientNumber</span>
+                    @if (_p.IsDeceased) { <span class="vd-chip">Deceased</span> }
+                </div>
+                <div class="vd-muted" style="margin-top:4px">@_p.SpeciesAndBreed · @_p.SexLabel · @_p.Age@(_p.LatestWeightKg is { } w ? $" · {w:0.0#} kg" : "")</div>
+                <div class="vd-muted vd-small" style="margin-top:2px">Chip <span class="vd-mono">@(_p.Microchip ?? "not recorded")</span></div>
+                <div class="vd-row" style="gap:6px;margin-top:10px;flex-wrap:wrap" aria-label="Alerts">
+                    @foreach (var a in _p.Allergies)
+                    {
+                        <span class="vd-chip vd-chip-danger" title="Drug allergy@(a.DrugClass is null ? "" : $" (class: {a.DrugClass})")"><Icon Name="alert" Size="13" /> @a.Label</span>
+                    }
+                    @foreach (var a in _p.Alerts)
+                    {
+                        <button type="button" class="vd-chip-button" aria-label="@($"{a.Severity}: {a.Text}. Edit")" @onclick="() => EditAlert(a)"><AlertChip Text="@a.Text" Severity="a.Severity" /></button>
+                    }
+                    @if (CanEdit)
+                    {
+                        <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="NewAlert"><Icon Name="plus" Size="14" /> Add alert</button>
+                    }
+                </div>
+                @if (_alert is not null)
+                {
+                    <AlertEditor Alert="_alert" OnClose="() => _alert = null" OnSave="SaveAlert" OnDelete="DeleteAlert" />
+                }
+            </div>
+            <button type="button" class="vd-card" style="padding:14px 16px;text-align:left;min-width:260px;cursor:pointer;font:inherit;color:inherit" @onclick="() => _ownerOpen = true" aria-haspopup="dialog">
+                <div class="vd-small vd-muted">Owner</div>
+                <div class="vd-strong" style="color:var(--vd-accent);text-decoration:underline">@_p.Owner.FullName</div>
+                <div class="vd-small">@_p.Owner.Phone</div>
+                <div class="vd-small vd-muted">@(_p.Owner.Balance > 0 ? $"{Fmt.Money(_p.Owner.Balance)} due" : "No balance due") · @PetCount</div>
+            </button>
+            <div class="vd-stack-sm">
+                @if (!_p.IsDeceased)
+                {
+                    <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _booking = true">Book</button>
+                }
+                @if (Session.Can(Permission.WriteClinicalNotes) && !_p.IsDeceased)
+                {
+                    <button type="button" class="vd-btn vd-btn-primary" @onclick="Consult">@(_p.OpenConsultationId is null ? "Start consultation" : "Continue consultation")</button>
+                }
+                @if (CanEdit)
+                {
+                    <button type="button" class="vd-btn vd-btn-ghost" @onclick="() => _editing = true"><Icon Name="edit" Size="16" /> Edit details</button>
+                }
+            </div>
+        </div>
+
+        <div class="vd-tabs" role="tablist">
+            @foreach (var t in Tabs)
+            {
+                <button type="button" class="vd-tab" role="tab" aria-selected="@(_tab == t)" @onclick="() => _tab = t">@t</button>
+            }
+        </div>
+
+        @if (_tab is "Overview" or "History")
+        {
+            <div class="@(_tab == "Overview" ? "vd-grid-main" : "")">
+                <section class="vd-card">
+                    <div class="vd-card-head">
+                        <h2 class="vd-section-title">Clinical history</h2>
+                        @if (Session.Can(Permission.WriteClinicalNotes))
+                        {
+                            <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" aria-expanded="@_noteOpen" @onclick="() => _noteOpen = !_noteOpen">Add note</button>
+                        }
+                    </div>
+                    @if (_noteOpen)
+                    {
+                        <div class="vd-card-body" style="border-bottom:1px solid var(--vd-border)">
+                            <div class="vd-field" style="margin-top:0"><label for="note-title">Note title</label><input id="note-title" @bind="_noteTitle" maxlength="200" placeholder="e.g. Phone call with owner" /></div>
+                            <div class="vd-field"><label for="note-body">Note</label><textarea id="note-body" @bind="_noteBody" maxlength="4000"></textarea></div>
+                            <div class="vd-actions vd-actions-end" style="margin-top:12px">
+                                <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _noteOpen = false">Cancel</button>
+                                <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@string.IsNullOrWhiteSpace(_noteTitle)" @onclick="SaveNote">Save note</button>
+                            </div>
+                        </div>
+                    }
+                    <ul class="vd-timeline">
+                        @foreach (var h in _tab == "Overview" ? _p.History.Take(8) : _p.History)
+                        {
+                            <li>
+                                <span class="vd-timeline-dot @DotCss(h.Kind)"></span>
+                                <div class="vd-row-between" style="align-items:baseline">
+                                    <div class="vd-strong">@h.Title @if (h.IsOpen) { <span class="vd-chip vd-chip-info" style="height:18px;font-size:11px">In progress</span> }</div>
+                                    <div class="vd-small vd-muted vd-nowrap">@Fmt.Date(h.Utc) · @h.Author</div>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(h.Body))
+                                {
+                                    <div style="margin-top:4px;white-space:pre-line">@h.Body</div>
+                                }
+                                @if (h.Drugs.Count > 0)
+                                {
+                                    <div class="vd-small" style="margin-top:6px">
+                                        @foreach (var d in h.Drugs)
+                                        {
+                                            <div>@d.Name @if (d.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-muted">· @d.Quantity</span></div>
+                                        }
+                                    </div>
+                                }
+                                <div class="vd-row" style="gap:10px;margin-top:6px">
+                                    @if (h.WeightKg is { } kg) { <span class="vd-weight-pill">@kg.ToString("0.0#") kg</span> }
+                                    @if (h.ConsultationId is { } cid) { <a class="vd-small" href="consultations/@cid">@(h.IsOpen ? "Continue consultation" : "View consultation")</a> }
+                                </div>
+                            </li>
+                        }
+                        @if (_p.History.Count == 0)
+                        {
+                            <li class="vd-muted">No history yet.</li>
+                        }
+                    </ul>
+                    @if (_tab == "Overview" && _p.History.Count > 8)
+                    {
+                        <div class="vd-card-foot"><button type="button" class="vd-btn-link" @onclick="@(() => _tab = "History")">Show all @_p.History.Count entries</button></div>
+                    }
+                </section>
+
+                @if (_tab == "Overview")
+                {
+                    <div class="vd-stack">
+                        <section class="vd-card">
+                            <div class="vd-card-head"><h2 class="vd-section-title">Weight</h2><span class="vd-small vd-muted">last 12 months</span></div>
+                            <div class="vd-card-body">
+                                @if (_p.Weights.Count == 0)
+                                {
+                                    <div class="vd-muted">No weights recorded.</div>
+                                }
+                                else
+                                {
+                                    var latest = _p.Weights[0];
+                                    var earliest = _p.Weights[^1];
+                                    var change = latest.Kg - earliest.Kg;
+                                    <div class="vd-row" style="align-items:baseline;gap:8px">
+                                        <span style="font-size:24px;font-weight:600">@latest.Kg.ToString("0.0#") kg</span>
+                                        @if (_p.Weights.Count > 1)
+                                        {
+                                            <span class="vd-small vd-muted">@(change >= 0 ? "+" : "−")@Math.Abs(change).ToString("0.0#") kg since @Fmt.Date(earliest.RecordedUtc)</span>
+                                        }
+                                    </div>
+                                    <WeightChart Weights="_p.Weights" />
+                                }
+                            </div>
+                        </section>
+                        <section class="vd-card">
+                            <div class="vd-card-head"><h2 class="vd-section-title">Allergies</h2></div>
+                            <ul class="vd-list">
+                                @foreach (var a in _p.Allergies)
+                                {
+                                    <li class="vd-row-between">
+                                        <span><span class="vd-strong">@a.Substance</span>@if (a.DrugClass is not null) { <span class="vd-muted"> · @a.DrugClass</span> }</span>
+                                        @if (Session.Can(Permission.WriteClinicalNotes))
+                                        {
+                                            <button type="button" class="vd-icon-btn" aria-label="Remove allergy to @a.Substance" @onclick="() => RemoveAllergy(a)"><Icon Name="trash" Size="16" /></button>
+                                        }
+                                    </li>
+                                }
+                                @if (_p.Allergies.Count == 0)
+                                {
+                                    <li class="vd-muted">No known drug allergies.</li>
+                                }
+                            </ul>
+                            @if (Session.Can(Permission.WriteClinicalNotes))
+                            {
+                                <form class="vd-card-foot vd-stack-sm" @onsubmit="AddAllergy" @onsubmit:preventDefault>
+                                    <input class="vd-input vd-input-sm" placeholder="Substance, e.g. amoxicillin" aria-label="Allergy substance" @bind="_allergy" maxlength="100" />
+                                    <div class="vd-row">
+                                        <input class="vd-input vd-input-sm" style="flex:1" placeholder="Drug class, e.g. penicillin (optional)" aria-label="Drug class" @bind="_allergyClass" maxlength="100" />
+                                        <button type="submit" class="vd-btn vd-btn-secondary vd-btn-sm" disabled="@string.IsNullOrWhiteSpace(_allergy)">Add</button>
+                                    </div>
+                                </form>
+                                <div class="vd-hint" style="padding:0 16px 12px">Adding the class (e.g. penicillin) also flags other drugs in that class when prescribing and invoicing.</div>
+                            }
+                        </section>
+                        <section class="vd-card">
+                            <div class="vd-card-head"><h2 class="vd-section-title">Vaccinations</h2></div>
+                            <ul class="vd-list">
+                                @foreach (var v in _p.Vaccinations.GroupBy(v => v.VaccineName).Select(g => g.First()))
+                                {
+                                    <li class="vd-row-between">
+                                        <span><span class="vd-strong">@v.VaccineName</span><span class="vd-cell-sub" style="display:block">Given @Fmt.Date(v.GivenUtc)</span></span>
+                                        <VaccineDueChip Vaccination="v" />
+                                    </li>
+                                }
+                                @if (_p.Vaccinations.Count == 0)
+                                {
+                                    <li class="vd-muted">No vaccinations recorded.</li>
+                                }
+                            </ul>
+                        </section>
+                        <section class="vd-card">
+                            <div class="vd-card-head"><h2 class="vd-section-title">Current medication</h2></div>
+                            <ul class="vd-list">
+                                @foreach (var m in _p.CurrentMedication)
+                                {
+                                    <li><div class="vd-strong">@m.ProductName</div><div class="vd-cell-sub">@(m.Directions ?? "No directions recorded") · @m.PrescribedBy · @Fmt.Date(m.DispensedUtc)</div></li>
+                                }
+                                @if (_p.CurrentMedication.Count == 0)
+                                {
+                                    <li class="vd-muted">Nothing dispensed in the last 30 days.</li>
+                                }
+                            </ul>
+                        </section>
+                    </div>
+                }
+            </div>
+        }
+        else if (_tab == "Vaccinations")
+        {
+            <section class="vd-card">
+                <table class="vd-table">
+                    <thead><tr><th>Vaccine</th><th>Given</th><th>By</th><th>Batch</th><th>Next due</th></tr></thead>
+                    <tbody>
+                        @foreach (var v in _p.Vaccinations)
+                        {
+                            <tr><td class="vd-strong">@v.VaccineName</td><td>@Fmt.Date(v.GivenUtc)</td><td>@v.GivenBy</td><td class="vd-mono">@(v.Batch ?? "—")</td><td><VaccineDueChip Vaccination="v" /></td></tr>
+                        }
+                    </tbody>
+                </table>
+                @if (_p.Vaccinations.Count == 0) { <div class="vd-empty">No vaccinations recorded.</div> }
+            </section>
+        }
+        else if (_tab == "Prescriptions")
+        {
+            <section class="vd-card">
+                <table class="vd-table">
+                    <thead><tr><th>Medicine</th><th>Directions</th><th>Prescribed</th><th class="vd-num">Quantity</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var rx in _p.Prescriptions)
+                        {
+                            <tr>
+                                <td class="vd-strong">@rx.ProductName</td>
+                                <td>@(rx.Directions ?? "—")</td>
+                                <td>@Fmt.Date(rx.CreatedUtc) · @rx.PrescribedBy</td>
+                                <td class="vd-num vd-mono">@Fmt.Qty(rx.Quantity) @rx.Unit</td>
+                                <td><span class="vd-chip @(rx.Status == "Dispensed" ? "vd-chip-success" : rx.Status == "Cancelled" ? "" : "vd-chip-warning")">@rx.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (_p.Prescriptions.Count == 0) { <div class="vd-empty">No prescriptions.</div> }
+            </section>
+        }
+        else if (_tab == "Billing")
+        {
+            <section class="vd-card">
+                <table class="vd-table">
+                    <thead><tr><th>Invoice</th><th>Date</th><th class="vd-num">Total</th><th class="vd-num">Due</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var i in _p.Invoices)
+                        {
+                            <tr>
+                                <td class="vd-mono">@i.Number</td>
+                                <td>@Fmt.Date(i.IssuedUtc)</td>
+                                <td class="vd-num vd-mono">@Fmt.Money(i.Total)</td>
+                                <td class="vd-num vd-mono">@(i.AmountDue > 0 ? Fmt.Money(i.AmountDue) : "—")</td>
+                                <td>@i.Status</td>
+                                <td class="vd-num"><a href="billing?invoice=@i.Id">@(i.AmountDue > 0 && Session.Can(Permission.TakePayments) ? "Take payment" : "View")</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (_p.Invoices.Count == 0) { <div class="vd-empty">No invoices for @_p.Name.</div> }
+            </section>
+        }
+    }
+</div>
+
+@if (_p is not null)
+{
+    if (_ownerOpen)
+    {
+        <OwnerDialog Owner="_p.Owner" CurrentPatientId="_p.Id" OnClose="() => _ownerOpen = false" />
+    }
+    if (_booking)
+    {
+        <AppointmentDialog Patient="PatientPicker.PatientRowFrom(_p)" OnClose="() => _booking = false" OnSaved="() => _booking = false" />
+    }
+    if (_editing)
+    {
+        <PatientDialog Patient="_p" OnClose="() => _editing = false" OnSaved="Saved" />
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private static readonly string[] Tabs = ["Overview", "History", "Vaccinations", "Prescriptions", "Billing"];
+
+    private PatientDetail? _p;
+    private bool _missing;
+    private string _tab = "Overview";
+    private bool _ownerOpen, _booking, _editing, _noteOpen;
+    private string _noteTitle = "", _noteBody = "";
+    private string _allergy = "", _allergyClass = "";
+    private AlertEditor.Draft? _alert;
+
+    private bool CanEdit => Session.Can(Permission.ViewClinicalRecords);
+
+    private string PetCount => _p!.Owner.Pets.Count == 1 ? "1 pet" : $"{_p.Owner.Pets.Count} pets";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _tab = "Overview";
+        _alert = null;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new GetPatientQuery { Id = Id });
+        if (result.IsSuccess)
+            _p = result.Value;
+        else if (Equals(result.ErrorCode, GetPatientError.NotFound))
+            _missing = true;
+        else
+            Toasts.Check(result);
+    }
+
+    private static string DotCss(HistoryKind kind) => kind switch
+    {
+        HistoryKind.Surgery => "vd-dot-surgery",
+        HistoryKind.Vaccination => "vd-dot-vaccination",
+        HistoryKind.Note => "vd-dot-note",
+        _ => ""
+    };
+
+    private async Task Consult()
+    {
+        if (_p!.OpenConsultationId is { } open)
+        {
+            Nav.NavigateTo($"consultations/{open}");
+            return;
+        }
+
+        var result = await Backend.Send(new StartConsultationCommand { PatientId = _p.Id });
+        if (Toasts.Check(result))
+            Nav.NavigateTo($"consultations/{result.Value}");
+    }
+
+    private async Task SaveNote()
+    {
+        var result = await Backend.Send(new AddClinicalNoteCommand { PatientId = Id, Title = _noteTitle, Body = _noteBody });
+        if (!Toasts.Check(result, "Note added to the clinical history"))
+            return;
+        _noteOpen = false;
+        _noteTitle = _noteBody = "";
+        await LoadAsync();
+    }
+
+    private async Task AddAllergy()
+    {
+        if (string.IsNullOrWhiteSpace(_allergy))
+            return;
+        var result = await Backend.Send(new AddAllergyCommand { PatientId = Id, Substance = _allergy, DrugClass = string.IsNullOrWhiteSpace(_allergyClass) ? null : _allergyClass });
+        if (!Toasts.Check(result, $"Allergy to {_allergy.Trim()} recorded"))
+            return;
+        _allergy = _allergyClass = "";
+        await LoadAsync();
+    }
+
+    private async Task RemoveAllergy(AllergyDto a)
+    {
+        if (!await Dialogs.ConfirmAsync($"Remove the allergy to {a.Substance}?", "Prescribing and invoicing will stop warning about it.", "Remove", isDanger: true))
+            return;
+        if (Toasts.Check(await Backend.Send(new RemoveAllergyCommand { AllergyId = a.Id }), "Allergy removed"))
+            await LoadAsync();
+    }
+
+    private void NewAlert() => _alert = new AlertEditor.Draft(null, null, "", AlertSeverity.Warning);
+
+    private void EditAlert(AlertDto a)
+    {
+        if (CanEdit)
+            _alert = new AlertEditor.Draft(a.Id, a.PresetKey ?? "custom", a.Text, a.Severity);
+    }
+
+    private async Task SaveAlert(AlertEditor.Draft d)
+    {
+        var result = await Backend.Send(new SavePatientAlertCommand
+        {
+            PatientId = Id, AlertId = d.Id, PresetKey = d.PresetKey == "custom" ? null : d.PresetKey, Text = d.Text, Severity = d.Severity
+        });
+        if (!Toasts.Check(result, d.Id is null ? "Alert added" : "Alert updated"))
+            return;
+        _alert = null;
+        await LoadAsync();
+    }
+
+    private async Task DeleteAlert(int alertId)
+    {
+        if (!Toasts.Check(await Backend.Send(new DeletePatientAlertCommand { AlertId = alertId }), "Alert removed"))
+            return;
+        _alert = null;
+        await LoadAsync();
+    }
+
+    private async Task Saved()
+    {
+        _editing = false;
+        await LoadAsync();
+    }
+}

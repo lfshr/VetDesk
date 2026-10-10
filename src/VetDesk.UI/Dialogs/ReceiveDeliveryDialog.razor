@@ -1,0 +1,122 @@
+@* Book a delivery into stock, against an outstanding order or as a one-off. Each line needs its batch number. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Receive delivery" Subtitle="Check the delivery against outstanding orders. Received quantities are added to stock." OnClose="OnClose" Size="xwide">
+    <ChildContent>
+        @if (_orders is null)
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+        else
+        {
+            <div class="vd-field" style="margin-top:0">
+                <label for="rd-order">Order</label>
+                <select id="rd-order" value="@(_orderId?.ToString() ?? "")" @onchange="PickOrder">
+                    <option value="">No order (one-off delivery)</option>
+                    @foreach (var o in _orders)
+                    {
+                        <option value="@o.OrderId">@o.Number · @o.Supplier@(o.DeliverBy is { } d ? $" · due {Fmt.Date(d)}" : "")</option>
+                    }
+                </select>
+            </div>
+            <table class="vd-table vd-table-compact" style="margin-top:12px">
+                <thead><tr><th><span class="vd-sr-only">Received</span></th><th>Product</th><th>Qty received</th><th>Batch</th><th>Expiry</th></tr></thead>
+                <tbody>
+                    @foreach (var l in _lines)
+                    {
+                        <tr>
+                            <td><input type="checkbox" aria-label="Received @l.Name" @bind="l.Include" /></td>
+                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub">@l.Unit</span></td>
+                            <td><input class="vd-input vd-input-sm vd-mono" style="width:90px" type="number" min="0" step="any" aria-label="Quantity received @l.Name" @bind="l.Quantity" disabled="@(!l.Include)" /></td>
+                            <td><input class="vd-input vd-input-sm vd-mono" style="width:130px" aria-label="Batch @l.Name" @bind="l.Batch" @bind:event="oninput" disabled="@(!l.Include)" maxlength="60" /></td>
+                            <td><input class="vd-input vd-input-sm" type="date" aria-label="Expiry @l.Name" @bind="l.Expiry" disabled="@(!l.Include)" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (_lines.Count == 0)
+            {
+                <div class="vd-empty" style="padding:16px">Add the products that arrived.</div>
+            }
+            <div style="margin-top:12px"><ProductSearch Placeholder="Add a product that arrived" InputId="rd-add" StockedOnly="true" Categories="Stockable" OnPick="Add" /></div>
+            @if (_lines.Any(l => l.Include && l.IsControlledDrug))
+            {
+                <div class="vd-banner vd-banner-info" style="margin-top:12px"><Icon Name="info" Size="18" /> Controlled drugs received are written into the register with the new balance.</div>
+            }
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">Receive into stock</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private static readonly ProductCategory[] Stockable = [ProductCategory.Medicine, ProductCategory.Vaccine, ProductCategory.Retail];
+
+    private class Line
+    {
+        public int ProductId { get; init; }
+        public string Name { get; init; } = "";
+        public string Unit { get; init; } = "";
+        public bool IsControlledDrug { get; init; }
+        public bool Include { get; set; } = true;
+        public decimal Quantity { get; set; }
+        public string Batch { get; set; } = "";
+        public DateOnly? Expiry { get; set; }
+    }
+
+    private IReadOnlyList<DeliveryDto>? _orders;
+    private int? _orderId;
+    private List<Line> _lines = new();
+    private bool _saving;
+
+    private bool CanSave => _lines.Any(l => l.Include) && _lines.Where(l => l.Include).All(l => l.Quantity > 0 && !string.IsNullOrWhiteSpace(l.Batch));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var orders = await Backend.Send(new GetPendingDeliveriesQuery());
+        if (!Toasts.Check(orders))
+            return;
+        _orders = orders.Value;
+        if (_orders.FirstOrDefault() is { } first)
+            Load(first);
+    }
+
+    private void PickOrder(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id) && _orders!.FirstOrDefault(o => o.OrderId == id) is { } order)
+            Load(order);
+        else
+        {
+            _orderId = null;
+            _lines = new();
+        }
+    }
+
+    private void Load(DeliveryDto order)
+    {
+        _orderId = order.OrderId;
+        _lines = order.Lines.Select(l => new Line { ProductId = l.ProductId, Name = l.ProductName, Unit = l.Unit, IsControlledDrug = l.IsControlledDrug, Quantity = l.Quantity }).ToList();
+    }
+
+    private void Add(ProductDto p)
+    {
+        if (_lines.All(l => l.ProductId != p.Id))
+            _lines.Add(new Line { ProductId = p.Id, Name = p.Name, Unit = p.Unit, IsControlledDrug = p.IsControlledDrug, Quantity = 1 });
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var lines = _lines.Where(l => l.Include).Select(l => new ReceivedLine(l.ProductId, l.Quantity, l.Batch, l.Expiry)).ToList();
+        var result = await Backend.Send(new ReceiveDeliveryCommand { OrderId = _orderId, Lines = lines });
+        _saving = false;
+        if (Toasts.Check(result, $"{lines.Count} item{(lines.Count == 1 ? "" : "s")} received into stock"))
+            await OnSaved.InvokeAsync();
+    }
+}

@@ -1,0 +1,30 @@
+@* What VetDesk does and doesn't connect to in this version, stated plainly so nobody expects a message that never goes. *@
+<section class="vd-card" aria-labelledby="rems-title">
+    <div class="vd-card-head"><h2 id="rems-title" class="vd-section-title">Reminders</h2></div>
+    <ul class="vd-list">
+        <li><div class="vd-strong">Vaccination boosters</div><div class="vd-cell-sub">Due dates come from each vaccine's booster interval on the price list. The list of reminders due is on Reports, ready to export for your messaging service. Owners who opted out are marked.</div></li>
+        <li><div class="vd-strong">Recheck follow-ups</div><div class="vd-cell-sub">Set when completing a consultation. They appear on the Today screen on the day.</div></li>
+        <li><div class="vd-strong">Appointment confirmations</div><div class="vd-cell-sub">The booking dialog records whether the owner wants a text. Sending isn't connected yet.</div></li>
+    </ul>
+</section>
+
+<section class="vd-card" aria-labelledby="ints-title" style="margin-top:16px">
+    <div class="vd-card-head"><h2 id="ints-title" class="vd-section-title">Integrations</h2></div>
+    <ul class="vd-list">
+        @foreach (var (name, status) in Integrations)
+        {
+            <li class="vd-row-between" style="align-items:flex-start"><div><div class="vd-strong">@name</div><div class="vd-cell-sub">@status</div></div><span class="vd-chip vd-nowrap">Not connected</span></li>
+        }
+    </ul>
+</section>
+
+@code {
+    private static readonly (string, string)[] Integrations =
+    [
+        ("SMS and email", "Reminders and receipts aren't sent from VetDesk. Export the reminder list from Reports."),
+        ("Card terminal", "Take card payments on your terminal as now, then record them on the invoice."),
+        ("Insurers", "Claims are recorded against the invoice and submitted through each insurer's own portal."),
+        ("Suppliers", "Purchase orders are recorded in VetDesk and sent to the wholesaler as you do now."),
+        ("Labs and accounts software", "Not part of this version."),
+    ];
+}

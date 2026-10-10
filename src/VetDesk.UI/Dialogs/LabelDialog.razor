@@ -1,0 +1,45 @@
+@* Dispensing label preview and print. *@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject IJSRuntime JS
+
+<Modal Title="Print label" Subtitle="Preview of the dispensing label" OnClose="OnClose" Size="narrow">
+    <ChildContent>
+        @if (_label is { } l)
+        {
+            <div class="vd-label-preview vd-printable">
+                <div class="vd-strong" style="font-size:15px">@l.ProductName @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> }</div>
+                <div>Quantity: @Fmt.Qty(l.Quantity) @l.Unit</div>
+                <div style="margin:6px 0;font-weight:600">@(l.Directions ?? "Use as directed by the vet")</div>
+                <div>Patient: <strong>@l.PatientName</strong> · Owner: @l.OwnerName</div>
+                <div>Prescribed by @l.PrescribedBy · @Fmt.Date(l.DispensedOrCreatedUtc)</div>
+                <div class="vd-small" style="margin-top:6px">For animal treatment only · Keep out of reach of children</div>
+                <div class="vd-small vd-muted">@string.Join(" · ", new[] { l.ClinicName, l.ClinicAddress, l.ClinicPhone }.Where(s => !string.IsNullOrWhiteSpace(s)))</div>
+            </div>
+        }
+        else
+        {
+            <div class="vd-loading">Loading…</div>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(_label is null)" @onclick="Print"><Icon Name="print" Size="16" /> Print label</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public int DispenseItemId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private LabelDto? _label;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var label = await Backend.Send(new GetLabelQuery { DispenseItemId = DispenseItemId });
+        if (Toasts.Check(label))
+            _label = label.Value;
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("vetdesk.print");
+}

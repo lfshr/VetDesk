@@ -1,0 +1,102 @@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject IJSRuntime JS
+
+<section class="vd-card" aria-labelledby="bk-title">
+    <div class="vd-card-head"><h2 id="bk-title" class="vd-section-title">Backup and data</h2></div>
+    @if (_s is null)
+    {
+        <div class="vd-loading">Loading…</div>
+    }
+    else
+    {
+        <div class="vd-card-body">
+            <dl style="display:grid;grid-template-columns:140px 1fr;gap:8px 16px;margin:0">
+                <dt class="vd-muted">Last backup</dt>
+                <dd style="margin:0">@(_s.LastBackupUtc is { } t ? $"{Fmt.DateTime(t)} · {_s.LastBackupResult}" : "Never")</dd>
+                <dt class="vd-muted">Schedule</dt>
+                <dd style="margin:0">Nightly at @_s.BackupTime.ToString("HH:mm") while VetDesk is open on at least one computer</dd>
+            </dl>
+            <div class="vd-form-grid" style="margin-top:8px">
+                <div class="vd-field"><label for="bk-folder">Backup folder</label><input id="bk-folder" class="vd-mono" @bind="_folder" maxlength="400" /></div>
+                <div class="vd-field"><label for="bk-time">Backup time</label><input id="bk-time" type="time" @bind="_time" /></div>
+            </div>
+            <div class="vd-hint">For SQL Server this folder is on the database server itself. Point it at a drive that is copied off-site.</div>
+            <div class="vd-actions" style="margin-top:16px">
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveSchedule">Save schedule</button>
+                <button type="button" class="vd-btn vd-btn-primary" disabled="@_running" @onclick="BackupNow">@(_running ? "Backing up…" : "Back up now")</button>
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="ExportClients"><Icon Name="download" Size="16" /> Export clients (CSV)</button>
+            </div>
+        </div>
+        <table class="vd-table vd-table-compact">
+            <thead><tr><th>Started</th><th>Result</th><th>File</th><th>By</th></tr></thead>
+            <tbody>
+                @foreach (var b in _history)
+                {
+                    <tr>
+                        <td class="vd-nowrap">@Fmt.DateTime(b.StartedUtc)</td>
+                        <td><span class="vd-chip @(b.Succeeded ? "vd-chip-success" : "vd-chip-danger")">@(b.Succeeded ? "Completed" : "Failed")</span></td>
+                        <td class="vd-mono vd-small" style="overflow-wrap:anywhere">@(b.Succeeded ? b.FilePath : b.Error)</td>
+                        <td>@b.TriggeredBy</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="vd-card-foot vd-small vd-muted">To restore, close VetDesk on every computer and restore the backup file with SQL Server Management Studio (or copy the SQLite file back). See the README.</div>
+    }
+</section>
+
+@code {
+    private ClinicSettingsDto? _s;
+    private IReadOnlyList<BackupDto> _history = [];
+    private string? _folder;
+    private TimeOnly _time;
+    private bool _running;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var s = await Backend.Send(new GetClinicSettingsQuery());
+        if (Toasts.Check(s))
+        {
+            _s = s.Value;
+            _folder = _s.BackupFolder;
+            _time = _s.BackupTime;
+        }
+
+        var history = await Backend.Send(new GetBackupHistoryQuery());
+        if (history.IsSuccess)
+            _history = history.Value;
+    }
+
+    private async Task SaveSchedule()
+    {
+        var s = _s!;
+        var result = await Backend.Send(new UpdateClinicSettingsCommand
+        {
+            Name = s.Name, Address = s.Address, Phone = s.Phone, Email = s.Email, VatNumber = s.VatNumber, WeekdayOpen = s.WeekdayOpen,
+            WeekdayClose = s.WeekdayClose, SaturdayOpen = s.SaturdayOpen, SaturdayClose = s.SaturdayClose, LunchStart = s.LunchStart,
+            LunchEnd = s.LunchEnd, PaymentTermsDays = s.PaymentTermsDays, OpeningFloat = s.OpeningFloat, AutoLockMinutes = s.AutoLockMinutes,
+            BackupFolder = _folder, BackupTime = _time, Version = s.Version
+        });
+        if (Toasts.Check(result, "Backup schedule saved"))
+            await LoadAsync();
+    }
+
+    private async Task BackupNow()
+    {
+        _running = true;
+        var result = await Backend.Send(new RunBackupCommand());
+        _running = false;
+        Toasts.Check(result, result.IsSuccess ? $"Backed up to {result.Value}" : null);
+        await LoadAsync();
+    }
+
+    private async Task ExportClients()
+    {
+        var result = await Backend.Send(new ExportClientsQuery());
+        if (Toasts.Check(result))
+            await JS.InvokeVoidAsync("vetdesk.download", $"vetdesk-clients-{ClinicTime.Today(DateTime.UtcNow):yyyy-MM-dd}.csv", "text/csv", Csv.From(result.Value));
+    }
+}

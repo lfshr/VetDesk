@@ -1,0 +1,57 @@
+@* Quantity (and for a prescription, directions) for a product picked on the consultation. An allergy conflict
+   needs a written reason before it can be added. *@
+@inject UserSession Session
+
+<div class="vd-card" style="margin-top:10px;padding:12px;background:var(--vd-surface-muted)">
+    <div class="vd-strong">@Pending.Product.Name @if (Pending.Product.IsControlledDrug) { <span class="vd-cd">CD</span> }</div>
+    <div class="vd-cell-sub">@Fmt.Money(Pending.Product.GrossPrice) per @Pending.Product.Unit incl. VAT@(Pending.Product.IsStocked ? $" · {Fmt.Qty(Pending.Product.OnHand)} in stock" : "")</div>
+    @if (Pending.Conflicts.Count > 0)
+    {
+        <div class="vd-banner vd-banner-danger" style="margin-top:10px">
+            <Icon Name="alert" Size="18" />
+            <span>This conflicts with the patient's allergy to <strong>@string.Join(", ", Pending.Conflicts)</strong>.</span>
+        </div>
+    }
+    <div class="vd-field" style="max-width:140px"><label for="cf-qty">Quantity (@Pending.Product.Unit)</label><input id="cf-qty" type="number" min="0.01" step="any" @bind="_qty" /></div>
+    @if (Pending.IsPrescription)
+    {
+        <div class="vd-field"><label for="cf-dir">Directions for the label</label><input id="cf-dir" @bind="_directions" @bind:event="oninput" placeholder="e.g. 1 tablet twice daily with food" maxlength="400" /></div>
+    }
+    @if (Pending.Conflicts.Count > 0)
+    {
+        @if (Session.Can(Permission.Prescribe))
+        {
+            <div class="vd-field"><label for="cf-reason">Reason to go ahead</label><input id="cf-reason" @bind="_reason" @bind:event="oninput" placeholder="e.g. Tolerated previously; owner informed" maxlength="400" /></div>
+        }
+        else
+        {
+            <div class="vd-error-text">Only a vet can override an allergy warning.</div>
+        }
+    }
+    <div class="vd-actions vd-actions-end" style="margin-top:12px">
+        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="vd-btn @(Pending.Conflicts.Count > 0 ? "vd-btn-danger" : "vd-btn-primary") vd-btn-sm" disabled="@(!CanAdd)" @onclick="Add">
+            @(Pending.Conflicts.Count > 0 ? "Override and add" : Pending.IsPrescription ? "Prescribe" : "Add")
+        </button>
+    </div>
+</div>
+
+@code {
+    public record PendingCharge(ProductDto Product, bool IsPrescription, IReadOnlyList<string> Conflicts);
+    public record ChargeInput(ProductDto Product, decimal Quantity, bool IsPrescription, string? Directions, string? OverrideReason);
+
+    [Parameter, EditorRequired] public PendingCharge Pending { get; set; } = default!;
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<ChargeInput> OnAdd { get; set; }
+
+    private decimal _qty = 1;
+    private string _directions = "";
+    private string _reason = "";
+
+    private bool CanAdd => _qty > 0
+                           && (!Pending.IsPrescription || !string.IsNullOrWhiteSpace(_directions))
+                           && (Pending.Conflicts.Count == 0 || (Session.Can(Permission.Prescribe) && !string.IsNullOrWhiteSpace(_reason)));
+
+    private Task Add() => OnAdd.InvokeAsync(new ChargeInput(Pending.Product, _qty, Pending.IsPrescription,
+        Pending.IsPrescription ? _directions : null, Pending.Conflicts.Count > 0 ? _reason : null));
+}

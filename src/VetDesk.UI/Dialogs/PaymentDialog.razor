@@ -1,0 +1,72 @@
+@* Records a payment. Card payments are taken on the practice's terminal as now; VetDesk records the result. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="@($"Take payment · {Method.ToString().ToLowerInvariant()}")" Subtitle="@($"{Invoice.Number} · {Invoice.ClientName} · due {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose" Size="narrow">
+    <ChildContent>
+        <div class="vd-field" style="margin-top:0"><label for="pay-amount">Amount (£)</label><input id="pay-amount" class="vd-mono" type="number" step="0.01" min="0.01" @bind="_amount" @bind:event="oninput" /></div>
+        @if (Method == PaymentMethod.Cash)
+        {
+            <div class="vd-field"><label for="pay-tendered">Cash handed over (£)</label><input id="pay-tendered" class="vd-mono" type="number" step="0.01" min="0" @bind="_tendered" @bind:event="oninput" /></div>
+        }
+        @if (Method != PaymentMethod.Cash)
+        {
+            <div class="vd-field"><label for="pay-ref">@(Method == PaymentMethod.Transfer ? "Bank reference" : "Terminal receipt number (optional)")</label><input id="pay-ref" @bind="_reference" @bind:event="oninput" maxlength="100" /></div>
+        }
+        <div class="vd-hint">@Note</div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(Problem is not null || _saving)" @onclick="Save">Record @Fmt.Money(_amount)</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public InvoiceDetail Invoice { get; set; } = default!;
+    [Parameter] public PaymentMethod Method { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private decimal _amount;
+    private decimal _tendered;
+    private string? _reference;
+    private bool _saving;
+
+    private decimal Change => _tendered - _amount;
+
+    private string? Problem =>
+        _amount <= 0 ? "Enter an amount." :
+        _amount > Invoice.AmountDue ? "The amount is more than is due." :
+        Method == PaymentMethod.Cash && Change < 0 ? "The cash handed over is less than the amount." :
+        Method == PaymentMethod.Transfer && string.IsNullOrWhiteSpace(_reference) ? "Enter the bank reference." :
+        null;
+
+    private string Note => Problem ?? Method switch
+    {
+        PaymentMethod.Card => "Take the payment on the card terminal first, then record it here.",
+        PaymentMethod.Cash => Change > 0 ? $"Change to give: {Fmt.Money(Change)}" : "Exact amount.",
+        _ => "Record a bank transfer once it shows in the practice account."
+    };
+
+    protected override void OnInitialized()
+    {
+        _amount = Invoice.AmountDue;
+        _tendered = Math.Ceiling(Invoice.AmountDue / 10m) * 10m;
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new TakePaymentCommand { InvoiceId = Invoice.Id, Method = Method, Amount = _amount, Reference = _reference, Version = Invoice.Version });
+        _saving = false;
+        if (!result.IsSuccess)
+        {
+            Toasts.Check(result);
+            return;
+        }
+
+        var due = result.Value;
+        Toasts.Success($"{Fmt.Money(_amount)} paid by {Method.ToString().ToLowerInvariant()} on {Invoice.Number}" + (due > 0 ? $" · {Fmt.Money(due)} still due" : " · paid in full"));
+        await OnSaved.InvokeAsync();
+    }
+}

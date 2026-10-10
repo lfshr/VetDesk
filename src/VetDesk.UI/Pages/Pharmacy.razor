@@ -1,0 +1,280 @@
+@page "/pharmacy"
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+@inject DialogService Dialogs
+
+<ScreenTitle Text="Pharmacy" />
+
+<div class="vd-toolbar">
+    <div class="vd-search-box">
+        <Icon Name="search" Size="18" />
+        <input type="search" aria-label="Search stock" placeholder="Search products, codes or batch numbers" value="@_text" @oninput="OnSearch" style="padding-right:12px" />
+    </div>
+    <span class="vd-spacer"></span>
+    @if (Session.Can(Permission.WriteClinicalNotes))
+    {
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _dialog = Dialog.StockTake" aria-haspopup="dialog"><Icon Name="clipboard" Size="16" /> Stock take</button>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _dialog = Dialog.Receive" aria-haspopup="dialog">
+            <Icon Name="truck" Size="16" /> Receive delivery
+            @if (_deliveries > 0) { <span class="vd-pill-count" style="background:var(--vd-accent);color:#fff;border-radius:9px;padding:0 6px">@_deliveries</span> }
+        </button>
+        <button type="button" class="vd-btn vd-btn-primary" @onclick="() => _dialog = Dialog.Order" aria-haspopup="dialog"><Icon Name="plus" Size="16" /> Create order</button>
+    }
+</div>
+
+<div class="vd-page">
+    <div class="vd-page-head">
+        <div>
+            <h1 class="vd-page-title">Pharmacy</h1>
+            <div class="vd-page-sub">Stock, dispensing and controlled drugs</div>
+        </div>
+        <div class="vd-pills" role="group" aria-label="Filter stock">
+            @foreach (var f in Enum.GetValues<StockFilter>())
+            {
+                <button type="button" class="vd-pill" aria-pressed="@(_filter == f)" @onclick="() => _filter = f">@FilterLabel(f) <span class="vd-pill-count">@Filtered(f).Count()</span></button>
+            }
+        </div>
+    </div>
+
+    <div class="vd-grid-main">
+        <section class="vd-card" aria-labelledby="stock-title">
+            <div class="vd-card-head"><h2 id="stock-title" class="vd-section-title">Stock</h2><span class="vd-small vd-muted">@ShownLabel</span></div>
+            @if (_stock is null)
+            {
+                <div class="vd-loading">Loading…</div>
+            }
+            else
+            {
+                <div class="vd-table-scroll">
+                    <table class="vd-table">
+                        <thead><tr><th>Product</th><th>Category</th><th>On hand</th><th>Batch · expiry</th><th>Location</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var s in Filtered(_filter))
+                            {
+                                <tr>
+                                    <td><div class="vd-cell-primary">@s.Name @if (s.IsControlledDrug) { <span class="vd-cd">CD</span> }</div><div class="vd-cell-sub">@(s.Form ?? s.Code)</div></td>
+                                    <td>@(s.StockCategory ?? s.Category.ToString())</td>
+                                    <td class="vd-nowrap">
+                                        <span class="vd-mono">@Fmt.Qty(s.OnHand)</span> <span class="vd-small vd-muted">/ reorder @Fmt.Qty(s.ReorderLevel)</span>
+                                        <span class="vd-meter @(s.Status == StockStatus.Out ? "vd-meter-out" : s.Status == StockStatus.Low ? "vd-meter-low" : "")"><span style="width:@MeterWidth(s)%"></span></span>
+                                    </td>
+                                    <td><div class="vd-mono vd-small">@(s.NextBatch ?? "—")</div><div class="vd-cell-sub">@(s.NextExpiry is { } e ? $"Exp {Fmt.Date(e)}" : "")@(s.BatchCount > 1 ? $" · {s.BatchCount} batches" : "")</div></td>
+                                    <td>@(s.Location ?? "—")</td>
+                                    <td><StockStatusChip Status="s.Status" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!Filtered(_filter).Any())
+                {
+                    <div class="vd-empty">Nothing matches.</div>
+                }
+            }
+        </section>
+
+        <div class="vd-stack">
+            <section class="vd-card" aria-labelledby="queue-title">
+                <div class="vd-card-head"><h2 id="queue-title" class="vd-section-title">To dispense</h2><span class="vd-small vd-muted">@(_queue?.Count ?? 0) waiting</span></div>
+                <ul class="vd-list">
+                    @foreach (var q in _queue ?? [])
+                    {
+                        <li>
+                            <div class="vd-row-between" style="align-items:flex-start">
+                                <div>
+                                    <div class="vd-strong">@q.ProductName @if (q.IsControlledDrug) { <span class="vd-cd">CD</span> }</div>
+                                    <div class="vd-cell-sub">@Fmt.Qty(q.Quantity) @q.Unit · <a href="patients/@q.PatientId">@q.PatientName</a> (@q.OwnerName) · @q.PrescribedBy</div>
+                                    @if (q.Directions is not null) { <div class="vd-small" style="margin-top:2px">@q.Directions</div> }
+                                </div>
+                                @if (q.AwaitingAuthorisation) { <span class="vd-chip vd-chip-warning vd-nowrap">Needs vet</span> }
+                                else if (q.OnHand < q.Quantity) { <span class="vd-chip vd-chip-danger vd-nowrap">Short</span> }
+                            </div>
+                            <div class="vd-actions" style="margin-top:8px">
+                                @if (q.AwaitingAuthorisation)
+                                {
+                                    @if (Session.Can(Permission.Prescribe))
+                                    {
+                                        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => Authorise(q)">Authorise</button>
+                                    }
+                                }
+                                else if (Session.Can(Permission.WriteClinicalNotes))
+                                {
+                                    <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => StartDispense(q)">@(q.IsControlledDrug ? "Witness and dispense" : "Dispense")</button>
+                                }
+                                <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _labelFor = q.Id"><Icon Name="label" Size="14" /> Label</button>
+                                @if (Session.Can(Permission.WriteClinicalNotes))
+                                {
+                                    <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => Cancel(q)">Cancel</button>
+                                }
+                            </div>
+                        </li>
+                    }
+                    @if (_queue is { Count: 0 })
+                    {
+                        <li class="vd-muted">Nothing waiting to dispense.</li>
+                    }
+                </ul>
+                <div class="vd-card-foot"><button type="button" class="vd-btn-link" @onclick="() => _dialog = Dialog.Repeat">Request a repeat prescription</button></div>
+            </section>
+
+            <section class="vd-card" aria-labelledby="cd-title">
+                <div class="vd-card-head"><h2 id="cd-title" class="vd-section-title">Controlled drugs register</h2><button type="button" class="vd-btn-link vd-nowrap" @onclick="() => _dialog = Dialog.Register" aria-haspopup="dialog">Open register</button></div>
+                <ul class="vd-list vd-small">
+                    @foreach (var c in _register ?? [])
+                    {
+                        <li>
+                            <div class="vd-row-between"><span class="vd-strong">@c.ProductName</span><span class="vd-mono">@(c.Change > 0 ? "+" : "")@Fmt.Qty(c.Change) → @Fmt.Qty(c.Balance)</span></div>
+                            <div class="vd-muted">@Fmt.DateTime(c.Utc) · @c.Reason · @c.By@(c.Witness is null ? "" : $", witnessed by {c.Witness}")</div>
+                        </li>
+                    }
+                    @if (_register is { Count: 0 })
+                    {
+                        <li class="vd-muted">No entries yet.</li>
+                    }
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>
+
+@switch (_dialog)
+{
+    case Dialog.StockTake:
+        <StockTakeDialog OnClose="Close" OnSaved="Changed" />
+        break;
+    case Dialog.Receive:
+        <ReceiveDeliveryDialog OnClose="Close" OnSaved="Changed" />
+        break;
+    case Dialog.Order:
+        <PurchaseOrderDialog OnClose="Close" OnSaved="Changed" />
+        break;
+    case Dialog.Register:
+        <ControlledDrugRegisterDialog OnClose="Close" OnChanged="LoadAsync" />
+        break;
+    case Dialog.Repeat:
+        <RepeatPrescriptionDialog OnClose="Close" OnSaved="Changed" />
+        break;
+}
+@if (_dispensing is not null)
+{
+    <WitnessDialog Item="_dispensing" OnClose="() => _dispensing = null" OnDone="Dispensed" />
+}
+@if (_labelFor is { } labelId)
+{
+    <LabelDialog DispenseItemId="labelId" OnClose="() => _labelFor = null" />
+}
+
+@code {
+    private enum Dialog { None, StockTake, Receive, Order, Register, Repeat }
+
+    private string _text = "";
+    private StockFilter _filter;
+    private List<StockRow>? _stock;
+    private List<DispenseRow>? _queue;
+    private List<ControlledDrugEntryDto>? _register;
+    private int _deliveries;
+    private Dialog _dialog;
+    private DispenseRow? _dispensing;
+    private int? _labelFor;
+    private CancellationTokenSource? _debounce;
+
+    private string ShownLabel => _stock is null ? "" : $"{Filtered(_filter).Count()} of {_stock.Count} products";
+
+    private static string FilterLabel(StockFilter f) => f switch
+    {
+        StockFilter.LowStock => "Low stock",
+        StockFilter.ExpiringSoon => "Expiring soon",
+        StockFilter.ControlledDrugs => "Controlled drugs",
+        _ => f.ToString()
+    };
+
+    // Same rules as the stock query, applied here so every pill can show its count from one load.
+    private IEnumerable<StockRow> Filtered(StockFilter f) => (_stock ?? []).Where(r => f switch
+    {
+        StockFilter.LowStock => r.Status is StockStatus.Low or StockStatus.Out,
+        StockFilter.ExpiringSoon => r.Status is StockStatus.Expiring or StockStatus.Expired,
+        StockFilter.ControlledDrugs => r.IsControlledDrug,
+        StockFilter.Vaccines => r.Category == ProductCategory.Vaccine,
+        _ => true
+    });
+
+    private static int MeterWidth(StockRow s) =>
+        s.ReorderLevel <= 0 ? 100 : (int)Math.Clamp(s.OnHand / (s.ReorderLevel * 2) * 100, 0, 100);
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var stock = await Backend.Send(new GetStockQuery { Text = _text });
+        if (Toasts.Check(stock))
+            _stock = stock.Value.ToList();
+        var queue = await Backend.Send(new GetDispenseQueueQuery());
+        if (queue.IsSuccess)
+            _queue = queue.Value.ToList();
+        var register = await Backend.Send(new GetControlledDrugRegisterQuery { Take = 5 });
+        if (register.IsSuccess)
+            _register = register.Value.ToList();
+        var deliveries = await Backend.Send(new GetPendingDeliveriesQuery());
+        _deliveries = deliveries.IsSuccess ? deliveries.Value.Count : 0;
+    }
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? "";
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(200, _debounce.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        var stock = await Backend.Send(new GetStockQuery { Text = _text });
+        if (stock.IsSuccess)
+            _stock = stock.Value.ToList();
+    }
+
+    private void Close() => _dialog = Dialog.None;
+
+    private async Task Changed()
+    {
+        _dialog = Dialog.None;
+        await LoadAsync();
+    }
+
+    private async Task StartDispense(DispenseRow q)
+    {
+        if (q.IsControlledDrug)
+        {
+            _dispensing = q;
+            return;
+        }
+
+        if (Toasts.Check(await Backend.Send(new DispenseItemCommand { Id = q.Id }), $"{q.ProductName} dispensed for {q.PatientName}"))
+            await LoadAsync();
+    }
+
+    private async Task Dispensed()
+    {
+        _dispensing = null;
+        await LoadAsync();
+    }
+
+    private async Task Authorise(DispenseRow q)
+    {
+        if (Toasts.Check(await Backend.Send(new AuthoriseDispenseCommand { Id = q.Id }), $"{q.ProductName} authorised"))
+            await LoadAsync();
+    }
+
+    private async Task Cancel(DispenseRow q)
+    {
+        if (!await Dialogs.ConfirmAsync($"Cancel {q.ProductName} for {q.PatientName}?", "It comes off the queue. Nothing is taken from stock.", "Cancel item", "Keep it", isDanger: true))
+            return;
+        if (Toasts.Check(await Backend.Send(new CancelDispenseCommand { Id = q.Id }), "Item cancelled"))
+            await LoadAsync();
+    }
+}

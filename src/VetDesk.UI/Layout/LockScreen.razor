@@ -1,0 +1,32 @@
+@using VetDesk.Application.Staff.Commands
+@inject Backend Backend
+@inject UserSession Session
+
+<div class="vd-overlay vd-overlay-top" style="background:rgba(14,42,42,.92)">
+    <div class="vd-signin-card" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+        <div class="vd-signin-brand"><Icon Name="lock" Size="22" /> VetDesk is locked</div>
+        <p id="lock-title" class="vd-muted" style="margin-top:0;text-align:center">@Session.Staff?.ShortName was signed in. Enter the PIN to carry on where you left off.</p>
+        <PinPad Id="lock-pin" Label="@($"{Session.Staff?.ShortName}'s PIN")" Busy="_busy" OnComplete="Unlock" />
+        <FormError Text="@_error" />
+        <button type="button" class="vd-btn vd-btn-ghost" style="width:100%;margin-top:12px" @onclick="Session.SignOut">Not @Session.Staff?.ShortName? Switch user</button>
+    </div>
+</div>
+
+@code {
+    private string? _error;
+    private bool _busy;
+
+    private async Task Unlock(string pin)
+    {
+        _busy = true;
+        var result = await Backend.Send(new SignInCommand { StaffId = Session.Staff?.StaffId ?? 0, Pin = pin });
+        _busy = false;
+        if (result.IsFailure)
+        {
+            _error = result.ToString();
+            return;
+        }
+
+        Session.Unlock(result.Value);
+    }
+}

@@ -1,0 +1,20 @@
+<span class="vd-chip @Css">@Label</span>
+
+@code {
+    [Parameter] public StockStatus Status { get; set; }
+
+    private string Css => Status switch
+    {
+        StockStatus.Out or StockStatus.Expired => "vd-chip-danger",
+        StockStatus.Low or StockStatus.Expiring => "vd-chip-warning",
+        _ => "vd-chip-success"
+    };
+
+    private string Label => Status switch
+    {
+        StockStatus.InStock => "In stock",
+        StockStatus.Out => "Out of stock",
+        StockStatus.Expiring => "Expiring soon",
+        _ => Status.ToString()
+    };
+}

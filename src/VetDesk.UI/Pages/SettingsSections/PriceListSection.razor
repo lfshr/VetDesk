@@ -1,0 +1,153 @@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<section class="vd-card" aria-labelledby="prices-title">
+    <div class="vd-card-head">
+        <h2 id="prices-title" class="vd-section-title">Price list</h2>
+        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => _editing = New()" aria-haspopup="dialog"><Icon Name="plus" Size="14" /> Add item</button>
+    </div>
+    <div class="vd-card-body" style="padding-bottom:0">
+        <div class="vd-search-box" style="max-width:none">
+            <Icon Name="search" Size="18" />
+            <input type="search" aria-label="Search price list" placeholder="Search name or code" value="@_text" @oninput="OnSearch" style="padding-right:12px" />
+        </div>
+    </div>
+    <table class="vd-table" style="margin-top:12px">
+        <thead><tr><th>Item</th><th>Category</th><th class="vd-num">Price (net)</th><th>VAT</th><th class="vd-num">Price incl. VAT</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var p in _rows)
+            {
+                <tr>
+                    <td><div class="vd-cell-primary">@p.Name @if (p.IsControlledDrug) { <span class="vd-cd">CD</span> } @if (!p.IsActive) { <span class="vd-chip">Inactive</span> }</div><div class="vd-cell-sub vd-mono">@p.Code</div></td>
+                    <td>@p.Category</td>
+                    <td class="vd-num vd-mono">@Fmt.Money(p.UnitPrice)</td>
+                    <td>@p.VatRate.Label()</td>
+                    <td class="vd-num vd-mono">@Fmt.Money(p.GrossPrice)</td>
+                    <td class="vd-num"><button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => _editing = From(p)">Edit</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@if (_editing is { } e)
+{
+    <Modal Title="@(e.Id is null ? "Add price list item" : $"Edit {e.Name}")" OnClose="() => _editing = null" Size="wide">
+        <ChildContent>
+            <div class="vd-form-grid-3">
+                <div class="vd-field" style="margin-top:0"><label for="pl-code">Code</label><input id="pl-code" class="vd-mono" @bind="e.Code" maxlength="40" /></div>
+                <div class="vd-field vd-field-wide" style="margin-top:0;grid-column:span 2"><label for="pl-name">Name</label><input id="pl-name" @bind="e.Name" maxlength="200" /></div>
+                <div class="vd-field">
+                    <label for="pl-cat">Category</label>
+                    <select id="pl-cat" @bind="e.Category">@foreach (var c in Enum.GetValues<ProductCategory>()) { <option value="@c">@c</option> }</select>
+                </div>
+                <div class="vd-field"><label for="pl-price">Price excl. VAT (£)</label><input id="pl-price" type="number" step="0.01" min="0" @bind="e.UnitPrice" /></div>
+                <div class="vd-field">
+                    <label for="pl-vat">VAT rate</label>
+                    <select id="pl-vat" @bind="e.VatRate">@foreach (var v in Enum.GetValues<VatRate>()) { <option value="@v">@v.Label()</option> }</select>
+                </div>
+                <div class="vd-field"><label for="pl-cost">Cost price (£)</label><input id="pl-cost" type="number" step="0.01" min="0" @bind="e.CostPrice" /></div>
+                <div class="vd-field"><label for="pl-unit">Unit</label><input id="pl-unit" @bind="e.Unit" placeholder="e.g. tablet, ml, item" maxlength="40" /></div>
+                <div class="vd-field"><label for="pl-form">Form</label><input id="pl-form" @bind="e.Form" placeholder="e.g. Tablet · 250 mg" maxlength="100" /></div>
+            </div>
+            <label class="vd-check"><input type="checkbox" @bind="e.IsStocked" /> Kept in stock</label>
+            @if (e.IsStocked)
+            {
+                <div class="vd-form-grid-3">
+                    <div class="vd-field"><label for="pl-reorder">Reorder at</label><input id="pl-reorder" type="number" min="0" step="any" @bind="e.ReorderLevel" /></div>
+                    <div class="vd-field"><label for="pl-loc">Location</label><input id="pl-loc" @bind="e.Location" maxlength="100" /></div>
+                    <div class="vd-field"><label for="pl-scat">Stock category</label><input id="pl-scat" @bind="e.StockCategory" placeholder="e.g. Antibiotic" maxlength="100" /></div>
+                </div>
+            }
+            @if (e.Category == ProductCategory.Medicine)
+            {
+                <div class="vd-form-grid">
+                    <div class="vd-field"><label for="pl-class">Drug class</label><input id="pl-class" @bind="e.DrugClass" placeholder="e.g. Penicillin" maxlength="100" /></div>
+                    <div class="vd-field"><label for="pl-ing">Active ingredients</label><input id="pl-ing" @bind="e.Ingredients" placeholder="e.g. amoxicillin, clavulanic acid" maxlength="400" /></div>
+                </div>
+                <div class="vd-hint">Allergy checks match a patient's allergy against the name, the ingredients and the drug class.</div>
+                <label class="vd-check"><input type="checkbox" @bind="e.IsControlledDrug" /> Controlled drug (witnessed dispensing and register)</label>
+            }
+            @if (e.Category == ProductCategory.Vaccine)
+            {
+                <div class="vd-field" style="max-width:200px"><label for="pl-booster">Booster due after (months)</label><input id="pl-booster" type="number" min="1" @bind="e.BoosterMonths" /></div>
+            }
+            <label class="vd-check" style="display:flex"><input type="checkbox" @bind="e.IsActive" /> Available to charge</label>
+        </ChildContent>
+        <Footer>
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _editing = null">Cancel</button>
+            <button type="button" class="vd-btn vd-btn-primary" @onclick="Save">Save</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    private class Draft
+    {
+        public int? Id;
+        public string Code = "", Name = "", Unit = "item";
+        public string? Form, StockCategory, DrugClass, Ingredients, Location;
+        public ProductCategory Category;
+        public decimal UnitPrice, CostPrice, ReorderLevel;
+        public VatRate VatRate = VatRate.Standard;
+        public bool IsControlledDrug, IsStocked, IsActive = true;
+        public int? BoosterMonths;
+    }
+
+    private IReadOnlyList<ProductDto> _rows = [];
+    private string _text = "";
+    private Draft? _editing;
+    private CancellationTokenSource? _debounce;
+
+    private static Draft New() => new();
+
+    private static Draft From(ProductDto p) => new()
+    {
+        Id = p.Id, Code = p.Code, Name = p.Name, Unit = p.Unit, Form = p.Form, StockCategory = p.StockCategory, DrugClass = p.DrugClass,
+        Ingredients = p.Ingredients, Location = p.Location, Category = p.Category, UnitPrice = p.UnitPrice, CostPrice = p.CostPrice,
+        ReorderLevel = p.ReorderLevel, VatRate = p.VatRate, IsControlledDrug = p.IsControlledDrug, IsStocked = p.IsStocked, IsActive = p.IsActive,
+        BoosterMonths = p.BoosterMonths
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Backend.Send(new SearchProductsQuery { Text = _text, IncludeInactive = true, Take = 500 });
+        if (Toasts.Check(result))
+            _rows = result.Value;
+    }
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? "";
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(200, _debounce.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task Save()
+    {
+        var e = _editing!;
+        var result = await Backend.Send(new SaveProductCommand
+        {
+            Id = e.Id, Code = e.Code, Name = e.Name, Category = e.Category, UnitPrice = e.UnitPrice, CostPrice = e.CostPrice, VatRate = e.VatRate,
+            Form = e.Form, Unit = e.Unit, StockCategory = e.StockCategory, IsControlledDrug = e.IsControlledDrug, DrugClass = e.DrugClass,
+            Ingredients = e.Ingredients, IsStocked = e.IsStocked, ReorderLevel = e.ReorderLevel, Location = e.Location, BoosterMonths = e.BoosterMonths,
+            IsActive = e.IsActive
+        });
+        if (!Toasts.Check(result, $"{e.Name} saved"))
+            return;
+        _editing = null;
+        await LoadAsync();
+    }
+}

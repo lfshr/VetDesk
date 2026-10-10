@@ -1,0 +1,167 @@
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@using VetDesk.Application.Settings.Queries
+@using VetDesk.Application.Pharmacy.Queries
+@inject UserSession Session
+@inject Crumbs Crumbs
+@inject Backend Backend
+@inject Hotkeys Hotkeys
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+@if (!Session.IsSignedIn)
+{
+    <SignInScreen />
+}
+else
+{
+    var staff = Session.Staff!;
+    <div class="vd-app">
+        <header class="vd-header">
+            <div class="vd-header-brand">
+                <Icon Name="paw" Size="16" />
+                <strong>VetDesk</strong>
+                <span class="vd-crumbs">@Crumbs.Text</span>
+            </div>
+            <div class="vd-row">
+                <button type="button" class="vd-header-btn" @onclick="Session.Lock" title="Lock this desk (your session stays open)"><Icon Name="lock" Size="16" /> Lock</button>
+                <button type="button" class="vd-header-btn" @onclick="SignOut">Sign out</button>
+            </div>
+        </header>
+        <div class="vd-body">
+            <nav class="vd-sidebar" aria-label="Main">
+                <NavLink href="" Match="NavLinkMatch.All"><Icon Name="home" Size="18" /> Today</NavLink>
+                <NavLink href="schedule"><Icon Name="schedule" Size="18" /> Schedule</NavLink>
+                @if (Session.Can(Permission.ViewClinicalRecords))
+                {
+                    <NavLink href="patients"><Icon Name="paw" Size="18" /> Patients</NavLink>
+                    <NavLink href="clients"><Icon Name="owners" Size="18" /> Clients</NavLink>
+                }
+                <NavLink href="pharmacy"><Icon Name="pill" Size="18" /> Pharmacy
+                    @if (_toDispense > 0)
+                    {
+                        <span class="vd-sidebar-badge" title="Items waiting to be dispensed">@_toDispense</span>
+                    }
+                </NavLink>
+                @if (Session.Can(Permission.TakePayments))
+                {
+                    <NavLink href="billing"><Icon Name="receipt" Size="18" /> Billing</NavLink>
+                    <NavLink href="reports"><Icon Name="chart" Size="18" /> Reports</NavLink>
+                }
+                <span class="vd-spacer"></span>
+                <NavLink href="settings"><Icon Name="settings" Size="18" /> Settings</NavLink>
+                <div class="vd-usercard">
+                    <span class="vd-avatar vd-avatar-dark">@staff.Initials</span>
+                    <div>
+                        <div class="vd-usercard-name">@staff.ShortName</div>
+                        <div class="vd-usercard-role">@staff.JobTitle</div>
+                    </div>
+                </div>
+            </nav>
+            <main class="vd-main">
+                @Body
+            </main>
+        </div>
+    </div>
+
+    @if (Session.IsLocked)
+    {
+        <LockScreen />
+    }
+}
+
+<ConfirmHost />
+<ToastHost />
+
+<div id="blazor-error-ui">
+    Something went wrong on this screen. <a href="" class="reload">Reload</a>
+    <a class="dismiss">Dismiss</a>
+</div>
+
+@code {
+    private PeriodicTimer? _timer;
+    private Task? _loop;
+    private readonly CancellationTokenSource _stop = new();
+    private int _autoLockMinutes = 10;
+    private int _toDispense;
+
+    protected override void OnInitialized()
+    {
+        Session.Changed += OnSessionChanged;
+        Crumbs.Changed += OnCrumbsChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await Hotkeys.StartAsync();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+        _loop = WatchAsync(_stop.Token);
+    }
+
+    private async void OnSessionChanged()
+    {
+        if (Session.IsSignedIn && !Session.IsLocked)
+        {
+            var settings = await Backend.Send(new GetClinicSettingsQuery());
+            if (settings.IsSuccess)
+                _autoLockMinutes = settings.Value.AutoLockMinutes;
+            await RefreshBadgeAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnCrumbsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    /// <summary>Locks the desk after the practice's auto-lock time without a key press or click, and keeps the pharmacy badge fresh.</summary>
+    private async Task WatchAsync(CancellationToken token)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(token))
+            {
+                if (!Session.IsSignedIn || Session.IsLocked)
+                    continue;
+                var idle = await JS.InvokeAsync<int>("vetdesk.idleSeconds", token);
+                if (idle >= _autoLockMinutes * 60)
+                {
+                    Session.Lock();
+                    continue;
+                }
+
+                await RefreshBadgeAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    private async Task RefreshBadgeAsync()
+    {
+        var queue = await Backend.Send(new GetDispenseQueueQuery());
+        _toDispense = queue.IsSuccess ? queue.Value.Count : 0;
+    }
+
+    private void SignOut()
+    {
+        Session.SignOut();
+        Nav.NavigateTo("");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Session.Changed -= OnSessionChanged;
+        Crumbs.Changed -= OnCrumbsChanged;
+        await _stop.CancelAsync();
+        if (_loop is not null)
+            await _loop;
+        _timer?.Dispose();
+    }
+}

@@ -1,0 +1,71 @@
+@* New client, or edit an existing one. A phone number already on another client is flagged before saving. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : null)" OnClose="OnClose">
+    <ChildContent>
+        <div class="vd-form-grid">
+            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" @bind="_first" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" @bind="_last" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field"><label for="cd-phone">Mobile</label><input id="cd-phone" type="tel" value="@_phone" @onchange="OnPhone" placeholder="07…" maxlength="40" /></div>
+            <div class="vd-field"><label for="cd-email">Email</label><input id="cd-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
+            <div class="vd-field vd-field-wide"><label for="cd-address">Address</label><input id="cd-address" @bind="_address" placeholder="Optional" maxlength="400" /></div>
+            <div class="vd-field"><label for="cd-postcode">Postcode</label><input id="cd-postcode" @bind="_postcode" placeholder="e.g. BS6 5QT" maxlength="12" /></div>
+        </div>
+        <label class="vd-check"><input type="checkbox" @bind="_reminders" /> Owner is happy to get reminders</label>
+        @if (_match is not null)
+        {
+            <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> That number belongs to @_match.FullName (@_match.ClientNumber). Each client needs their own number.</div>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">@(Client is null ? "Add client" : "Save")</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public ClientDetail? Client { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<int> OnSaved { get; set; }
+
+    private string _first = "", _last = "", _phone = "";
+    private string? _email, _address, _postcode;
+    private bool _reminders = true, _saving;
+    private ClientMatch? _match;
+
+    private bool CanSave => !string.IsNullOrWhiteSpace(_first) && !string.IsNullOrWhiteSpace(_last) && !string.IsNullOrWhiteSpace(_phone) && _match is null;
+
+    protected override void OnInitialized()
+    {
+        if (Client is not { } c)
+            return;
+        _first = c.FirstName;
+        _last = c.LastName;
+        _phone = c.Phone;
+        _email = c.Email;
+        _address = c.Address;
+        _postcode = c.Postcode;
+        _reminders = c.RemindersOptIn;
+    }
+
+    private async Task OnPhone(ChangeEventArgs e)
+    {
+        _phone = e.Value?.ToString() ?? "";
+        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = _phone, ExcludeClientId = Client?.Id });
+        _match = found.IsSuccess ? found.Value : null;
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new SaveClientCommand
+        {
+            Id = Client?.Id, FirstName = _first, LastName = _last, Phone = _phone, Email = _email, Address = _address, Postcode = _postcode,
+            RemindersOptIn = _reminders, Version = Client?.Version
+        });
+        _saving = false;
+        if (Toasts.Check(result, Client is null ? $"{_first.Trim()} {_last.Trim()} added" : "Client saved"))
+            await OnSaved.InvokeAsync(result.Value);
+    }
+}

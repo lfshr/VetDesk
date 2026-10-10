@@ -1,0 +1,18 @@
+@using VetDesk.Application.Invoices
+@using VetDesk.Domain.Entities.Invoices
+
+<span class="vd-chip @Css">@Status.Label()</span>
+
+@code {
+    [Parameter, EditorRequired] public InvoiceStatus Status { get; set; }
+
+    private string Css => Status switch
+    {
+        InvoiceStatus.Paid => "vd-chip-success",
+        InvoiceStatus.Overdue => "vd-chip-danger",
+        InvoiceStatus.PartPaid => "vd-chip-warning",
+        InvoiceStatus.ClaimSent => "vd-chip-info",
+        InvoiceStatus.Unpaid => "vd-chip-warning",
+        _ => ""
+    };
+}

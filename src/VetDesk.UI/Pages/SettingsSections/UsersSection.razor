@@ -1,0 +1,109 @@
+@inject Backend Backend
+@inject ToastService Toasts
+@inject UserSession Session
+
+<section class="vd-card" aria-labelledby="users-title">
+    <div class="vd-card-head">
+        <h2 id="users-title" class="vd-section-title">Users</h2>
+        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="() => { _editing = null; _dialog = true; }" aria-haspopup="dialog"><Icon Name="plus" Size="14" /> Add user</button>
+    </div>
+    <table class="vd-table">
+        <thead><tr><th>Name</th><th>Role</th><th>Registration</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var u in _staff)
+            {
+                <tr>
+                    <td>
+                        <div class="vd-row" style="gap:10px">
+                            <span class="vd-avatar">@u.Initials</span>
+                            <div>
+                                <div class="vd-cell-primary">@u.FullName</div>
+                                @if (u.Email is not null)
+                                {
+                                    <div class="vd-cell-sub">@u.Email</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td>@u.RoleLabel</td>
+                    <td class="vd-mono">@(u.RegistrationNumber ?? "—")</td>
+                    <td>@(u.LastSignInUtc is { } t ? Fmt.Ago(t, DateTime.UtcNow) : "Never")</td>
+                    <td>
+                        <span class="vd-chip @(u.IsActive ? "vd-chip-success" : "")">@(u.IsActive ? "Active" : "Disabled")</span>
+                        @if (u.IsActive && !u.HasPin)
+                        {
+                            <span class="vd-chip vd-chip-warning" title="Can't sign in until a PIN is set">No PIN</span>
+                        }
+                    </td>
+                    <td class="vd-num"><button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => { _editing = u; _dialog = true; }">Edit</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<section class="vd-card" aria-labelledby="perms-title" style="margin-top:16px">
+    <div class="vd-card-head"><h2 id="perms-title" class="vd-section-title">Role permissions</h2><span class="vd-small vd-muted">Changes apply the next time someone signs in</span></div>
+    <table class="vd-table">
+        <thead><tr><th>Permission</th>@foreach (var r in Enum.GetValues<StaffRole>()) { <th style="text-align:center">@r</th> }</tr></thead>
+        <tbody>
+            @foreach (var p in Enum.GetValues<Permission>())
+            {
+                <tr>
+                    <td>@p.Label()</td>
+                    @foreach (var r in Enum.GetValues<StaffRole>())
+                    {
+                        var role = r;
+                        var permission = p;
+                        <td style="text-align:center"><input type="checkbox" style="width:18px;height:18px;accent-color:var(--vd-accent)" aria-label="@($"{role}: {permission.Label()}")"
+                                                              checked="@_grants.Contains((role, permission))" @onchange="e => Toggle(role, permission, (bool)e.Value!)" /></td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="vd-card-foot vd-small vd-muted">Administrators can always manage users and settings, whatever their role.</div>
+</section>
+
+@if (_dialog)
+{
+    <StaffDialog Staff="_editing" OnClose="() => _dialog = false" OnSaved="Saved" />
+}
+
+@code {
+    private IReadOnlyList<StaffDto> _staff = [];
+    private HashSet<(StaffRole, Permission)> _grants = new();
+    private bool _dialog;
+    private StaffDto? _editing;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var staff = await Backend.Send(new GetStaffQuery { IncludeInactive = true });
+        if (Toasts.Check(staff))
+            _staff = staff.Value;
+        var grants = await Backend.Send(new GetRolePermissionsQuery());
+        if (grants.IsSuccess)
+            _grants = grants.Value.Select(g => (g.Role, g.Permission)).ToHashSet();
+    }
+
+    private async Task Toggle(StaffRole role, Permission permission, bool granted)
+    {
+        var result = await Backend.Send(new SetRolePermissionCommand { Role = role, Permission = permission, Granted = granted });
+        if (Toasts.Check(result, $"{role}s {(granted ? "can now" : "can no longer")} {permission.Label().ToLowerInvariant()}"))
+        {
+            if (granted) _grants.Add((role, permission)); else _grants.Remove((role, permission));
+        }
+        else
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task Saved()
+    {
+        _dialog = false;
+        await LoadAsync();
+    }
+}

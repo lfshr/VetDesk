@@ -1,0 +1,36 @@
+@* The owner card from the patient record: contact details, balance and their other pets. *@
+@inject NavigationManager Nav
+
+<Modal Title="@Owner.FullName" Subtitle="@($"Client {Owner.ClientNumber}")" OnClose="OnClose">
+    <ChildContent>
+        <dl class="vd-form-grid" style="grid-template-columns:110px 1fr;gap:8px 12px;margin:0">
+            <dt class="vd-muted">Phone</dt><dd style="margin:0">@Owner.Phone</dd>
+            <dt class="vd-muted">Email</dt><dd style="margin:0">@(Owner.Email ?? "—")</dd>
+            <dt class="vd-muted">Address</dt><dd style="margin:0">@(Owner.Address ?? "—")@(Owner.Postcode is null ? "" : $", {Owner.Postcode}")</dd>
+            <dt class="vd-muted">Reminders</dt><dd style="margin:0">@(Owner.RemindersOptIn ? "Yes" : "Opted out")</dd>
+            <dt class="vd-muted">Balance</dt><dd style="margin:0" class="vd-mono">@(Owner.Balance > 0 ? $"{Fmt.Money(Owner.Balance)} due" : "Nothing due")</dd>
+        </dl>
+        <div class="vd-label" style="margin-top:16px">Pets</div>
+        <div class="vd-stack-sm">
+            @foreach (var pet in Owner.Pets)
+            {
+                <a class="vd-card" style="padding:10px 12px;display:block;color:inherit;text-decoration:none;@(pet.Id == CurrentPatientId ? "border-color:var(--vd-accent)" : "")"
+                   href="patients/@pet.Id" @onclick="OnClose">
+                    <span class="vd-strong">@pet.Name</span> <span class="vd-small vd-muted">@pet.SpeciesAndBreed@(pet.Id == CurrentPatientId ? " · this record" : "")</span>
+                </a>
+            }
+        </div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenClient">Open client</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public PatientOwner Owner { get; set; } = default!;
+    [Parameter] public int CurrentPatientId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void OpenClient() => Nav.NavigateTo($"clients/{Owner.Id}");
+}

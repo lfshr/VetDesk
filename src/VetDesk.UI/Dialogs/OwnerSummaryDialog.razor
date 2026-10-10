@@ -1,0 +1,51 @@
+@* A plain-English summary for the owner, built from the note and charges, ready to print. *@
+@inject Backend Backend
+@inject IJSRuntime JS
+
+<Modal Title="Owner summary — preview" OnClose="OnClose">
+    <ChildContent>
+        <div class="vd-printable" style="line-height:1.55">
+            <div class="vd-row-between vd-small vd-muted"><span>@(_clinic?.Name ?? "")</span><span>@Fmt.LongDate(ClinicTime.Today(Consultation.StartedUtc))</span></div>
+            <p><strong>@Consultation.PatientName</strong> (@Consultation.SpeciesAndBreed)@(string.IsNullOrWhiteSpace(Notes.Reason) ? "" : $" — {Notes.Reason}") with @Consultation.ClinicianName.</p>
+            @if (!string.IsNullOrWhiteSpace(Notes.Assessment))
+            {
+                <p><strong>How @Consultation.PatientName is doing:</strong> @Notes.Assessment</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Notes.Plan))
+            {
+                <p><strong>What to do at home:</strong> @Notes.Plan</p>
+            }
+            @if (Given.Count > 0)
+            {
+                <p><strong>Given today:</strong> @string.Join("; ", Given)</p>
+            }
+            <p>Call us@(_clinic?.Phone is { } phone ? $" on {phone}" : "") if you have any concerns.</p>
+        </div>
+        <div class="vd-hint">Edit the Assessment and Plan on the note to change this summary.</div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-primary" @onclick="Print"><Icon Name="print" Size="16" /> Print</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter, EditorRequired] public ConsultationDetail Consultation { get; set; } = default!;
+    [Parameter, EditorRequired] public Pages.Consultation.NoteDraft Notes { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private ClinicSettingsDto? _clinic;
+
+    private List<string> Given => Consultation.Charges
+        .Where(c => c.Category is ProductCategory.Medicine or ProductCategory.Vaccine)
+        .Select(c => c.Directions is null ? c.Description : $"{c.Description} ({c.Directions})")
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var clinic = await Backend.Send(new GetClinicSettingsQuery());
+        _clinic = clinic.IsSuccess ? clinic.Value : null;
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("vetdesk.print");
+}

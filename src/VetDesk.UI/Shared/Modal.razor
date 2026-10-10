@@ -1,0 +1,54 @@
+@* A dialog in the design's style: title (and subtitle), close button, body, footer. Escape closes it. *@
+<div class="vd-overlay @(OnTop ? "vd-overlay-top" : "")" @onkeydown="OnKeyDown" @onclick="OnBackdropClick">
+    <div class="vd-modal @SizeClass" role="dialog" aria-modal="true" aria-labelledby="@_titleId" @onclick:stopPropagation="true">
+        <div class="vd-modal-head">
+            <div>
+                <h2 id="@_titleId">@Title</h2>
+                @if (Subtitle is not null)
+                {
+                    <div class="vd-modal-sub">@Subtitle</div>
+                }
+            </div>
+            <button type="button" class="vd-icon-btn" aria-label="Close" @onclick="Close"><Icon Name="close" Size="18" /></button>
+        </div>
+        <div class="vd-modal-body @(Flush ? "vd-modal-body-flush" : "")">
+            @ChildContent
+        </div>
+        @if (Footer is not null)
+        {
+            <div class="vd-modal-foot">@Footer</div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly string _titleId = "dlg-" + Guid.NewGuid().ToString("N")[..8];
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public string Size { get; set; } = "";
+    [Parameter] public bool Flush { get; set; }
+    [Parameter] public bool OnTop { get; set; }
+
+    private string SizeClass => Size switch
+    {
+        "wide" => "vd-modal-wide",
+        "xwide" => "vd-modal-xwide",
+        "narrow" => "vd-modal-narrow",
+        _ => ""
+    };
+
+    private Task Close() => OnClose.InvokeAsync();
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            await Close();
+    }
+
+    // Clicking outside doesn't close: a half-filled form shouldn't vanish because of a stray click.
+    private static void OnBackdropClick() { }
+}

@@ -1,0 +1,161 @@
+@* Picks a patient inside a dialog: search box, matches, and an inline "new client and patient" form. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+@if (Selected is not null)
+{
+    <div class="vd-row" style="padding:10px 12px;border:1px solid var(--vd-border-strong);border-radius:var(--vd-radius-sm)">
+        <span class="vd-avatar">@Selected.Name[..1]</span>
+        <div style="flex:1;min-width:0">
+            <div class="vd-strong">@Selected.Name</div>
+            <div class="vd-cell-sub">@Selected.SpeciesAndBreed · @Selected.OwnerName</div>
+        </div>
+        @foreach (var a in Selected.AllergyLabels)
+        {
+            <span class="vd-chip vd-chip-danger">@a</span>
+        }
+        @if (!Locked)
+        {
+            <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="Clear">Change</button>
+        }
+    </div>
+}
+else
+{
+    <div class="vd-search-box" style="max-width:none">
+        <Icon Name="search" Size="18" />
+        <input id="@InputId" type="search" autocomplete="off" placeholder="Search patient, owner or microchip" aria-label="Search patient"
+               value="@_query" @oninput="OnInput" @onkeydown="OnKeyDown" style="padding-right:12px" />
+    </div>
+    <div class="vd-card" style="margin-top:6px">
+        @if (_query.Trim().Length >= 2)
+        {
+            @for (var i = 0; i < _results.Count; i++)
+            {
+                var r = _results[i];
+                var index = i;
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" @onclick="() => Pick(r)">
+                    <span style="flex:1"><span class="vd-strong">@r.Name</span> <span class="vd-muted">· @r.SpeciesAndBreed</span></span>
+                    <span class="vd-small vd-muted">@r.OwnerName</span>
+                </button>
+            }
+            @if (_results.Count == 0 && !_searching)
+            {
+                <div class="vd-dropdown-item vd-muted">No match. Add them as a new client below.</div>
+            }
+        }
+        else
+        {
+            <div class="vd-dropdown-item vd-muted vd-small">Type at least two letters of the pet's or owner's name, a phone number or a microchip.</div>
+        }
+        <button type="button" class="vd-dropdown-foot" aria-expanded="@_newOpen" @onclick="() => _newOpen = !_newOpen"><span><Icon Name="plus" Size="16" /> New client and patient</span></button>
+        @if (_newOpen)
+        {
+            <div class="vd-card-body" style="border-top:1px solid var(--vd-border)">
+                <div class="vd-form-grid">
+                    <div class="vd-field"><label for="np-owner">Owner name</label><input id="np-owner" @bind="_owner" /></div>
+                    <div class="vd-field"><label for="np-phone">Phone</label><input id="np-phone" type="tel" @bind="_phone" /></div>
+                    <div class="vd-field"><label for="np-pet">Pet name</label><input id="np-pet" @bind="_pet" /></div>
+                    <div class="vd-field">
+                        <label for="np-species">Species</label>
+                        <select id="np-species" @bind="_species">
+                            @foreach (var s in Patient.SpeciesOptions)
+                            {
+                                <option>@s</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="vd-actions vd-actions-end" style="margin-top:12px">
+                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _newOpen = false">Cancel</button>
+                    <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(!CanAdd || _adding)" @onclick="AddNew">Add and select</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public PatientRow? Selected { get; set; }
+    [Parameter] public EventCallback<PatientRow?> SelectedChanged { get; set; }
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public string InputId { get; set; } = "picker-search";
+
+    private string _query = "";
+    private List<PatientRow> _results = new();
+    private bool _searching;
+    private int _active = -1;
+    private CancellationTokenSource? _debounce;
+    private bool _newOpen;
+    private bool _adding;
+    private string _owner = "", _phone = "", _pet = "", _species = "Dog";
+
+    private bool CanAdd => !string.IsNullOrWhiteSpace(_owner) && !string.IsNullOrWhiteSpace(_phone) && !string.IsNullOrWhiteSpace(_pet);
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? "";
+        _active = -1;
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        var token = _debounce.Token;
+        try
+        {
+            await Task.Delay(180, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (_query.Trim().Length < 2)
+        {
+            _results.Clear();
+            return;
+        }
+
+        _searching = true;
+        var result = await Backend.Send(new SearchPatientsQuery { Text = _query.Trim(), Take = 6, IncludeDeceased = false });
+        _searching = false;
+        if (!token.IsCancellationRequested)
+            _results = result.IsSuccess ? result.Value.ToList() : new();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown" && _results.Count > 0)
+            _active = (_active + 1) % _results.Count;
+        else if (e.Key == "ArrowUp" && _results.Count > 0)
+            _active = _active <= 0 ? _results.Count - 1 : _active - 1;
+        else if (e.Key == "Enter" && _results.Count > 0)
+            await Pick(_results[Math.Max(_active, 0)]);
+    }
+
+    private Task Pick(PatientRow row) => SelectedChanged.InvokeAsync(row);
+
+    private Task Clear() => SelectedChanged.InvokeAsync(null);
+
+    private async Task AddNew()
+    {
+        _adding = true;
+        var created = await Backend.Send(new CreateClientAndPatientCommand { OwnerName = _owner, Phone = _phone, PetName = _pet, Species = _species });
+        _adding = false;
+        if (!Toasts.Check(created))
+            return;
+
+        Toasts.Success(created.Value.AddedToExistingClient
+            ? $"{_pet.Trim()} added to {created.Value.ClientName}'s record"
+            : $"{created.Value.ClientName} and {_pet.Trim()} added");
+        var found = await Backend.Send(new GetPatientQuery { Id = created.Value.PatientId });
+        if (!found.IsSuccess)
+            return;
+        var p = found.Value;
+        _newOpen = false;
+        _owner = _phone = _pet = "";
+        await SelectedChanged.InvokeAsync(PatientRowFrom(p));
+    }
+
+    public static PatientRow PatientRowFrom(PatientDetail p) => new(
+        p.Id, p.Name, p.PatientNumber, p.Species, p.SpeciesAndBreed, p.Age, p.Owner.Id, p.Owner.FullName, p.Owner.Phone, p.Microchip,
+        null, p.Owner.Balance, p.IsDeceased, p.Allergies.Select(a => a.Label).ToList());
+}

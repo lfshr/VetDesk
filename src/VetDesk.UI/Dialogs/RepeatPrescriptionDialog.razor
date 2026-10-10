@@ -1,0 +1,59 @@
+@* A repeat request goes to the pharmacy queue; a vet authorises it before it is dispensed. *@
+@inject Backend Backend
+@inject ToastService Toasts
+
+<Modal Title="Request a repeat prescription" Subtitle="The request waits in the queue until a vet authorises it." OnClose="OnClose" Size="wide">
+    <ChildContent>
+        <div class="vd-field" style="margin-top:0"><span class="vd-label">Patient</span><PatientPicker @bind-Selected="_patient" InputId="rp-patient" /></div>
+        <div class="vd-field">
+            <span class="vd-label">Medicine</span>
+            @if (_product is null)
+            {
+                <ProductSearch PatientId="_patient?.Id" Categories="MedicineOnly" StockedOnly="true" Placeholder="Search formulary" InputId="rp-product" OnPick="p => _product = p" />
+            }
+            else
+            {
+                <div class="vd-row" style="padding:10px 12px;border:1px solid var(--vd-border-strong);border-radius:var(--vd-radius-sm)">
+                    <span class="vd-strong" style="flex:1">@_product.Name @if (_product.IsControlledDrug) { <span class="vd-cd">CD</span> }</span>
+                    <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => _product = null">Change</button>
+                </div>
+                @if (_product.AllergyConflicts.Count > 0)
+                {
+                    <div class="vd-banner vd-banner-danger" style="margin-top:8px"><Icon Name="alert" Size="18" /> This conflicts with the @string.Join(", ", _product.AllergyConflicts) allergy. Ask a vet to prescribe it in a consultation.</div>
+                }
+            }
+        </div>
+        <div class="vd-form-grid" style="grid-template-columns:140px 1fr">
+            <div class="vd-field"><label for="rp-qty">Quantity</label><input id="rp-qty" type="number" min="0.01" step="any" @bind="_qty" /></div>
+            <div class="vd-field"><label for="rp-dir">Directions</label><input id="rp-dir" @bind="_directions" maxlength="400" /></div>
+        </div>
+    </ChildContent>
+    <Footer>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">Send to queue</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private static readonly ProductCategory[] MedicineOnly = [ProductCategory.Medicine];
+
+    private PatientRow? _patient;
+    private ProductDto? _product;
+    private decimal _qty = 1;
+    private string? _directions;
+    private bool _saving;
+
+    private bool CanSave => _patient is not null && _product is not null && _qty > 0 && _product.AllergyConflicts.Count == 0;
+
+    private async Task Save()
+    {
+        _saving = true;
+        var result = await Backend.Send(new RequestRepeatCommand { PatientId = _patient!.Id, ProductId = _product!.Id, Quantity = _qty, Directions = _directions });
+        _saving = false;
+        if (Toasts.Check(result, $"Repeat of {_product.Name} for {_patient.Name} sent for authorisation"))
+            await OnSaved.InvokeAsync();
+    }
+}
