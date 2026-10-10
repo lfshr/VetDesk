@@ -21,10 +21,10 @@
             <Icon Name="search" Size="18" />
             <input type="search" aria-label="Search clients" placeholder="Client name, phone, postcode, email, pet name or client number" value="@_text" @oninput="OnSearch" style="padding-right:12px" />
         </div>
-        <div class="vd-segmented" role="group" aria-label="Show">
+        <div class="vd-pills" role="group" aria-label="Show">
             @foreach (var f in Enum.GetValues<ClientFilter>())
             {
-                <button type="button" aria-pressed="@(_filter == f)" @onclick="() => SetFilter(f)">@FilterLabel(f)</button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == f)" @onclick="() => SetFilter(f)">@FilterLabel(f)</button>
             }
         </div>
         <span class="vd-spacer"></span>
@@ -67,7 +67,7 @@
                                 <td><div>@c.Phone</div><div class="vd-cell-sub">@(c.Email ?? "—")</div></td>
                                 <td>@(c.PetNames.Count == 0 ? "—" : string.Join(", ", c.PetNames))</td>
                                 <td>@(c.LastVisitUtc is { } v ? Fmt.Date(v) : "—")</td>
-                                <td class="vd-num vd-mono @(c.Balance > 0 ? "vd-strong" : "vd-muted")">@(c.Balance > 0 ? Fmt.Money(c.Balance) : "—")</td>
+                                <td class="vd-num vd-mono @(c.Balance > 0 ? "vd-due" : "vd-muted")">@(c.Balance > 0 ? $"{Fmt.Money(c.Balance)} due" : "—")</td>
                             </tr>
                         }
                     </tbody>

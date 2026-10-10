@@ -19,10 +19,10 @@
             <Icon Name="search" Size="18" />
             <input type="search" placeholder="Search by pet, owner, phone, microchip or PT number" aria-label="Search patients" value="@_text" @oninput="OnInput" style="padding-right:12px" />
         </div>
-        <div class="vd-segmented" role="group" aria-label="Species">
+        <div class="vd-pills" role="group" aria-label="Species">
             @foreach (var s in Enum.GetValues<SpeciesFilter>())
             {
-                <button type="button" aria-pressed="@(_species == s)" @onclick="() => SetSpecies(s)">@s</button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_species == s)" @onclick="() => SetSpecies(s)">@s</button>
             }
         </div>
         <span class="vd-spacer"></span>
@@ -70,7 +70,7 @@
                             <td>@p.Age</td>
                             <td><div>@p.OwnerName</div><div class="vd-cell-sub">@p.OwnerPhone</div></td>
                             <td>@(p.LastVisitUtc is { } v ? Fmt.Date(v) : "—")</td>
-                            <td class="vd-num vd-mono @(p.Balance > 0 ? "vd-strong" : "vd-muted")">@(p.Balance > 0 ? Fmt.Money(p.Balance) : "—")</td>
+                            <td class="vd-num vd-mono @(p.Balance > 0 ? "vd-due" : "vd-muted")">@(p.Balance > 0 ? $"{Fmt.Money(p.Balance)} due" : "—")</td>
                             <td class="vd-num" @onclick:stopPropagation="true">
                                 <div class="vd-actions vd-actions-end" style="flex-wrap:nowrap">
                                     @if (!p.IsDeceased)

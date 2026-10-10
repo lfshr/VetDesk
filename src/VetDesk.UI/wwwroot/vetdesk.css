@@ -267,6 +267,7 @@ h1:focus { outline: none; }
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    font-size: 13px;
     font-weight: 500;
 }
 
@@ -278,7 +279,7 @@ h1:focus { outline: none; }
 .vd-segmented { display: inline-flex; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius-sm); overflow: hidden; background: var(--vd-surface); }
 .vd-segmented button { height: 36px; padding: 0 14px; border: none; background: transparent; cursor: pointer; color: var(--vd-text); display: inline-flex; align-items: center; gap: 6px; }
 .vd-segmented button + button { border-left: 1px solid var(--vd-border-strong); }
-.vd-segmented button[aria-pressed=true] { background: var(--vd-accent-wash); color: var(--vd-accent); font-weight: 600; }
+.vd-segmented button[aria-pressed=true] { background: #17201E; color: #fff; font-weight: 500; }
 
 /* ---------- Cards, tiles, banners ---------- */
 
@@ -316,11 +317,18 @@ h1:focus { outline: none; }
 
 .vd-chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: var(--vd-neutral-bg); color: var(--vd-neutral-text); white-space: nowrap; }
 .vd-chip-success { background: var(--vd-success-bg); color: var(--vd-success-text); }
+/* An amount the owner still owes, as the design shows it in tables: "£57.30 due" in amber. */
+.vd-due { color: var(--vd-warning-text); }
 .vd-chip-warning { background: var(--vd-warning-bg); color: var(--vd-warning-text); }
 .vd-chip-danger { background: var(--vd-danger-bg); color: var(--vd-danger-text); }
 .vd-chip-info { background: var(--vd-info-bg); color: var(--vd-info-text); }
 .vd-chip-surgery { background: var(--vd-surgery-bg); color: var(--vd-surgery-text); }
-.vd-chip-button { border: none; cursor: pointer; }
+.vd-chip-outline { background: var(--vd-surface); box-shadow: inset 0 0 0 1px var(--vd-border-strong); color: var(--vd-text); }
+.vd-chip-button { border: none; background: none; padding: 0; cursor: pointer; }
+/* Patient record header: alerts are the first thing staff should see. The border takes the chip's own text colour. */
+.vd-chip-lg { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 13px; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+.vd-facts { display: flex; flex-wrap: wrap; column-gap: 18px; color: var(--vd-text-secondary); }
+.vd-facts > span { white-space: nowrap; }
 .vd-cd { display: inline-block; padding: 0 5px; border-radius: 4px; background: #17201E; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px; letter-spacing: .02em; vertical-align: 1px; }
 
 /* ---------- Tables ---------- */
@@ -382,7 +390,8 @@ h1:focus { outline: none; }
 
 .vd-search-box { position: relative; flex: 1; max-width: 520px; }
 .vd-search-box > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--vd-text-secondary); pointer-events: none; }
-.vd-search-box input { width: 100%; height: 40px; padding: 0 64px 0 38px; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius-sm); background: var(--vd-surface); font: inherit; color: var(--vd-text); }
+/* The second selector out-ranks .vd-field's input rule, whose padding would otherwise put the text under the icon. */
+.vd-search-box input, .vd-field .vd-search-box input[type=search] { width: 100%; height: 40px; padding: 0 64px 0 38px; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius-sm); background: var(--vd-surface); font: inherit; color: var(--vd-text); }
 .vd-search-box kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-family: var(--vd-font-mono); font-size: 11.5px; color: var(--vd-text-secondary); border: 1px solid var(--vd-border-strong); border-radius: 4px; padding: 1px 6px; background: var(--vd-surface-muted); }
 
 .vd-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--vd-surface); border: 1px solid var(--vd-border); border-radius: var(--vd-radius); box-shadow: var(--vd-shadow); z-index: 60; overflow: hidden; }

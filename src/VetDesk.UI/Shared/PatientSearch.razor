@@ -21,7 +21,7 @@
             {
                 var r = _results[i];
                 var index = i;
-                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@(index == _active)"
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@Aria.Bool(index == _active)"
                         @onmousedown="() => Open(r.Id)">
                     <span class="vd-avatar">@r.Name[..1]</span>
                     <span style="flex:1;min-width:0">

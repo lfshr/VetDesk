@@ -24,16 +24,19 @@
                     <span class="vd-mono vd-muted">@_p.PatientNumber</span>
                     @if (_p.IsDeceased) { <span class="vd-chip">Deceased</span> }
                 </div>
-                <div class="vd-muted" style="margin-top:4px">@_p.SpeciesAndBreed · @_p.SexLabel · @_p.Age@(_p.LatestWeightKg is { } w ? $" · {w:0.0#} kg" : "")</div>
+                <div class="vd-facts" style="margin-top:4px">
+                    <span>@_p.SpeciesAndBreed</span><span>@_p.SexLabel</span><span>@_p.Age</span>
+                    @if (_p.LatestWeightKg is { } w) { <span>@($"{w:0.0#} kg")</span> }
+                </div>
                 <div class="vd-muted vd-small" style="margin-top:2px">Chip <span class="vd-mono">@(_p.Microchip ?? "not recorded")</span></div>
                 <div class="vd-row" style="gap:6px;margin-top:10px;flex-wrap:wrap" aria-label="Alerts">
                     @foreach (var a in _p.Allergies)
                     {
-                        <span class="vd-chip vd-chip-danger" title="Drug allergy@(a.DrugClass is null ? "" : $" (class: {a.DrugClass})")"><Icon Name="alert" Size="13" /> @a.Label</span>
+                        <span class="vd-chip vd-chip-danger vd-chip-lg" title="Drug allergy@(a.DrugClass is null ? "" : $" (class: {a.DrugClass})")"><Icon Name="alert" Size="13" /> @a.Label</span>
                     }
                     @foreach (var a in _p.Alerts)
                     {
-                        <button type="button" class="vd-chip-button" aria-label="@($"{a.Severity}: {a.Text}. Edit")" @onclick="() => EditAlert(a)"><AlertChip Text="@a.Text" Severity="a.Severity" /></button>
+                        <button type="button" class="vd-chip-button" aria-label="@($"{a.Severity}: {a.Text}. Edit")" @onclick="() => EditAlert(a)"><AlertChip Text="@a.Text" Severity="a.Severity" Large="true" /></button>
                     }
                     @if (CanEdit)
                     {
@@ -70,7 +73,7 @@
         <div class="vd-tabs" role="tablist">
             @foreach (var t in Tabs)
             {
-                <button type="button" class="vd-tab" role="tab" aria-selected="@(_tab == t)" @onclick="() => _tab = t">@t</button>
+                <button type="button" class="vd-tab" role="tab" aria-selected="@Aria.Bool(_tab == t)" @onclick="() => _tab = t">@t</button>
             }
         </div>
 
