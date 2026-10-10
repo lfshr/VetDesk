@@ -337,6 +337,8 @@ else
 
     private async Task Completed()
     {
+        // "Pay later" or the close button after completing: the dialog goes, and the page shows the locked record.
+        _completeOpen = false;
         await LoadAsync(keepNotes: false);
     }
 
