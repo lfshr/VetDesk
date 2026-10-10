@@ -4,7 +4,8 @@ public enum ReportPeriod { Week, Month, Quarter }
 
 public enum StandardReport { DaySheet, VatSummary, AgedDebtors, ControlledDrugs, ClinicianProductivity, StockValuation }
 
-public record ReportBar(string Label, decimal Value);
+/// <param name="IsCurrent">The revenue bar for the day, week or month that today falls in; the chart picks it out.</param>
+public record ReportBar(string Label, decimal Value, bool IsCurrent = false);
 
 public record ReportSummary(
     ReportPeriod Period,

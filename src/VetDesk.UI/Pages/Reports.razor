@@ -9,7 +9,7 @@
     <div class="vd-segmented" role="group" aria-label="Period">
         @foreach (var p in Enum.GetValues<ReportPeriod>())
         {
-            <button type="button" aria-pressed="@(_period == p)" @onclick="() => SetPeriod(p)">@p</button>
+            <button type="button" aria-pressed="@Aria.Bool(_period == p)" @onclick="() => SetPeriod(p)">@p</button>
         }
     </div>
     @if (_s is not null)
@@ -52,7 +52,7 @@
                             var b = _s.RevenueBars[i];
                             <div class="vd-bar">
                                 <span class="vd-bar-value">@ShortMoney(b.Value)</span>
-                                <span class="vd-bar-fill" style="height:@((int)(b.Value / max * 150))px;@(i == _s.RevenueBars.Count - 1 ? "" : "background:#9FCFC5")"></span>
+                                <span class="vd-bar-fill" style="height:@((int)(b.Value / max * 150))px;@(b.IsCurrent ? "" : "background:#9FCFC5")"></span>
                                 <span class="vd-bar-label">@b.Label</span>
                             </div>
                         }

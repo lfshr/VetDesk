@@ -87,4 +87,15 @@ public class DemoDataTests
         result.IsSuccess.ShouldBeTrue(result.ToString());
         result.Value.RevenueBars.ShouldNotBeEmpty();
     }
+
+    [TestCase(ReportPeriod.Week, "Fri")]
+    [TestCase(ReportPeriod.Month, "8–14")]
+    [TestCase(ReportPeriod.Quarter, "Oct")]
+    public async Task ReportSummary_PicksOutTheBarTodayFallsIn(ReportPeriod period, string label)
+    {
+        var result = await new GetReportSummaryQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new GetReportSummaryQuery { Period = period }, CancellationToken.None);
+
+        result.Value.RevenueBars.Where(b => b.IsCurrent).Select(b => b.Label).ShouldBe([label]);
+    }
 }
