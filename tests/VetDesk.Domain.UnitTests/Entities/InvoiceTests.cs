@@ -62,6 +62,40 @@ public class InvoiceTests
     }
 
     [Test]
+    public void PaidThenFullyRefunded_LeavesNothingDue()
+    {
+        var invoice = NewInvoice(120m, Today);
+        Pay(invoice, 120m);
+        Pay(invoice, -120m);
+
+        invoice.AmountDue.ShouldBe(0m);
+    }
+
+    [Test]
+    public void PaidThenPartlyRefunded_StaysPaid_WithNothingDue()
+    {
+        var invoice = NewInvoice(100m, Today);
+        Pay(invoice, 100m);
+        Pay(invoice, -20m);
+
+        invoice.StatusOn(Today).ShouldBe(InvoiceStatus.Paid);
+        invoice.AmountDue.ShouldBe(0m);
+        invoice.Paid.ShouldBe(80m);
+        invoice.Refunded.ShouldBe(20m);
+    }
+
+    [Test]
+    public void PartPaidThenPartlyRefunded_StillOwesWhatWasNeverPaid()
+    {
+        var invoice = NewInvoice(100m, Today);
+        Pay(invoice, 50m);
+        Pay(invoice, -20m);
+
+        invoice.StatusOn(Today).ShouldBe(InvoiceStatus.PartPaid);
+        invoice.AmountDue.ShouldBe(50m);
+    }
+
+    [Test]
     public void ClaimSent_AndUnpaid_IsClaimSent()
     {
         var invoice = NewInvoice(120m, Today.AddDays(-30));

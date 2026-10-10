@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using VetDesk.Application.Common;
 using VetDesk.Application.Invoices.Commands;
 using VetDesk.Application.Invoices.Queries;
 using VetDesk.Domain.Entities.Invoices;
@@ -74,6 +75,19 @@ public class BillingHandlerTests
         var result = await PayAsync(invoice.Id, 20m);
 
         result.Value.ShouldBe(42.40m);
+    }
+
+    [Test]
+    public async Task PartRefund_OnAPaidInvoice_LeavesNothingOwed()
+    {
+        var invoice = await InvoiceAsync(new NewInvoiceLine(_consult.Id, 1));
+        await PayAsync(invoice.Id, 62.40m);
+        await new RefundPaymentCommandHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new RefundPaymentCommand { InvoiceId = invoice.Id, Amount = 20m, Reason = "Goodwill" }, CancellationToken.None);
+
+        var clientId = (await _database.Db.Patients.Include(p => p.Client).FirstAsync(p => p.Id == _patient.Id)).Client.Id;
+        (await Balances.ForClientAsync(_database.NewContext(), clientId, CancellationToken.None)).ShouldBe(0m);
+        (await PayAsync(invoice.Id, 20m)).ErrorCode.ShouldBe(TakePaymentError.Overpayment);
     }
 
     [Test]

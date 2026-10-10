@@ -91,7 +91,12 @@
                         <dt class="vd-muted">Subtotal</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Net)</dd>
                         <dt class="vd-muted">VAT</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Vat)</dd>
                         <dt class="vd-strong">Total</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right">@Fmt.Money(s.Total)</dd>
-                        <dt class="vd-muted">Paid</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Paid)</dd>
+                        @{ var refunded = -s.Payments.Where(p => p.IsRefund).Sum(p => p.Amount); }
+                        <dt class="vd-muted">Paid</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Paid + refunded)</dd>
+                        @if (refunded > 0)
+                        {
+                            <dt class="vd-muted">Refunded</dt><dd class="vd-mono" style="margin:0;text-align:right">−@Fmt.Money(refunded)</dd>
+                        }
                         <dt class="vd-strong" style="font-size:15px">Amount due</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right;font-size:15px">@Fmt.Money(s.AmountDue)</dd>
                     </dl>
                     @if (s.Payments.Count > 0)

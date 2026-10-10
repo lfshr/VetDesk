@@ -30,9 +30,16 @@ public class Invoice : BaseAuditableEntity, IHasVersion
     /// <summary>Money received less money refunded.</summary>
     public decimal Paid => Payments.Sum(p => p.Amount);
 
+    /// <summary>Money received, before any refunds.</summary>
+    public decimal Received => Payments.Where(p => p.Amount > 0).Sum(p => p.Amount);
+
     public decimal Refunded => -Payments.Where(p => p.Amount < 0).Sum(p => p.Amount);
 
-    public decimal AmountDue => Math.Max(0, Total - Paid);
+    /// <summary>
+    /// A refund lowers what is owed by as much as it hands back (a goodwill refund on a paid bill doesn't put the client
+    /// back in debt), so only money never received is due.
+    /// </summary>
+    public decimal AmountDue => Math.Max(0, Total - Received);
 
     public void SetTotals(VatBreakdown totals)
     {
@@ -45,7 +52,7 @@ public class Invoice : BaseAuditableEntity, IHasVersion
     {
         if (Refunded > 0 && Paid <= 0)
             return InvoiceStatus.Refunded;
-        if (Total > 0 && Paid >= Total)
+        if (Total > 0 && Received >= Total)
             return InvoiceStatus.Paid;
         if (Total == 0)
             return InvoiceStatus.Paid;
