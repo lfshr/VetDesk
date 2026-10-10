@@ -64,6 +64,8 @@ else
     var serverName = builder.AddParameter("server-name");
     // Password for the vetdesk_app SQL login that Web uses instead of sa. Kept only in the server's .env.
     var appSqlPassword = builder.AddParameter("app-sql-password", secret: true);
+    // The practice network's ranges, comma-separated, e.g. 192.168.1.0/24. Web refuses any other address.
+    var allowedNetworks = builder.AddParameter("allowed-networks");
 
     // The default image is Developer edition, which is not licensed for production. Express caps each database at
     // 10 GB. The backup folder is a bind mount so the nightly .bak files can be copied straight to the USB drive.
@@ -90,6 +92,7 @@ else
         .WithEnvironment("VetDesk__SeedDemoData", "false")
         .WithEnvironment("VetDesk__DataProtectionKeysPath", "/home/app/data-protection-keys")
         .WithEnvironment("AllowedHosts", serverName)
+        .WithEnvironment("VetDesk__AllowedNetworks", allowedNetworks)
         .WaitForCompletion(sqlInit)
         .PublishAsDockerComposeService((_, service) =>
         {

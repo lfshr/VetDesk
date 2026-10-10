@@ -22,12 +22,14 @@ public class SignInCommandHandler : IRequestHandler<SignInCommand, Result<Signed
     private readonly IVetDeskDbContext _dbContext;
     private readonly IPasswordHasher _hasher;
     private readonly IClock _clock;
+    private readonly IDevicePinLimit _deviceLimit;
 
-    public SignInCommandHandler(IVetDeskDbContext dbContext, IPasswordHasher hasher, IClock clock)
+    public SignInCommandHandler(IVetDeskDbContext dbContext, IPasswordHasher hasher, IClock clock, IDevicePinLimit deviceLimit)
     {
         _dbContext = dbContext;
         _hasher = hasher;
         _clock = clock;
+        _deviceLimit = deviceLimit;
     }
 
     public async Task<Result<SignedInStaff>> Handle(SignInCommand request, CancellationToken cancellationToken)
@@ -37,7 +39,7 @@ public class SignInCommandHandler : IRequestHandler<SignInCommand, Result<Signed
             return Result.Failure(SignInError.InvalidCredentials, "That account isn't active. Ask a practice administrator.");
 
         var now = _clock.UtcNow;
-        if (await StaffRules.CheckPinAsync(_dbContext, _hasher, staff, request.Pin, now, cancellationToken) is { } problem)
+        if (await StaffRules.CheckPinAsync(_dbContext, _hasher, _deviceLimit, staff, request.Pin, now, cancellationToken) is { } problem)
             return Result.Failure(SignInError.InvalidCredentials, problem);
 
         staff.LastSignInUtc = now;

@@ -13,7 +13,7 @@ internal static class WitnessCheck
 {
     /// <remarks>Call before the request changes anything: a wrong PIN is counted and saved straight away.</remarks>
     public static async Task<(StaffMember? Witness, string? Problem)> VerifyAsync(
-        IVetDeskDbContext db, IPasswordHasher hasher, ICurrentUser user, int? witnessId, string? pin, DateTime nowUtc,
+        IVetDeskDbContext db, IPasswordHasher hasher, IDevicePinLimit deviceLimit, ICurrentUser user, int? witnessId, string? pin, DateTime nowUtc,
         CancellationToken cancellationToken)
     {
         if (witnessId is null)
@@ -29,7 +29,7 @@ internal static class WitnessCheck
         if (!permissions.Contains(Permission.WitnessControlledDrugs))
             return (null, $"{witness.ShortName}'s role can't witness controlled drugs.");
 
-        if (await StaffRules.CheckPinAsync(db, hasher, witness, pin, nowUtc, cancellationToken) is { } problem)
+        if (await StaffRules.CheckPinAsync(db, hasher, deviceLimit, witness, pin, nowUtc, cancellationToken) is { } problem)
             return (null, problem);
 
         return (witness, null);

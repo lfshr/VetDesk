@@ -29,12 +29,16 @@ internal static class StaffRules
 
     /// <summary>
     /// Checks a PIN and keeps count of wrong ones, saving the count straight away so a failed attempt still counts
-    /// when the caller returns without saving. Call it before the request changes anything else.
+    /// when the caller returns without saving. Call it before the request changes anything else. A device that has
+    /// entered too many wrong PINs (for anyone) is refused without the PIN being checked.
     /// </summary>
     /// <returns>Why it was refused, or null when the PIN is right.</returns>
     public static async Task<string?> CheckPinAsync(
-        IVetDeskDbContext db, IPasswordHasher hasher, StaffMember staff, string? pin, DateTime nowUtc, CancellationToken cancellationToken)
+        IVetDeskDbContext db, IPasswordHasher hasher, IDevicePinLimit deviceLimit, StaffMember staff, string? pin, DateTime nowUtc,
+        CancellationToken cancellationToken)
     {
+        if (deviceLimit.IsBlocked(nowUtc))
+            return "Too many wrong PINs have been entered on this device. Try again in 15 minutes, or use another desk.";
         if (!staff.HasPin)
             return $"{staff.FirstName} has no PIN yet. A practice administrator can set one in Settings › Users and roles.";
         if (staff.IsPinLocked(nowUtc))
@@ -52,6 +56,7 @@ internal static class StaffRules
         }
 
         staff.RecordWrongPin(nowUtc);
+        deviceLimit.RecordWrongPin(nowUtc);
         await db.SaveChangesAsync(cancellationToken);
         return staff.IsPinLocked(nowUtc)
             ? $"Too many wrong PINs for {staff.FirstName}. Try again in a few minutes."
