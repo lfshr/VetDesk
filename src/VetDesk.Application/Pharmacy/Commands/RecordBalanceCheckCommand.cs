@@ -19,7 +19,7 @@ public class RecordBalanceCheckCommand : IRequest<Result<decimal>>
     public int ProductId { get; init; }
     public decimal Counted { get; init; }
     public int? WitnessId { get; init; }
-    public string? WitnessPassword { get; init; }
+    public string? WitnessPin { get; init; }
     public string? DiscrepancyReason { get; init; }
 }
 
@@ -51,7 +51,7 @@ public class RecordBalanceCheckCommandHandler : IRequestHandler<RecordBalanceChe
         if (product is null)
             return Result.Failure(RecordBalanceCheckError.NotFound, "Choose a controlled drug.");
 
-        var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPassword, cancellationToken);
+        var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
         if (problem is not null)
             return Result.Failure(RecordBalanceCheckError.WitnessRequired, problem);
 

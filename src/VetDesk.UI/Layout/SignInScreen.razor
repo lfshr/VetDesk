@@ -4,7 +4,7 @@
 @inject UserSession Session
 
 <div class="vd-signin">
-    <div class="vd-signin-card">
+    <div class="vd-signin-card @(_chosen is null && _needsSetup == false ? "vd-signin-card-wide" : "")">
         <div class="vd-signin-brand"><Icon Name="paw" Size="22" /> VetDesk</div>
 
         @if (_needsSetup is null)
@@ -18,7 +18,7 @@
             <form @onsubmit="CreateFirstAdmin" @onsubmit:preventDefault>
                 <div class="vd-form-grid">
                     <div class="vd-field"><label for="su-first">First name</label><input id="su-first" @bind="_first" autocomplete="given-name" /></div>
-                    <div class="vd-field"><label for="su-last">Surname</label><input id="su-last" @bind="_last" autocomplete="family-name" /></div>
+                    <div class="vd-field"><label for="su-last">Surname (optional)</label><input id="su-last" @bind="_last" autocomplete="family-name" /></div>
                 </div>
                 <div class="vd-field"><label for="su-role">Role</label>
                     <select id="su-role" @bind="_role">
@@ -27,51 +27,69 @@
                         <option value="@StaffRole.Nurse">Nurse (and administrator)</option>
                     </select>
                 </div>
-                <div class="vd-field"><label for="su-email">Email</label><input id="su-email" type="email" @bind="_email" autocomplete="username" /></div>
-                <div class="vd-field"><label for="su-pw">Password</label><input id="su-pw" type="password" @bind="_password" autocomplete="new-password" />
-                    <span class="vd-hint">At least 10 characters.</span></div>
-                @if (_error is not null)
-                {
-                    <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="warning" Size="16" /> @_error</div>
-                }
+                <div class="vd-field"><label for="su-pin">PIN</label><input id="su-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_pin" />
+                    <span class="vd-hint">4 digits. Used to sign in, unlock the desk and witness controlled drugs.</span></div>
+                <div class="vd-field"><label for="su-pw">Administrator password</label><input id="su-pw" type="password" @bind="_password" autocomplete="new-password" />
+                    <span class="vd-hint">At least 10 characters. Asked for before users and settings open.</span></div>
+                <FormError Text="@_error" />
                 <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Create account and sign in</button>
             </form>
         }
-        else if (_forgot)
+        else if (_chosen is null)
         {
-            <h1 style="font-size:20px">Forgot your password?</h1>
-            <p class="vd-muted">Ask a practice administrator to set a temporary password for you in Settings › Users and roles. You can change it after you sign in.</p>
-            <button type="button" class="vd-btn vd-btn-secondary" style="width:100%;margin-top:8px" @onclick="() => _forgot = false">Back to sign in</button>
+            <h1 style="font-size:20px">Who's at the desk?</h1>
+            <div class="vd-tiles">
+                @foreach (var tile in _tiles)
+                {
+                    <button type="button" class="vd-tile" @onclick="() => Choose(tile)">
+                        <span class="vd-avatar vd-avatar-lg">@tile.Initials</span>
+                        <span class="vd-tile-name">@tile.Name</span>
+                        <span class="vd-tile-role">@tile.JobTitle</span>
+                    </button>
+                }
+            </div>
+            <FormError Text="@_error" />
+            <p class="vd-small vd-muted" style="margin:16px 0 0">On shared computers VetDesk locks itself after a few minutes without use. Sign out when you leave the desk.</p>
+        }
+        else if (_chosen.HasPin)
+        {
+            <h1 style="font-size:20px;text-align:center">Hi @_chosen.Name</h1>
+            <p class="vd-muted" style="text-align:center;margin:4px 0 0">Enter your PIN</p>
+            <PinPad Id="si-pin" Label="@($"{_chosen.Name}'s PIN")" Busy="_busy" OnComplete="SignIn" />
+            <FormError Text="@_error" />
+            <button type="button" class="vd-btn vd-btn-ghost" style="width:100%;margin-top:12px" @onclick="Back">Not @_chosen.Name? Back</button>
+        }
+        else if (_chosen.CanSetUpPin)
+        {
+            <h1 style="font-size:20px">Choose your PIN, @_chosen.Name</h1>
+            <p class="vd-muted" style="margin:6px 0 4px">VetDesk now signs in with a 4-digit PIN. Enter your password once, then choose your PIN.</p>
+            <form @onsubmit="SetUpPin" @onsubmit:preventDefault>
+                <div class="vd-field"><label for="sp-pw">Password</label><input id="sp-pw" type="password" @bind="_password" autocomplete="current-password" autofocus /></div>
+                <div class="vd-form-grid">
+                    <div class="vd-field"><label for="sp-pin">New PIN</label><input id="sp-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_pin" /></div>
+                    <div class="vd-field"><label for="sp-pin2">New PIN again</label><input id="sp-pin2" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_pinAgain" /></div>
+                </div>
+                <FormError Text="@_error" />
+                <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Save PIN and sign in</button>
+            </form>
+            <button type="button" class="vd-btn vd-btn-ghost" style="width:100%;margin-top:8px" @onclick="Back">Back</button>
         }
         else
         {
-            <h1 style="font-size:20px">Sign in</h1>
-            <form @onsubmit="SignIn" @onsubmit:preventDefault>
-                <div class="vd-field"><label for="si-email">Email</label><input id="si-email" type="email" @bind="_email" autocomplete="username" autofocus /></div>
-                <div class="vd-field"><label for="si-pw">Password</label><input id="si-pw" type="password" @bind="_password" autocomplete="current-password" /></div>
-                @if (_error is not null)
-                {
-                    <div class="vd-banner vd-banner-danger" style="margin-top:12px"><Icon Name="warning" Size="16" /> @_error</div>
-                }
-                <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;margin-top:16px" disabled="@_busy">Sign in</button>
-            </form>
-            <div class="vd-row-between" style="margin-top:14px">
-                <button type="button" class="vd-btn-link" @onclick="() => _forgot = true">Forgot password?</button>
-            </div>
-            <p class="vd-small vd-muted" style="margin:16px 0 0">On shared computers VetDesk locks itself after a few minutes without use. Sign out when you leave the desk.</p>
+            <h1 style="font-size:20px">No PIN yet</h1>
+            <p class="vd-muted">@_chosen.Name doesn't have a PIN. Ask a practice administrator to set one in Settings › Users and roles.</p>
+            <button type="button" class="vd-btn vd-btn-secondary" style="width:100%;margin-top:8px" @onclick="Back">Back</button>
         }
     </div>
 </div>
 
 @code {
     private bool? _needsSetup;
-    private bool _forgot;
+    private IReadOnlyList<SignInTileDto> _tiles = [];
+    private SignInTileDto? _chosen;
     private bool _busy;
     private string? _error;
-    private string _email = "";
-    private string _password = "";
-    private string _first = "";
-    private string _last = "";
+    private string _pin = "", _pinAgain = "", _password = "", _first = "", _last = "";
     private StaffRole _role = StaffRole.Admin;
 
     protected override async Task OnInitializedAsync()
@@ -85,13 +103,59 @@
         }
 
         _needsSetup = !state.Value;
+        if (_needsSetup == false)
+            await LoadTilesAsync();
     }
 
-    private async Task SignIn()
+    private async Task LoadTilesAsync()
+    {
+        var tiles = await Backend.Send(new GetSignInTilesQuery());
+        if (tiles.IsSuccess)
+            _tiles = tiles.Value;
+        else
+            _error = tiles.ToString();
+    }
+
+    private void Choose(SignInTileDto tile)
+    {
+        _chosen = tile;
+        _error = null;
+        _pin = _pinAgain = _password = "";
+    }
+
+    private void Back()
+    {
+        _chosen = null;
+        _error = null;
+        _pin = _pinAgain = _password = "";
+    }
+
+    private async Task SignIn(string pin)
     {
         _busy = true;
         _error = null;
-        var result = await Backend.Send(new SignInCommand { Email = _email, Password = _password });
+        var result = await Backend.Send(new SignInCommand { StaffId = _chosen!.Id, Pin = pin });
+        _busy = false;
+        if (result.IsFailure)
+        {
+            _error = result.ToString();
+            return;
+        }
+
+        Session.SignIn(result.Value);
+    }
+
+    private async Task SetUpPin()
+    {
+        if (_pin != _pinAgain)
+        {
+            _error = "The two PINs don't match.";
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await Backend.Send(new SetUpPinCommand { StaffId = _chosen!.Id, Password = _password, NewPin = _pin });
         _busy = false;
         _password = "";
         if (result.IsFailure)
@@ -100,14 +164,14 @@
             return;
         }
 
-        Session.SignIn(result.Value, _email.Trim());
+        Session.SignIn(result.Value);
     }
 
     private async Task CreateFirstAdmin()
     {
         _busy = true;
         _error = null;
-        var result = await Backend.Send(new CreateFirstAdministratorCommand { FirstName = _first, LastName = _last, Email = _email, Password = _password, Role = _role });
+        var result = await Backend.Send(new CreateFirstAdministratorCommand { FirstName = _first, LastName = _last, Pin = _pin, Password = _password, Role = _role });
         _busy = false;
         if (result.IsFailure)
         {
@@ -115,6 +179,6 @@
             return;
         }
 
-        Session.SignIn(result.Value, _email.Trim());
+        Session.SignIn(result.Value);
     }
 }

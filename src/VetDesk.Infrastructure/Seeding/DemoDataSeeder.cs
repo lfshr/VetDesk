@@ -23,6 +23,7 @@ namespace VetDesk.Infrastructure.Seeding;
 /// </summary>
 public class DemoDataSeeder
 {
+    public const string DemoPin = "1234";
     public const string DemoPassword = "vetdesk-demo";
 
     private readonly VetDeskDbContext _db;
@@ -50,17 +51,20 @@ public class DemoDataSeeder
         settings.VatNumber = "GB123456789";
         settings.BackupFolder = Path.Combine(Path.GetTempPath(), "VetDesk", "Backups");
 
-        // People
-        var hash = _hasher.Hash(DemoPassword);
-        StaffMember Staff(string first, string last, StaffRole role, bool admin = false, string? reg = null) =>
-            new() { FirstName = first, LastName = last, Email = $"{first}.{last}@northfieldvets.example".ToLowerInvariant(), Role = role, IsAdministrator = admin, RegistrationNumber = reg, PasswordHash = hash };
-        var patel = Staff("Asha", "Patel", StaffRole.Vet, admin: true, reg: "7123456");
-        var okafor = Staff("Chidi", "Okafor", StaffRole.Vet, reg: "7234567");
-        var lindqvist = Staff("Eva", "Lindqvist", StaffRole.Vet, reg: "7345678");
-        var reid = Staff("Mia", "Reid", StaffRole.Nurse, reg: "RVN 1023");
-        var bennett = Staff("Jack", "Bennett", StaffRole.Reception);
-        var kaur = Staff("Sofia", "Kaur", StaffRole.Nurse, reg: "RVN 1188");
-        _db.StaffMembers.AddRange(patel, okafor, lindqvist, reid, bennett, kaur);
+        // People: the practice's own team, by first name. Everyone signs in with DemoPin; administrators open
+        // users and settings with DemoPassword.
+        var pinHash = _hasher.Hash(DemoPin);
+        var passwordHash = _hasher.Hash(DemoPassword);
+        StaffMember Staff(string first, StaffRole role, bool admin = false) =>
+            new() { FirstName = first, Role = role, IsAdministrator = admin, PinHash = pinHash, PasswordHash = admin || role == StaffRole.Admin ? passwordHash : string.Empty };
+        var douglas = Staff("Douglas", StaffRole.Vet, admin: true);
+        var heather = Staff("Heather", StaffRole.Vet, admin: true);
+        var jen = Staff("Jen", StaffRole.Vet, admin: true);
+        var janet = Staff("Janet", StaffRole.Nurse);
+        var lesley = Staff("Lesley", StaffRole.Nurse);
+        var lorna = Staff("Lorna", StaffRole.Nurse);
+        var liam = Staff("Liam", StaffRole.Admin);
+        _db.StaffMembers.AddRange(douglas, heather, jen, janet, lesley, lorna, liam);
 
         // Price list
         Product P(string code, string name, ProductCategory cat, decimal price, decimal cost = 0, string unit = "item", string? form = null,
@@ -112,7 +116,7 @@ public class DemoDataSeeder
             _db.ControlledDrugEntries.Add(new ControlledDrugEntry
             {
                 Product = cd, Utc = now.AddDays(-30), Kind = ControlledDrugEntryKind.Received, Change = cd.OnHand, Balance = cd.OnHand,
-                Reason = $"Opening balance, batch {cd.Batches[0].BatchNumber}", By = reid.ShortName, Witness = patel.ShortName,
+                Reason = $"Opening balance, batch {cd.Batches[0].BatchNumber}", By = janet.ShortName, Witness = douglas.ShortName,
             });
 
         // Clients and pets
@@ -203,7 +207,7 @@ public class DemoDataSeeder
             invoice.Lines.AddRange(consultation.Charges.Select(ch => new InvoiceLine { Invoice = invoice, Product = ch.Product, Description = ch.Description, Quantity = ch.Quantity, UnitPrice = ch.UnitPrice, VatRate = ch.VatRate }));
             invoice.SetTotals(VatCalculator.For(invoice.Lines));
             if (paidBy is { } method)
-                invoice.Payments.Add(new Payment { Invoice = invoice, Amount = invoice.Total, Method = method, TakenBy = bennett.ShortName, TakenUtc = started.AddMinutes(25), Reference = method == PaymentMethod.Card ? "Terminal 1" : null });
+                invoice.Payments.Add(new Payment { Invoice = invoice, Amount = invoice.Total, Method = method, TakenBy = liam.ShortName, TakenUtc = started.AddMinutes(25), Reference = method == PaymentMethod.Card ? "Terminal 1" : null });
             consultation.MarkCompleted(started.AddMinutes(20), invoice);
             _db.Consultations.Add(consultation);
             _db.Invoices.Add(invoice);
@@ -219,59 +223,59 @@ public class DemoDataSeeder
             return invoice;
         }
 
-        History(biscuit, patel, 352, "Annual booster", "Owner reports well. Eating and drinking normally.", "BCS 6/9. Heart and lungs normal. Teeth grade 1 tartar.",
+        History(biscuit, douglas, 352, "Annual booster", "Owner reports well. Eating and drinking normally.", "BCS 6/9. Heart and lungs normal. Teeth grade 1 tartar.",
             "Healthy. Slightly overweight.", "Lepto 4 given. Diet advice. Recheck weight in 3 months.", 32.4m, [(consult, 1), (lepto, 1)], PaymentMethod.Card);
-        History(biscuit, okafor, 180, "Ear infection", "Shaking head for 3 days, scratching left ear.", "Left ear canal erythematous, brown discharge. Right ear normal.",
+        History(biscuit, heather, 180, "Ear infection", "Shaking head for 3 days, scratching left ear.", "Left ear canal erythematous, brown discharge. Right ear normal.",
             "Otitis externa, left.", "Ear cleaner and drops. Avoid amoxicillin (allergy). Recheck in 10 days.", 31.8m, [(consult, 1), (chlorhex, 1)], PaymentMethod.Cash);
-        History(biscuit, patel, 21, "Lameness, right fore", "Limping after a long walk, worse after rest.", "Mild pain on extension of right elbow. No swelling.",
+        History(biscuit, douglas, 21, "Lameness, right fore", "Limping after a long walk, worse after rest.", "Mild pain on extension of right elbow. No swelling.",
             "Suspect early elbow osteoarthritis.", "Meloxicam 21 days. Restricted exercise. Recheck in 3 weeks.", 31.2m, [(consult, 1), (meloxicam, 30)], PaymentMethod.Card);
-        History(mabel, lindqvist, 330, "Vaccination", "Indoor/outdoor cat, well.", "Healthy exam.", "Healthy.", "Feline flu and enteritis vaccine given.", 4.1m, [(consult, 1), (catFlu, 1)], PaymentMethod.Card);
-        History(rufus, okafor, 45, "Cough", "Soft cough at night for 2 weeks.", "Grade 3/6 left apical systolic murmur. Lungs clear.",
+        History(mabel, jen, 330, "Vaccination", "Indoor/outdoor cat, well.", "Healthy exam.", "Healthy.", "Feline flu and enteritis vaccine given.", 4.1m, [(consult, 1), (catFlu, 1)], PaymentMethod.Card);
+        History(rufus, heather, 45, "Cough", "Soft cough at night for 2 weeks.", "Grade 3/6 left apical systolic murmur. Lungs clear.",
             "Murmur, likely degenerative mitral valve disease.", "Refer for echo. Recheck in 4 weeks.", 14.6m, [(consult, 1)], null);
-        History(pepper, patel, 12, "Vomiting", "Vomited 4 times yesterday, now bright.", "Mild abdominal discomfort. Temp 38.9.",
+        History(pepper, douglas, 12, "Vomiting", "Vomited 4 times yesterday, now bright.", "Mild abdominal discomfort. Temp 38.9.",
             "Acute gastritis, likely dietary.", "Maropitant injection. Bland diet 3 days.", 19.2m, [(consult, 1), (maropitant, 2)], null);
-        History(luna, lindqvist, 9, "Diabetic check", "Drinking less since insulin dose change.", "BCS 5/9. Hydrated.", "Diabetes well controlled.",
+        History(luna, jen, 9, "Diabetic check", "Drinking less since insulin dose change.", "BCS 5/9. Hydrated.", "Diabetes well controlled.",
             "Continue insulin. Fructosamine next visit.", 5.8m, [(consult, 1)], PaymentMethod.Transfer);
-        var overdue = History(max, okafor, 40, "Skin itch", "Itchy paws and belly.", "Erythema on ventral abdomen, no parasites seen.",
+        var overdue = History(max, heather, 40, "Skin itch", "Itchy paws and belly.", "Erythema on ventral abdomen, no parasites seen.",
             "Suspect atopic dermatitis.", "Flea treatment. Diet trial discussed.", 36.0m, [(consult, 1), (flea, 1)], null);
-        var claimed = History(atlas, patel, 5, "Wound on paw", "Cut pad on glass yesterday.", "2 cm laceration right hind pad, clean.", "Pad laceration.",
+        var claimed = History(atlas, douglas, 5, "Wound on paw", "Cut pad on glass yesterday.", "2 cm laceration right hind pad, clean.", "Pad laceration.",
             "Cleaned and dressed. Recheck in 3 days.", 38.5m, [(consult, 1), (chlorhex, 1)], null);
         claimed.Claim = new InsuranceClaim { Invoice = claimed, Insurer = "Petplan", PolicyNumber = "PP-4471902", Excess = 99m, Condition = "Pad laceration", CreatedUtc = now.AddDays(-4) };
-        var partPaid = History(bramble, lindqvist, 3, "Dental check", "Bad breath.", "Grade 2 tartar, gingivitis.", "Periodontal disease.", "Book dental under GA.", 7.4m,
+        var partPaid = History(bramble, jen, 3, "Dental check", "Bad breath.", "Grade 2 tartar, gingivitis.", "Periodontal disease.", "Book dental under GA.", 7.4m,
             [(consult, 1), (chlorhex, 1)], null);
-        partPaid.Payments.Add(new Payment { Invoice = partPaid, Amount = 30m, Method = PaymentMethod.Cash, TakenBy = bennett.ShortName, TakenUtc = At(-3, 11) });
+        partPaid.Payments.Add(new Payment { Invoice = partPaid, Amount = 30m, Method = PaymentMethod.Cash, TakenBy = liam.ShortName, TakenUtc = At(-3, 11) });
         _ = overdue;
 
         // Vaccinations due soon, for the reminders list.
-        _db.Vaccinations.Add(new Vaccination { Patient = juniper, VaccineName = catFlu.Name, GivenUtc = At(-350, 9), GivenBy = lindqvist.ShortName, DueDate = today.AddDays(15) });
-        _db.Vaccinations.Add(new Vaccination { Patient = ziggy, VaccineName = lepto.Name, GivenUtc = At(-372, 9), GivenBy = okafor.ShortName, DueDate = today.AddDays(-7) });
-        _db.Vaccinations.Add(new Vaccination { Patient = pepper, VaccineName = kennelCough.Name, GivenUtc = At(-360, 9), GivenBy = patel.ShortName, DueDate = today.AddDays(5) });
+        _db.Vaccinations.Add(new Vaccination { Patient = juniper, VaccineName = catFlu.Name, GivenUtc = At(-350, 9), GivenBy = jen.ShortName, DueDate = today.AddDays(15) });
+        _db.Vaccinations.Add(new Vaccination { Patient = ziggy, VaccineName = lepto.Name, GivenUtc = At(-372, 9), GivenBy = heather.ShortName, DueDate = today.AddDays(-7) });
+        _db.Vaccinations.Add(new Vaccination { Patient = pepper, VaccineName = kennelCough.Name, GivenUtc = At(-360, 9), GivenBy = douglas.ShortName, DueDate = today.AddDays(5) });
 
         // Today, as on the design's Today screen (only on days the practice is open).
         if (settings.HoursOn(today.DayOfWeek) is not null)
         {
-            var done = Book(juniper, "Vaccination", 0, 8, 30, "Annual booster", lindqvist);
+            var done = Book(juniper, "Vaccination", 0, 8, 30, "Annual booster", jen);
             done.ChangeStatus(AppointmentStatus.InConsult, At(0, 8, 30));
             done.ChangeStatus(AppointmentStatus.Done, At(0, 8, 45));
-            var inConsult = Book(biscuit, "Recheck", 0, 9, 0, "Lameness recheck", patel);
+            var inConsult = Book(biscuit, "Recheck", 0, 9, 0, "Lameness recheck", douglas);
             inConsult.ChangeStatus(AppointmentStatus.CheckedIn, At(0, 8, 52));
             inConsult.ChangeStatus(AppointmentStatus.InConsult, At(0, 9, 2));
             _db.Consultations.Add(new Consultation
             {
-                Patient = biscuit, Appointment = inConsult, Clinician = patel, StartedUtc = At(0, 9, 2), Reason = "Lameness recheck",
+                Patient = biscuit, Appointment = inConsult, Clinician = douglas, StartedUtc = At(0, 9, 2), Reason = "Lameness recheck",
                 Subjective = "Much improved on meloxicam. Still a little stiff in the mornings.",
                 Charges = { new ConsultationCharge { Product = recheck, Description = recheck.Name, Quantity = 1, UnitPrice = recheck.UnitPrice, VatRate = recheck.VatRate } },
             });
-            var waiting = Book(miso, "Consultation", 0, 9, 15, "Vomiting since yesterday", okafor);
+            var waiting = Book(miso, "Consultation", 0, 9, 15, "Vomiting since yesterday", heather);
             waiting.ChangeStatus(AppointmentStatus.CheckedIn, At(0, 9, 10));
-            Book(atlas, "Surgery", 0, 9, 30, "Castration", lindqvist, 120);
-            Book(pepper, "Consultation", 0, 10, 15, "Itchy skin", patel);
+            Book(atlas, "Surgery", 0, 9, 30, "Castration", jen, 120);
+            Book(pepper, "Consultation", 0, 10, 15, "Itchy skin", douglas);
             Book(clover, "Nurse clinic", 0, 10, 45, "Nail clip and weight check", null);
-            Book(ziggy, "Consultation", 0, 11, 30, "Breathing noisily", okafor);
-            Book(nala, "Vaccination", 0, 14, 0, "Second kitten vaccination", lindqvist);
-            Book(rufus, "Recheck", 0, 14, 30, "Murmur recheck", okafor);
-            Book(bramble, "Dental", 0, 15, 0, "Dental scale and polish", patel);
-            Book(max, "Consultation", 0, 16, 15, "Skin recheck", patel);
+            Book(ziggy, "Consultation", 0, 11, 30, "Breathing noisily", heather);
+            Book(nala, "Vaccination", 0, 14, 0, "Second kitten vaccination", jen);
+            Book(rufus, "Recheck", 0, 14, 30, "Murmur recheck", heather);
+            Book(bramble, "Dental", 0, 15, 0, "Dental scale and polish", douglas);
+            Book(max, "Consultation", 0, 16, 15, "Skin recheck", douglas);
             Book(luna, "Nurse clinic", 0, 17, 0, "Insulin technique check", null);
         }
 
@@ -280,19 +284,19 @@ public class DemoDataSeeder
         {
             if (settings.HoursOn(today.AddDays(day).DayOfWeek) is null)
                 continue;
-            Book(mabel, "Consultation", day, 9, 0, "Weight loss", lindqvist);
-            Book(pepper, "Recheck", day, 10, 30, "Gastritis recheck", patel);
+            Book(mabel, "Consultation", day, 9, 0, "Weight loss", jen);
+            Book(pepper, "Recheck", day, 10, 30, "Gastritis recheck", douglas);
             if (today.AddDays(day).DayOfWeek != DayOfWeek.Saturday)
             {
-                Book(rufus, "Surgery", day, 14, 0, "Mass removal", okafor, 90);
+                Book(rufus, "Surgery", day, 14, 0, "Mass removal", heather, 90);
                 Book(juniper, "Nurse clinic", day, 16, 0, "Weight clinic", null);
             }
         }
 
         // Pharmacy queue: one from the open consultation path, one controlled drug, one repeat needing a vet.
-        _db.DispenseItems.Add(new DispenseItem { Patient = pepper, Product = meloxicam, Quantity = 30, Directions = "1 ml once daily with food for 21 days", PrescribedBy = patel.ShortName });
-        _db.DispenseItems.Add(new DispenseItem { Patient = atlas, Product = methadone, Quantity = 0.8m, Directions = "Pre-medication, IV", PrescribedBy = lindqvist.ShortName });
-        _db.DispenseItems.Add(new DispenseItem { Patient = luna, Product = food, Quantity = 1, Directions = "Repeat request by phone", PrescribedBy = bennett.ShortName, RequiresAuthorisation = true });
+        _db.DispenseItems.Add(new DispenseItem { Patient = pepper, Product = meloxicam, Quantity = 30, Directions = "1 ml once daily with food for 21 days", PrescribedBy = douglas.ShortName });
+        _db.DispenseItems.Add(new DispenseItem { Patient = atlas, Product = methadone, Quantity = 0.8m, Directions = "Pre-medication, IV", PrescribedBy = jen.ShortName });
+        _db.DispenseItems.Add(new DispenseItem { Patient = luna, Product = food, Quantity = 1, Directions = "Repeat request by phone", PrescribedBy = liam.ShortName, RequiresAuthorisation = true });
 
         // A delivery on its way.
         var order = new PurchaseOrder { Number = PurchaseOrder.FormatNumber(1), Supplier = "Covetrus", DeliverBy = today.AddDays(1), Status = PurchaseOrderStatus.Sent, SentUtc = now.AddDays(-1) };

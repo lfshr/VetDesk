@@ -5,13 +5,13 @@ namespace VetDesk.UI.Services;
 
 /// <summary>
 /// Who is signed in at this desk. One per window (desktop) or browser tab (web host). Locked means the screen is
-/// covered after inactivity and the same person must re-enter their password; signing out clears it.
+/// covered after inactivity and the same person must re-enter their PIN; signing out clears it. Users and settings
+/// open only after an administrator confirms their password, and close again when the desk locks.
 /// </summary>
 public class UserSession
 {
     public SignedInStaff? Staff { get; private set; }
     public bool IsLocked { get; private set; }
-    public string? Email { get; private set; }
 
     public bool IsSignedIn => Staff is not null;
 
@@ -19,10 +19,9 @@ public class UserSession
 
     public bool Can(Permission permission) => Staff?.Permissions.Contains(permission) == true;
 
-    public void SignIn(SignedInStaff staff, string email)
+    public void SignIn(SignedInStaff staff)
     {
         Staff = staff;
-        Email = email;
         IsLocked = false;
         Changed?.Invoke();
     }
@@ -35,6 +34,7 @@ public class UserSession
         Changed?.Invoke();
     }
 
+    /// <summary>Back in by PIN, so with settings closed again.</summary>
     public void Unlock(SignedInStaff staff)
     {
         Staff = staff;
@@ -42,10 +42,16 @@ public class UserSession
         Changed?.Invoke();
     }
 
+    /// <summary>The administrator confirmed their password: users and settings are open until the desk locks.</summary>
+    public void UnlockSettings(SignedInStaff staff)
+    {
+        Staff = staff;
+        Changed?.Invoke();
+    }
+
     public void SignOut()
     {
         Staff = null;
-        Email = null;
         IsLocked = false;
         Changed?.Invoke();
     }

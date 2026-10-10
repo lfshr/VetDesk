@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-and-test:
-    # VetDesk.Desktop targets net10.0-windows (WPF), so CI runs on Windows like the practice PCs.
+    # VetDesk.Desktop targets net10.0-windows10.0.17763.0 (WPF), so CI runs on Windows like the practice PCs.
     runs-on: windows-latest
 
     steps:

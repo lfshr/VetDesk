@@ -50,7 +50,7 @@ public class GetStaffQueryHandler : IRequestHandler<GetStaffQuery, Result<IReadO
             query = query.Where(s => roles.Contains(s.Role) || (adminsCanWitness && s.IsAdministrator));
         }
 
-        var staff = await query.OrderBy(s => s.Role).ThenBy(s => s.LastName).ToListAsync(cancellationToken);
+        var staff = await query.OrderBy(s => s.Role).ThenBy(s => s.LastName).ThenBy(s => s.FirstName).ToListAsync(cancellationToken);
         IReadOnlyList<StaffDto> dtos = staff.Select(StaffDto.From).ToList();
         return Result.Success(dtos);
     }

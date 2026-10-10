@@ -14,13 +14,13 @@ public enum DispenseItemError { NotAllowed, NotFound, AlreadyHandled, NeedsAutho
 
 /// <summary>
 /// Hands over (or administers) an item from the queue: takes it out of stock, earliest expiry first. A controlled
-/// drug needs a witness who confirms with their password, and goes into the register with the new balance.
+/// drug needs a witness who confirms with their PIN, and goes into the register with the new balance.
 /// </summary>
 public class DispenseItemCommand : IRequest<Result>
 {
     public int Id { get; init; }
     public int? WitnessId { get; init; }
-    public string? WitnessPassword { get; init; }
+    public string? WitnessPin { get; init; }
 }
 
 public class DispenseItemCommandHandler : IRequestHandler<DispenseItemCommand, Result>
@@ -57,7 +57,7 @@ public class DispenseItemCommandHandler : IRequestHandler<DispenseItemCommand, R
         string? witnessName = null;
         if (item.Product.IsControlledDrug)
         {
-            var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPassword, cancellationToken);
+            var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
             if (problem is not null)
                 return Result.Failure(DispenseItemError.WitnessRequired, problem);
             witnessName = witness!.ShortName;

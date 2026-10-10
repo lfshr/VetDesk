@@ -16,7 +16,7 @@ public class DemoDataTests
     public async Task SetUp()
     {
         _database = await TestDatabase.CreateAsync(demoData: true);
-        await _database.SignInAsync(await _database.Db.StaffMembers.FirstAsync(s => s.LastName == "Patel"));
+        await _database.SignInAsync(await _database.Db.StaffMembers.FirstAsync(s => s.FirstName == "Douglas"));
     }
 
     [TearDown]

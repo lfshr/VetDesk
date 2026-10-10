@@ -497,6 +497,18 @@ h1:focus { outline: none; }
 .vd-signin-card { width: min(420px, 100%); background: var(--vd-surface); border-radius: 10px; padding: 28px; box-shadow: var(--vd-shadow); }
 .vd-signin-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; margin-bottom: 18px; color: var(--vd-text); }
 .vd-signin-brand svg { color: var(--vd-accent); }
+.vd-signin-card-wide { width: min(640px, 100%); }
+.vd-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+.vd-tile { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px; border: 1px solid var(--vd-border); border-radius: var(--vd-radius); background: var(--vd-surface); color: var(--vd-text); cursor: pointer; font: inherit; text-align: center; }
+.vd-tile:hover, .vd-tile:focus-visible { border-color: var(--vd-accent); background: var(--vd-accent-wash); }
+.vd-tile-name { font-weight: 600; }
+.vd-tile-role { font-size: 12px; color: var(--vd-text-secondary); }
+.vd-pinpad { display: grid; justify-items: center; gap: 12px; margin-top: 8px; }
+.vd-pin-input { width: 180px; text-align: center; font-size: 28px; letter-spacing: 12px; font-family: var(--vd-font-mono); }
+.vd-pin-keys { display: grid; grid-template-columns: repeat(3, 64px); gap: 8px; }
+.vd-pin-key { height: 52px; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius); background: var(--vd-surface); color: var(--vd-text); font: inherit; font-size: 20px; cursor: pointer; }
+.vd-pin-key:hover:not(:disabled) { background: var(--vd-accent-wash); }
+.vd-pin-key-small { font-size: 13px; }
 
 /* ---------- Printing: only the printable area ---------- */
 

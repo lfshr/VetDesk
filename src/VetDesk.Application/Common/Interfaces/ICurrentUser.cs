@@ -7,7 +7,7 @@ public interface ICurrentUser
 {
     int? StaffId { get; }
 
-    /// <summary>How the person is written into records, e.g. "Dr Patel".</summary>
+    /// <summary>How the person is written into records, e.g. "Douglas".</summary>
     string Name { get; }
 
     bool Has(Permission permission);

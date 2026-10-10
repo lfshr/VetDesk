@@ -1461,9 +1461,11 @@ namespace VetDesk.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("FailedPinAttempts")
+                        .HasColumnType("int");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -1499,6 +1501,14 @@ namespace VetDesk.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("PinHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("PinLockedUntilUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RegistrationNumber")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
@@ -1511,7 +1521,8 @@ namespace VetDesk.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
 
                     b.ToTable("StaffMembers");
                 });

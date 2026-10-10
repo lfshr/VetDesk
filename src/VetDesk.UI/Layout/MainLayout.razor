@@ -53,7 +53,7 @@ else
                 <div class="vd-usercard">
                     <span class="vd-avatar vd-avatar-dark">@staff.Initials</span>
                     <div>
-                        <div class="vd-usercard-name">@(staff.Role == StaffRole.Vet ? $"Dr {staff.FullName}" : staff.FullName)</div>
+                        <div class="vd-usercard-name">@staff.ShortName</div>
                         <div class="vd-usercard-role">@staff.JobTitle</div>
                     </div>
                 </div>

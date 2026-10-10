@@ -86,7 +86,7 @@ public class ConsultationHandlerTests
 
         result.IsSuccess.ShouldBeTrue(result.ToString());
         var charge = await _database.Db.ConsultationCharges.SingleAsync();
-        charge.AllergyOverrideReason.ShouldBe("Sensitivity culture, no alternative (Dr Patel)");
+        charge.AllergyOverrideReason.ShouldBe("Sensitivity culture, no alternative (Asha)");
     }
 
     [Test]

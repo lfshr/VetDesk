@@ -17,6 +17,8 @@ BlazorWebView), so there's no web server to install or keep running.
 | `src/VetDesk.UI` | All the screens, dialogs and the stylesheet (a Razor class library). |
 | `src/VetDesk.Desktop` | **The app the practice runs**: a WPF window hosting `VetDesk.UI`. |
 | `src/VetDesk.Web` | The same screens in a browser, for development on machines without Windows. |
+| `src/VetDesk.AppHost` | Aspire host for development: SQL Server in a container, plus Web and Desktop wired to it. |
+| `src/VetDesk.ServiceDefaults` | Aspire's telemetry and health-check defaults, used by `VetDesk.Web`. |
 | `tests/*` | NUnit + Shouldly tests for the domain rules and the handlers (handlers run against in-memory SQLite). |
 
 The screens call the Application layer in-process (`Backend.Send(...)`), with a fresh DI scope per request, so
@@ -27,15 +29,37 @@ every screen goes through the same commands, queries and permission checks.
 You need the .NET 10 SDK. The desktop app needs Windows 10 or 11 with the WebView2 runtime (already present on
 current Windows).
 
+**Everything with Aspire, SQL Server in a container (needs Docker Desktop or Podman):**
+
+```
+dotnet run --project src/VetDesk.AppHost
+```
+
+This starts SQL Server in a container (`vetdesk-sql`, data kept in the `vetdesk-sql-data` volume), runs the
+migrations, adds the demo practice, then starts the browser host and, on Windows, the desktop app against it. The
+Aspire dashboard opens with every app's logs and traces. The container keeps running after you stop the AppHost so
+the next start is quick; remove the container and volume to start again from an empty database.
+
 **Desktop (Windows), with demo data:**
 
 ```
 dotnet run --project src/VetDesk.Desktop
 ```
 
-A Debug build reads `appsettings.Debug.json`: a SQLite database at `%LOCALAPPDATA%\VetDesk\vetdesk-dev.db`, filled
-with a demo practice on first start. Sign in as `asha.patel@northfieldvets.example` with password `vetdesk-demo`
-(every demo user has the same password). F12 opens the developer tools.
+A Debug build reads `appsettings.Debug.json`: a `VetDeskDev` database on `localhost\SQLEXPRESS` (install SQL Server
+Express first), created by migrations and filled with a demo practice on first start. F12 opens the developer tools.
+
+**Signing in.** Tap your name and enter your 4-digit PIN; the same PIN unlocks the desk and witnesses controlled
+drugs. Five wrong PINs in a row block that person for five minutes. Administrators also have a password, asked for
+before users and practice settings open; they close again when the desk locks. In the demo data:
+
+| Staff | Role | PIN | Password |
+| --- | --- | --- | --- |
+| Douglas, Heather, Jen | Vet and administrator | `1234` | `vetdesk-demo` |
+| Janet, Lesley, Lorna | Nurse | `1234` | none |
+| Liam | Practice administrator | `1234` | `vetdesk-demo` |
+
+An account from before PINs (it has a password but no PIN) taps its name, enters the password once and chooses a PIN.
 
 **Browser (any OS), with demo data:**
 
@@ -43,7 +67,7 @@ with a demo practice on first start. Sign in as `asha.patel@northfieldvets.examp
 dotnet run --project src/VetDesk.Web
 ```
 
-then open the URL it prints. This uses `vetdesk-web.db` next to the project.
+then open the URL it prints. This uses a `VetDeskWeb` database on `localhost\SQLEXPRESS`.
 
 **Tests:**
 
@@ -65,7 +89,8 @@ dotnet test VetDesk.sln
    ```
 
 4. Start VetDesk on one PC. It creates or upgrades the database (EF Core migrations) and, on an empty database,
-   asks for the first administrator. That person then adds the other staff under Settings › Users.
+   asks for the first administrator (name, PIN and password). That person then adds the other staff, each with a
+   PIN to hand over, under Settings › Users and roles. Surnames and emails are optional.
 
 `DatabaseProvider` can also be `Sqlite` for a practice with a single PC; the database is then a file
 (`Data Source=%LOCALAPPDATA%\VetDesk\vetdesk.db`) and is created from the model rather than by migrations.

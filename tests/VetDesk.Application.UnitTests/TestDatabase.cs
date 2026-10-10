@@ -41,11 +41,16 @@ public sealed class TestDatabase : IDisposable
         return database;
     }
 
-    public async Task<StaffMember> AddStaffAsync(string first, string last, StaffRole role, string password = "correct-horse-battery")
+    public const string Pin = "2468";
+    public const string Password = "correct-horse-battery";
+
+    /// <summary>Adds someone who signs in with <see cref="Pin"/>; administrators (by role) also get <see cref="Password"/>.</summary>
+    public async Task<StaffMember> AddStaffAsync(string first, string last, StaffRole role, string pin = Pin)
     {
         var staff = new StaffMember
         {
-            FirstName = first, LastName = last, Email = $"{first}.{last}@test.example".ToLowerInvariant(), Role = role, PasswordHash = Hasher.Hash(password),
+            FirstName = first, LastName = last, Email = $"{first}.{last}@test.example".ToLowerInvariant(), Role = role, PinHash = Hasher.Hash(pin),
+            PasswordHash = role == StaffRole.Admin ? Hasher.Hash(Password) : string.Empty,
         };
         Db.StaffMembers.Add(staff);
         await Db.SaveChangesAsync();

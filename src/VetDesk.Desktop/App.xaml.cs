@@ -26,6 +26,8 @@ public partial class App : System.Windows.Application
 #if DEBUG
                 .AddJsonFile("appsettings.Debug.json", optional: true)
 #endif
+                // Lets VetDesk.AppHost (Aspire) hand over ConnectionStrings__VetDesk for its SQL Server container.
+                .AddEnvironmentVariables()
                 .Build();
 
             var services = new ServiceCollection();

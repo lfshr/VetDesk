@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\VetDesk.UI\VetDesk.UI.csproj" />
     <ProjectReference Include="..\VetDesk.Infrastructure\VetDesk.Infrastructure.csproj" />
+    <ProjectReference Include="..\VetDesk.ServiceDefaults\VetDesk.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@ namespace VetDesk.Application.UnitTests.Handlers;
 [TestFixture]
 public class PharmacyHandlerTests
 {
-    private const string WitnessPassword = "witness-password-1";
+    private const string WitnessPin = "8642";
 
     private TestDatabase _database = null!;
     private StaffMember _nurse = null!;
@@ -24,8 +24,8 @@ public class PharmacyHandlerTests
     {
         _database = await TestDatabase.CreateAsync();
         _nurse = await _database.AddStaffAsync("Mia", "Reid", StaffRole.Nurse);
-        _witness = await _database.AddStaffAsync("Asha", "Patel", StaffRole.Vet, WitnessPassword);
-        _reception = await _database.AddStaffAsync("Jack", "Bennett", StaffRole.Reception, WitnessPassword);
+        _witness = await _database.AddStaffAsync("Asha", "Patel", StaffRole.Vet, WitnessPin);
+        _reception = await _database.AddStaffAsync("Jack", "Bennett", StaffRole.Reception, WitnessPin);
         _atlas = await _database.AddPatientAsync("Atlas");
         _methadone = await _database.AddProductAsync("Methadone 10 mg/ml", ProductCategory.Medicine, 4.5m, stock: 10, controlled: true);
         await _database.SignInAsync(_nurse);
@@ -36,15 +36,15 @@ public class PharmacyHandlerTests
 
     private async Task<DispenseItem> QueueAsync(Product product, decimal quantity)
     {
-        var item = new DispenseItem { Patient = _atlas, Product = product, Quantity = quantity, PrescribedBy = "Dr Patel" };
+        var item = new DispenseItem { Patient = _atlas, Product = product, Quantity = quantity, PrescribedBy = "Asha" };
         _database.Db.DispenseItems.Add(item);
         await _database.Db.SaveChangesAsync();
         return item;
     }
 
-    private Task<SimpleResult.Result> DispenseAsync(int id, int? witnessId, string? password) =>
+    private Task<SimpleResult.Result> DispenseAsync(int id, int? witnessId, string? pin) =>
         new DispenseItemCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher)
-            .Handle(new DispenseItemCommand { Id = id, WitnessId = witnessId, WitnessPassword = password }, CancellationToken.None);
+            .Handle(new DispenseItemCommand { Id = id, WitnessId = witnessId, WitnessPin = pin }, CancellationToken.None);
 
     [Test]
     public async Task ControlledDrug_WithoutWitness_IsRefused()
@@ -71,18 +71,18 @@ public class PharmacyHandlerTests
     {
         var item = await QueueAsync(_methadone, 0.8m);
 
-        var result = await DispenseAsync(item.Id, _reception.Id, WitnessPassword);
+        var result = await DispenseAsync(item.Id, _reception.Id, WitnessPin);
 
         result.ErrorCode.ShouldBe(DispenseItemError.WitnessRequired);
         result.ToString().ShouldContain("can't witness");
     }
 
     [Test]
-    public async Task ControlledDrug_WrongWitnessPassword_IsRefused()
+    public async Task ControlledDrug_WrongWitnessPin_IsRefused()
     {
         var item = await QueueAsync(_methadone, 0.8m);
 
-        var result = await DispenseAsync(item.Id, _witness.Id, "guess");
+        var result = await DispenseAsync(item.Id, _witness.Id, "1111");
 
         result.ErrorCode.ShouldBe(DispenseItemError.WitnessRequired);
         (await _database.Db.ControlledDrugEntries.CountAsync()).ShouldBe(0);
@@ -93,14 +93,14 @@ public class PharmacyHandlerTests
     {
         var item = await QueueAsync(_methadone, 0.8m);
 
-        var result = await DispenseAsync(item.Id, _witness.Id, WitnessPassword);
+        var result = await DispenseAsync(item.Id, _witness.Id, WitnessPin);
 
         result.IsSuccess.ShouldBeTrue(result.ToString());
         var entry = await _database.Db.ControlledDrugEntries.SingleAsync();
         entry.Change.ShouldBe(-0.8m);
         entry.Balance.ShouldBe(9.2m);
-        entry.By.ShouldBe("Nurse Reid");
-        entry.Witness.ShouldBe("Dr Patel");
+        entry.By.ShouldBe("Mia");
+        entry.Witness.ShouldBe("Asha");
         (await _database.Db.StockBatches.SingleAsync()).Quantity.ShouldBe(9.2m);
     }
 
@@ -109,7 +109,7 @@ public class PharmacyHandlerTests
     {
         var item = await QueueAsync(_methadone, 12m);
 
-        var result = await DispenseAsync(item.Id, _witness.Id, WitnessPassword);
+        var result = await DispenseAsync(item.Id, _witness.Id, WitnessPin);
 
         result.ErrorCode.ShouldBe(DispenseItemError.InsufficientStock);
     }
@@ -134,12 +134,12 @@ public class PharmacyHandlerTests
     public async Task BalanceCheck_Discrepancy_NeedsReason_ThenAdjustsAndKeepsItInTheRegister()
     {
         var handler = new RecordBalanceCheckCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher);
-        var command = new RecordBalanceCheckCommand { ProductId = _methadone.Id, Counted = 9.5m, WitnessId = _witness.Id, WitnessPassword = WitnessPassword };
+        var command = new RecordBalanceCheckCommand { ProductId = _methadone.Id, Counted = 9.5m, WitnessId = _witness.Id, WitnessPin = WitnessPin };
 
         var withoutReason = await handler.Handle(command, CancellationToken.None);
         var withReason = await handler.Handle(new RecordBalanceCheckCommand
         {
-            ProductId = _methadone.Id, Counted = 9.5m, WitnessId = _witness.Id, WitnessPassword = WitnessPassword, DiscrepancyReason = "Spillage, see incident log",
+            ProductId = _methadone.Id, Counted = 9.5m, WitnessId = _witness.Id, WitnessPin = WitnessPin, DiscrepancyReason = "Spillage, see incident log",
         }, CancellationToken.None);
 
         withoutReason.ErrorCode.ShouldBe(RecordBalanceCheckError.Discrepancy);

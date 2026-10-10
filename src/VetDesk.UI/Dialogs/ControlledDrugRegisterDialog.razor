@@ -35,7 +35,7 @@
                 {
                     <div class="vd-banner vd-banner-warning" style="margin-top:10px"><Icon Name="warning" Size="18" /> That's @Fmt.Qty(c2 - drug.OnHand) @drug.Unit different from the register. The difference is recorded with your reason.</div>
                 }
-                <WitnessPicker Id="bc-witness" @bind-WitnessId="_witnessId" @bind-Password="_password" />
+                <WitnessPicker Id="bc-witness" @bind-WitnessId="_witnessId" @bind-Pin="_pin" />
                 <div class="vd-actions vd-actions-end" style="margin-top:12px">
                     <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _checking = false">Cancel</button>
                     <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(!CanCheck || _saving)" @onclick="SaveCheck">Record check</button>
@@ -77,12 +77,12 @@
     private int? _productId;
     private bool _checking, _saving;
     private decimal? _counted;
-    private string? _reason, _password;
+    private string? _reason, _pin;
     private int? _witnessId;
 
     private StockRow? Selected => _drugs.FirstOrDefault(d => d.ProductId == _productId);
 
-    private bool CanCheck => _counted is >= 0 && _witnessId is not null && !string.IsNullOrEmpty(_password)
+    private bool CanCheck => _counted is >= 0 && _witnessId is not null && !string.IsNullOrEmpty(_pin)
                              && (_counted == Selected?.OnHand || !string.IsNullOrWhiteSpace(_reason));
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
@@ -109,11 +109,11 @@
         _saving = true;
         var result = await Backend.Send(new RecordBalanceCheckCommand
         {
-            ProductId = _productId!.Value, Counted = _counted!.Value, WitnessId = _witnessId, WitnessPassword = _password,
+            ProductId = _productId!.Value, Counted = _counted!.Value, WitnessId = _witnessId, WitnessPin = _pin,
             DiscrepancyReason = string.IsNullOrWhiteSpace(_reason) ? null : _reason
         });
         _saving = false;
-        _password = null;
+        _pin = null;
         if (!Toasts.Check(result, "Balance check recorded"))
             return;
         _checking = false;

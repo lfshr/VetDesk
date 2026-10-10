@@ -17,11 +17,13 @@ public class StaffAndClientHandlerTests
     [TearDown]
     public void TearDown() => _database.Dispose();
 
+    private SignInCommandHandler SignInHandler() => new(_database.Db, _database.Hasher, _database.Clock);
+
     [Test]
-    public async Task FirstAdministrator_OnlyWhileNoStaffExist()
+    public async Task FirstAdministrator_OnlyWhileNoStaffExist_AndStartsWithSettingsOpen()
     {
         var handler = new CreateFirstAdministratorCommandHandler(_database.Db, _database.Hasher, _database.Clock);
-        var command = new CreateFirstAdministratorCommand { FirstName = "Asha", LastName = "Patel", Email = "Asha@Example.com ", Password = "long-enough-pw", Role = StaffRole.Vet };
+        var command = new CreateFirstAdministratorCommand { FirstName = "Douglas", Pin = "1357", Password = "long-enough-pw", Role = StaffRole.Vet };
 
         var first = await handler.Handle(command, CancellationToken.None);
         var second = await handler.Handle(command, CancellationToken.None);
@@ -29,34 +31,123 @@ public class StaffAndClientHandlerTests
         first.IsSuccess.ShouldBeTrue(first.ToString());
         first.Value.Permissions.ShouldContain(Permission.ManageSettings);
         first.Value.Permissions.ShouldContain(Permission.Prescribe);
+        first.Value.ShortName.ShouldBe("Douglas");
         second.ErrorCode.ShouldBe(CreateFirstAdministratorError.AlreadySetUp);
     }
 
-    [Test]
-    public async Task SignIn_IsCaseInsensitiveOnEmail_AndRejectsWrongPassword()
+    [TestCase("123")]
+    [TestCase("12a4")]
+    [TestCase("12345")]
+    public async Task FirstAdministrator_NeedsAFourDigitPin(string pin)
     {
-        await _database.AddStaffAsync("Mia", "Reid", StaffRole.Nurse, "nurse-password");
-        var handler = new SignInCommandHandler(_database.Db, _database.Hasher, _database.Clock);
+        var result = await new CreateFirstAdministratorCommandHandler(_database.Db, _database.Hasher, _database.Clock)
+            .Handle(new CreateFirstAdministratorCommand { FirstName = "Liam", Pin = pin, Password = "long-enough-pw" }, CancellationToken.None);
 
-        var ok = await handler.Handle(new SignInCommand { Email = "MIA.REID@test.example", Password = "nurse-password" }, CancellationToken.None);
-        var wrong = await handler.Handle(new SignInCommand { Email = "mia.reid@test.example", Password = "nope" }, CancellationToken.None);
+        result.ErrorCode.ShouldBe(CreateFirstAdministratorError.InvalidRequest);
+    }
+
+    [Test]
+    public async Task SignIn_WithPin_GivesRolePermissions_AndRejectsAWrongPin()
+    {
+        var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
+
+        var ok = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+        var wrong = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = "0000" }, CancellationToken.None);
 
         ok.IsSuccess.ShouldBeTrue(ok.ToString());
+        ok.Value.Permissions.ShouldContain(Permission.WitnessControlledDrugs);
         ok.Value.Permissions.ShouldNotContain(Permission.Prescribe);
         wrong.ErrorCode.ShouldBe(SignInError.InvalidCredentials);
     }
 
     [Test]
+    public async Task SignIn_AfterTooManyWrongPins_RefusesEvenTheRightOne_UntilTheLockoutEnds()
+    {
+        var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
+        for (var i = 0; i < StaffMember.MaxPinAttempts; i++)
+            await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = "0000" }, CancellationToken.None);
+
+        var locked = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+        _database.Clock.UtcNow += StaffMember.PinLockout;
+        var later = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+
+        locked.IsFailure.ShouldBeTrue();
+        locked.ToString().ShouldContain("Too many wrong PINs");
+        later.IsSuccess.ShouldBeTrue(later.ToString());
+    }
+
+    [Test]
     public async Task SignIn_DeactivatedAccount_IsRejected()
     {
-        var staff = await _database.AddStaffAsync("Mia", "Reid", StaffRole.Nurse, "nurse-password");
+        var staff = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
         staff.IsActive = false;
         await _database.Db.SaveChangesAsync();
 
-        var result = await new SignInCommandHandler(_database.Db, _database.Hasher, _database.Clock)
-            .Handle(new SignInCommand { Email = "mia.reid@test.example", Password = "nurse-password" }, CancellationToken.None);
+        var result = await SignInHandler().Handle(new SignInCommand { StaffId = staff.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
 
         result.ErrorCode.ShouldBe(SignInError.InvalidCredentials);
+    }
+
+    [Test]
+    public async Task Administrator_SignedInByPin_NeedsThePasswordForSettings()
+    {
+        var admin = await _database.AddStaffAsync("Liam", "", StaffRole.Admin);
+
+        var byPin = await SignInHandler().Handle(new SignInCommand { StaffId = admin.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+        _database.User.Set(admin.Id, admin.ShortName, byPin.Value.Permissions);
+        var unlock = new UnlockSettingsCommandHandler(_database.Db, _database.User, _database.Hasher);
+        var wrong = await unlock.Handle(new UnlockSettingsCommand { Password = "not-the-password" }, CancellationToken.None);
+        var right = await unlock.Handle(new UnlockSettingsCommand { Password = TestDatabase.Password }, CancellationToken.None);
+
+        byPin.Value.Permissions.ShouldNotContain(Permission.ManageSettings);
+        byPin.Value.CanUnlockSettings.ShouldBeTrue();
+        wrong.ErrorCode.ShouldBe(UnlockSettingsError.WrongPassword);
+        right.Value.Permissions.ShouldContain(Permission.ManageSettings);
+    }
+
+    [Test]
+    public async Task UnlockSettings_ForSomeoneWhoIsNotAnAdministrator_IsRefused()
+    {
+        var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
+        await _database.SignInAsync(nurse);
+
+        var result = await new UnlockSettingsCommandHandler(_database.Db, _database.User, _database.Hasher)
+            .Handle(new UnlockSettingsCommand { Password = TestDatabase.Password }, CancellationToken.None);
+
+        result.ErrorCode.ShouldBe(UnlockSettingsError.NotAdministrator);
+    }
+
+    [Test]
+    public async Task AccountFromBeforePins_ChoosesAPinWithItsPassword()
+    {
+        var admin = await _database.AddStaffAsync("Liam", "", StaffRole.Admin);
+        admin.PinHash = string.Empty;
+        await _database.Db.SaveChangesAsync();
+        var handler = new SetUpPinCommandHandler(_database.Db, _database.Hasher, _database.Clock);
+
+        var wrong = await handler.Handle(new SetUpPinCommand { StaffId = admin.Id, Password = "nope", NewPin = "9753" }, CancellationToken.None);
+        var ok = await handler.Handle(new SetUpPinCommand { StaffId = admin.Id, Password = TestDatabase.Password, NewPin = "9753" }, CancellationToken.None);
+        var again = await handler.Handle(new SetUpPinCommand { StaffId = admin.Id, Password = TestDatabase.Password, NewPin = "1111" }, CancellationToken.None);
+        var signIn = await SignInHandler().Handle(new SignInCommand { StaffId = admin.Id, Pin = "9753" }, CancellationToken.None);
+
+        wrong.ErrorCode.ShouldBe(SetUpPinError.WrongPassword);
+        ok.IsSuccess.ShouldBeTrue(ok.ToString());
+        again.ErrorCode.ShouldBe(SetUpPinError.NotAllowed);
+        signIn.IsSuccess.ShouldBeTrue(signIn.ToString());
+    }
+
+    [Test]
+    public async Task NewStaff_NeedOnlyAFirstNameAndPin_ButAdministratorsAlsoNeedAPassword()
+    {
+        await _database.SignInAsync(await _database.AddStaffAsync("Liam", "", StaffRole.Admin));
+        var handler = new SaveStaffMemberCommandHandler(_database.Db, _database.User, _database.Hasher);
+
+        var nurse = await handler.Handle(new SaveStaffMemberCommand { FirstName = "Lorna", Role = StaffRole.Nurse, Pin = "4321" }, CancellationToken.None);
+        var vetAdmin = await handler.Handle(new SaveStaffMemberCommand { FirstName = "Jen", Role = StaffRole.Vet, IsAdministrator = true, Pin = "4321" }, CancellationToken.None);
+
+        nurse.IsSuccess.ShouldBeTrue(nurse.ToString());
+        (await _database.Db.StaffMembers.SingleAsync(s => s.Id == nurse.Value)).Email.ShouldBeNull();
+        vetAdmin.ErrorCode.ShouldBe(SaveStaffMemberError.InvalidRequest);
     }
 
     [Test]

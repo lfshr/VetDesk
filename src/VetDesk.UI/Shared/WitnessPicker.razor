@@ -1,4 +1,4 @@
-@* A second member of staff confirms a controlled drug entry with their own password. *@
+@* A second member of staff confirms a controlled drug entry with their own PIN. *@
 @inject Backend Backend
 @inject UserSession Session
 
@@ -9,23 +9,23 @@
             <option value="">Choose a witness</option>
             @foreach (var s in _witnesses)
             {
-                <option value="@s.Id">@s.FullName (@s.JobTitle)</option>
+                <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
             }
         </select>
     </div>
     <div class="vd-field">
-        <label for="@($"{Id}-pw")">Witness's password</label>
-        <input id="@($"{Id}-pw")" type="password" autocomplete="off" value="@Password" @oninput="e => PasswordChanged.InvokeAsync(e.Value?.ToString())" />
+        <label for="@($"{Id}-pin")">Witness's PIN</label>
+        <input id="@($"{Id}-pin")" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" value="@Pin" @oninput="e => PinChanged.InvokeAsync(e.Value?.ToString())" />
     </div>
 </div>
-<div class="vd-hint">The witness types their own password to confirm they saw the amount. It isn't stored.</div>
+<div class="vd-hint">The witness types their own PIN to confirm they saw the amount. It isn't stored.</div>
 
 @code {
     [Parameter] public string Id { get; set; } = "witness";
     [Parameter] public int? WitnessId { get; set; }
     [Parameter] public EventCallback<int?> WitnessIdChanged { get; set; }
-    [Parameter] public string? Password { get; set; }
-    [Parameter] public EventCallback<string?> PasswordChanged { get; set; }
+    [Parameter] public string? Pin { get; set; }
+    [Parameter] public EventCallback<string?> PinChanged { get; set; }
 
     private IReadOnlyList<StaffDto> _witnesses = [];
 

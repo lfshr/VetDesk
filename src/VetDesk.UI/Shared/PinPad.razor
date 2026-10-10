@@ -1,0 +1,49 @@
+@* Four-digit PIN entry: type it or tap the keypad (for touch screens). Hands the PIN over on the fourth digit. *@
+
+<div class="vd-pinpad">
+    <input id="@Id" class="vd-input vd-pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="4"
+           aria-label="@Label" value="@_pin" @oninput="Typed" disabled="@Busy" @ref="_input" />
+    <div class="vd-pin-keys">
+        @foreach (var key in "123456789")
+        {
+            <button type="button" class="vd-pin-key" disabled="@Busy" @onclick="() => Press(key)">@key</button>
+        }
+        <button type="button" class="vd-pin-key vd-pin-key-small" disabled="@Busy" @onclick="Clear">Clear</button>
+        <button type="button" class="vd-pin-key" disabled="@Busy" @onclick="() => Press('0')">0</button>
+        <button type="button" class="vd-pin-key vd-pin-key-small" disabled="@Busy" @onclick="Back" aria-label="Delete last digit">Delete</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = "pin";
+    [Parameter] public string Label { get; set; } = "PIN";
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<string> OnComplete { get; set; }
+
+    private string _pin = "";
+    private ElementReference _input;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await _input.FocusAsync();
+    }
+
+    private Task Typed(ChangeEventArgs e) => SetAsync(new string((e.Value?.ToString() ?? "").Where(char.IsAsciiDigit).Take(4).ToArray()));
+
+    private Task Press(char digit) => _pin.Length < 4 ? SetAsync(_pin + digit) : Task.CompletedTask;
+
+    private void Back() => _pin = _pin.Length > 0 ? _pin[..^1] : "";
+
+    private void Clear() => _pin = "";
+
+    private async Task SetAsync(string pin)
+    {
+        _pin = pin;
+        if (_pin.Length < 4)
+            return;
+        var complete = _pin;
+        _pin = "";
+        await OnComplete.InvokeAsync(complete);
+    }
+}

@@ -13,11 +13,28 @@
             @foreach (var u in _staff)
             {
                 <tr>
-                    <td><div class="vd-row" style="gap:10px"><span class="vd-avatar">@u.Initials</span><div><div class="vd-cell-primary">@u.FullName</div><div class="vd-cell-sub">@u.Email</div></div></div></td>
+                    <td>
+                        <div class="vd-row" style="gap:10px">
+                            <span class="vd-avatar">@u.Initials</span>
+                            <div>
+                                <div class="vd-cell-primary">@u.FullName</div>
+                                @if (u.Email is not null)
+                                {
+                                    <div class="vd-cell-sub">@u.Email</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
                     <td>@u.RoleLabel</td>
                     <td class="vd-mono">@(u.RegistrationNumber ?? "—")</td>
                     <td>@(u.LastSignInUtc is { } t ? Fmt.Ago(t, DateTime.UtcNow) : "Never")</td>
-                    <td><span class="vd-chip @(u.IsActive ? "vd-chip-success" : "")">@(u.IsActive ? "Active" : "Disabled")</span></td>
+                    <td>
+                        <span class="vd-chip @(u.IsActive ? "vd-chip-success" : "")">@(u.IsActive ? "Active" : "Disabled")</span>
+                        @if (u.IsActive && !u.HasPin)
+                        {
+                            <span class="vd-chip vd-chip-warning" title="Can't sign in until a PIN is set">No PIN</span>
+                        }
+                    </td>
                     <td class="vd-num"><button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="() => { _editing = u; _dialog = true; }">Edit</button></td>
                 </tr>
             }

@@ -7,17 +7,18 @@ namespace VetDesk.Application.Staff.Commands;
 
 public enum SignInError { InvalidCredentials }
 
+/// <summary>
+/// Signs in (or unlocks the desk) by tapping your name and entering your PIN. Users and settings stay closed until an
+/// administrator also confirms their password with <see cref="UnlockSettingsCommand"/>.
+/// </summary>
 public class SignInCommand : IRequest<Result<SignedInStaff>>
 {
-    public string Email { get; init; } = string.Empty;
-    public string Password { get; init; } = string.Empty;
+    public int StaffId { get; init; }
+    public string Pin { get; init; } = string.Empty;
 }
 
 public class SignInCommandHandler : IRequestHandler<SignInCommand, Result<SignedInStaff>>
 {
-    // One message for every failure, so the screen doesn't reveal which emails have accounts.
-    internal const string Rejected = "That email and password don't match an active account.";
-
     private readonly IVetDeskDbContext _dbContext;
     private readonly IPasswordHasher _hasher;
     private readonly IClock _clock;
@@ -31,16 +32,17 @@ public class SignInCommandHandler : IRequestHandler<SignInCommand, Result<Signed
 
     public async Task<Result<SignedInStaff>> Handle(SignInCommand request, CancellationToken cancellationToken)
     {
-        var email = StaffRules.NormaliseEmail(request.Email);
-        var staff = await _dbContext.StaffMembers.FirstOrDefaultAsync(s => s.Email == email, cancellationToken);
+        var staff = await _dbContext.StaffMembers.FirstOrDefaultAsync(s => s.Id == request.StaffId && s.IsActive, cancellationToken);
+        if (staff is null)
+            return Result.Failure(SignInError.InvalidCredentials, "That account isn't active. Ask a practice administrator.");
 
-        if (staff is null || !staff.IsActive || string.IsNullOrEmpty(request.Password) ||
-            !_hasher.Verify(staff.PasswordHash, request.Password))
-            return Result.Failure(SignInError.InvalidCredentials, Rejected);
+        var now = _clock.UtcNow;
+        if (await StaffRules.CheckPinAsync(_dbContext, _hasher, staff, request.Pin, now, cancellationToken) is { } problem)
+            return Result.Failure(SignInError.InvalidCredentials, problem);
 
-        staff.LastSignInUtc = _clock.UtcNow;
+        staff.LastSignInUtc = now;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(await StaffRules.SignedInAsync(_dbContext, staff, cancellationToken));
+        return Result.Success(await StaffRules.SignedInAsync(_dbContext, staff, passwordConfirmed: false, cancellationToken));
     }
 }

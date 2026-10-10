@@ -1,0 +1,10 @@
+@* The red banner under a form when a request is refused. Renders nothing without text. *@
+
+@if (Text is not null)
+{
+    <div class="vd-banner vd-banner-danger" style="margin-top:12px" role="alert"><Icon Name="warning" Size="16" /> @Text</div>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+}

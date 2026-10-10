@@ -12,7 +12,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<VetDeskDbC
     public VetDeskDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<VetDeskDbContext>()
-            .UseSqlServer("Server=.\\SQLEXPRESS;Database=VetDesk;Trusted_Connection=True;TrustServerCertificate=True")
+            .UseSqlServer("Server=localhost\\SQLEXPRESS;Database=VetDesk;Trusted_Connection=True;TrustServerCertificate=True")
             .Options;
         return new VetDeskDbContext(options);
     }

@@ -1,5 +1,6 @@
 @page "/settings"
 @page "/settings/{Section}"
+@implements IDisposable
 @inject UserSession Session
 @inject NavigationManager Nav
 
@@ -21,21 +22,35 @@
             }
         </nav>
         <div>
-            @switch (Current.Key)
+            @if (Current.Needs is { } needs && !Session.Can(needs))
             {
-                case "clinic": <ClinicSection /> break;
-                case "users": <UsersSection /> break;
-                case "types": <AppointmentTypesSection /> break;
-                case "prices": <PriceListSection /> break;
-                case "reminders": <RemindersSection /> break;
-                case "backup": <BackupSection /> break;
-                default: <PasswordSection /> break;
+                <UnlockSettingsSection />
+            }
+            else
+            {
+                switch (Current.Key)
+                {
+                    case "clinic": <ClinicSection /> break;
+                    case "users": <UsersSection /> break;
+                    case "types": <AppointmentTypesSection /> break;
+                    case "prices": <PriceListSection /> break;
+                    case "reminders": <RemindersSection /> break;
+                    case "backup": <BackupSection /> break;
+                    default: <PasswordSection /> break;
+                }
             }
         </div>
     </div>
 </div>
 
 @code {
+    protected override void OnInitialized() => Session.Changed += OnSessionChanged;
+
+    // Re-render when an administrator confirms their password, or the desk locks and settings close again.
+    private void OnSessionChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= OnSessionChanged;
+
     [Parameter] public string? Section { get; set; }
 
     private record Entry(string Key, string Label, Permission? Needs);
@@ -48,10 +63,12 @@
         new("prices", "Price list", Permission.EditPriceList),
         new("reminders", "Reminders and integrations", null),
         new("backup", "Backup and data", Permission.ManageSettings),
-        new("password", "My password", null),
+        new("password", "My PIN and password", null),
     ];
 
-    private IEnumerable<Entry> Visible => All.Where(e => e.Needs is not { } p || Session.Can(p));
+    // An administrator signed in by PIN sees the admin sections; opening one asks for their password first.
+    private IEnumerable<Entry> Visible => All.Where(e => e.Needs is not { } p || Session.Can(p) ||
+                                                        (p == Permission.ManageSettings && Session.Staff?.CanUnlockSettings == true));
 
     private Entry Current => Visible.FirstOrDefault(e => e.Key == Section) ?? Visible.First();
 }
