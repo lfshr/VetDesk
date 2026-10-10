@@ -481,7 +481,7 @@ h1:focus { outline: none; }
 .vd-legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--vd-text-secondary); align-items: center; }
 .vd-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 
-.vd-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 6px; max-height: 240px; overflow-y: auto; padding: 2px; }
+.vd-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 6px; padding: 2px; }
 .vd-slot { border: 1px solid var(--vd-border-strong); background: var(--vd-surface); border-radius: var(--vd-radius-sm); padding: 6px 4px; cursor: pointer; text-align: center; line-height: 1.2; }
 .vd-slot strong { display: block; font-family: var(--vd-font-mono); font-size: 13px; }
 .vd-slot span { font-size: 11px; color: var(--vd-text-secondary); }
