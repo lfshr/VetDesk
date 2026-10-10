@@ -15,7 +15,8 @@ public enum SlotState { Free, Booked, Lunch, Past, Closed }
 
 public record BookingSlot(TimeOnly Time, DateTime StartUtc, SlotState State, int BookedCount);
 
-public record BookingDay(DateOnly Date, bool IsClosed, TimeOnly? Open, TimeOnly? Close, IReadOnlyList<BookingSlot> Slots);
+public record BookingDay(DateOnly Date, bool IsClosed, TimeOnly? Open, TimeOnly? Close, IReadOnlyList<BookingSlot> Slots,
+    TimeOnly? LunchStart = null, TimeOnly? LunchEnd = null);
 
 /// <summary>
 /// The time grid in the booking dialog: every 15 minutes across the weekday hours (wider if the day's own hours are),
@@ -78,6 +79,6 @@ public class GetBookingSlotsQueryHandler : IRequestHandler<GetBookingSlotsQuery,
             slots.Add(new BookingSlot(time, startUtc, state, count));
         }
 
-        return Result.Success(new BookingDay(request.Date, hours is null, hours?.Open, hours?.Close, slots));
+        return Result.Success(new BookingDay(request.Date, hours is null, hours?.Open, hours?.Close, slots, lunch?.Start, lunch?.End));
     }
 }

@@ -65,7 +65,7 @@
                 </div>
                 @if (_day?.IsClosed == true)
                 {
-                    <div class="vd-hint"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
+                    <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
                 }
             </div>
 
@@ -83,6 +83,10 @@
                             </button>
                         }
                     </div>
+                    @if (PickedSlotWarning is { } warning)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
+                    }
                     @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
                     {
                         <div class="vd-hint">Currently booked at @Fmt.Time(start), outside the usual slots.</div>
@@ -173,6 +177,26 @@
         SlotState.Past => "Past",
         _ => "Free"
     };
+
+    // As in the design: picking a lunch, out-of-hours or busy time says so, without stopping the booking.
+    // On a closed day the banner above the grid already says it, so only a busy time is called out there.
+    private string? PickedSlotWarning
+    {
+        get
+        {
+            if (_day?.Slots.FirstOrDefault(s => s.StartUtc == _startUtc) is not { } s)
+                return null;
+            var time = s.Time.ToString("HH:mm");
+            var parts = new List<string>();
+            if (s.State == SlotState.Lunch && _day.LunchStart is { } ls && _day.LunchEnd is { } le)
+                parts.Add($"{time} is during lunch ({ls:HH:mm}–{le:HH:mm}).");
+            else if (s.State == SlotState.Closed && !_day.IsClosed && _day.Open is { } o && _day.Close is { } c)
+                parts.Add($"{time} is outside opening hours ({_day.Date.DayOfWeek} {o:HH:mm}–{c:HH:mm}).");
+            if (s.BookedCount >= 2)
+                parts.Add($"{s.BookedCount} appointments are already booked at {time}.");
+            return parts.Count == 0 ? null : string.Join(" ", parts) + " You can still book it.";
+        }
+    }
 
     // As in the design: closed, lunch and busy times (two or more already booked) are hatched but can still be picked.
     private static bool IsGreyed(BookingSlot s) =>

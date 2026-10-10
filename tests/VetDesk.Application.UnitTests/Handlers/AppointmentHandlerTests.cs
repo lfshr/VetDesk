@@ -107,6 +107,8 @@ public class AppointmentHandlerTests
         slots[new TimeOnly(10, 0)].State.ShouldBe(SlotState.Booked);
         slots[new TimeOnly(10, 15)].State.ShouldBe(SlotState.Free);
         slots[new TimeOnly(13, 15)].State.ShouldBe(SlotState.Lunch);
+        day.Value.LunchStart.ShouldBe(new TimeOnly(13, 0));
+        day.Value.LunchEnd.ShouldBe(new TimeOnly(14, 0));
         day.Value.Slots[^1].Time.ShouldBe(new TimeOnly(18, 45));
     }
 
