@@ -5,6 +5,10 @@ set -euo pipefail
 
 sqlcmd=/opt/mssql-tools18/bin/sqlcmd
 
+# The backups folder is mounted here too. Docker creates it owned by root if it was missing, which SQL Server
+# (running as mssql, uid 10001) can't write to.
+chown 10001:0 /backup
+
 for attempt in $(seq 1 60); do
     if "$sqlcmd" -S sql -U sa -C -b -Q "SELECT 1" > /dev/null 2>&1; then
         exec "$sqlcmd" -S sql -U sa -C -b -i /init/sql-init.sql

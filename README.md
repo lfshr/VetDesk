@@ -99,7 +99,13 @@ dotnet test VetDesk.sln
 
 Set the folder and time under Settings › Backup. While any desk has VetDesk open, it checks every few minutes and
 takes the day's backup once the time has passed; the first desk to notice does it and the others skip. "Back up now"
-takes one immediately. The history on that page shows every run and any failure.
+takes one immediately. The history on that page shows every run and any failure. If no folder is set, each night's
+run is recorded as a failure and raises a notice, so a practice can't go without backups unnoticed.
+
+On the Docker Compose server install the folder starts as the backup volume (`/var/opt/mssql/backup`, set by
+`VetDesk__DefaultBackupFolder`), so backups run from the first night. In `.env`, point `SQL_BINDMOUNT_0` and
+`SQL_INIT_BINDMOUNT_1` at the same host folder: the sql-init job hands that folder to SQL Server's user (uid 10001)
+on every start, because Docker creates a missing folder owned by root and SQL Server can't write to it.
 
 - **SQL Server:** a native `BACKUP DATABASE ... WITH CHECKSUM` to a `.bak` file. The folder is on the **database
   server's** disk (or a share its service account can write to), not the desk PC's. Restore with SQL Server

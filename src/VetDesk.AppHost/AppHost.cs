@@ -75,15 +75,19 @@ else
 
     // One-off job, run on every "docker compose up": creates the database and the least-rights vetdesk_app login
     // (or resets its password to the one in .env), then exits. It reuses the SQL Server image for its sqlcmd.
+    // It runs as root only so it can hand the backup folder to SQL Server's mssql user (uid 10001): Docker creates a
+    // missing bind-mount folder owned by root, and BACKUP then fails with "Access is denied".
     var sqlImage = sql.Resource.Annotations.OfType<ContainerImageAnnotation>().Single();
     var sqlInit = builder.AddContainer("sql-init", sqlImage.Image, sqlImage.Tag ?? "latest")
         .WithImageRegistry(sqlImage.Registry)
         .WithBindMount("deploy", "/init", isReadOnly: true)
+        .WithBindMount("backups", "/backup")
         .WithEntrypoint("/bin/bash")
         .WithArgs("/init/sql-init.sh")
         .WithEnvironment("SQLCMDPASSWORD", sql.Resource.PasswordParameter)
         .WithEnvironment("APP_SQL_PASSWORD", appSqlPassword)
-        .WaitFor(sql);
+        .WaitFor(sql)
+        .PublishAsDockerComposeService((_, service) => service.User = "0");
 
     var web = builder.AddProject<Projects.VetDesk_Web>("web")
         .WithEnvironment("ConnectionStrings__VetDesk", ReferenceExpression.Create(
@@ -91,6 +95,8 @@ else
         .WithEnvironment("VetDesk__DatabaseProvider", "SqlServer")
         .WithEnvironment("VetDesk__SeedDemoData", "false")
         .WithEnvironment("VetDesk__DataProtectionKeysPath", "/home/app/data-protection-keys")
+        // The backup bind mount as SQL Server sees it; used until someone picks another folder in Settings › Backup.
+        .WithEnvironment("VetDesk__DefaultBackupFolder", "/var/opt/mssql/backup")
         .WithEnvironment("AllowedHosts", serverName)
         .WithEnvironment("VetDesk__AllowedNetworks", allowedNetworks)
         .WaitForCompletion(sqlInit)
