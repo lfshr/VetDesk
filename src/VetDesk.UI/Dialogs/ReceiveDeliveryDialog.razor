@@ -2,7 +2,7 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="Receive delivery" Subtitle="Check the delivery against outstanding orders. Received quantities are added to stock." OnClose="OnClose" Size="xwide">
+<Modal Title="Receive delivery" Subtitle="Check the delivery against outstanding orders. Received quantities are added to stock." OnClose="OnClose" Size="720">
     <ChildContent>
         @if (_orders is null)
         {
@@ -27,7 +27,7 @@
                     {
                         <tr>
                             <td><input type="checkbox" aria-label="Received @l.Name" @bind="l.Include" /></td>
-                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub">@l.Unit</span></td>
+                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub" style="display:block">@l.Unit</span></td>
                             <td><input class="vd-input vd-input-sm vd-mono" style="width:90px" type="number" min="0" step="any" aria-label="Quantity received @l.Name" @bind="l.Quantity" disabled="@(!l.Include)" /></td>
                             <td><input class="vd-input vd-input-sm vd-mono" style="width:130px" aria-label="Batch @l.Name" @bind="l.Batch" @bind:event="oninput" disabled="@(!l.Include)" maxlength="60" /></td>
                             <td><input class="vd-input vd-input-sm" type="date" aria-label="Expiry @l.Name" @bind="l.Expiry" disabled="@(!l.Include)" /></td>
@@ -101,7 +101,7 @@
     private void Load(DeliveryDto order)
     {
         _orderId = order.OrderId;
-        _lines = order.Lines.Select(l => new Line { ProductId = l.ProductId, Name = l.ProductName, Unit = l.Unit, IsControlledDrug = l.IsControlledDrug, Quantity = l.Quantity }).ToList();
+        _lines = order.Lines.Select(l => new Line { ProductId = l.ProductId, Name = l.ProductName, Unit = l.Unit, IsControlledDrug = l.IsControlledDrug, Quantity = Fmt.Trim(l.Quantity) }).ToList();
     }
 
     private void Add(ProductDto p)

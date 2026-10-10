@@ -2,7 +2,7 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="Create purchase order" Subtitle="Pre-filled with items at or below their reorder level" OnClose="OnClose" Size="xwide">
+<Modal Title="Create purchase order" Subtitle="Pre-filled with items at or below their reorder level" OnClose="OnClose" Size="760">
     <ChildContent>
         <div class="vd-form-grid">
             <div class="vd-field" style="margin-top:0"><label for="po-supplier">Supplier</label><input id="po-supplier" @bind="_supplier" @bind:event="oninput" maxlength="200" placeholder="e.g. your wholesaler" /></div>
@@ -21,7 +21,7 @@
                     {
                         <tr>
                             <td><input type="checkbox" aria-label="Include @l.Name" @bind="l.Include" /></td>
-                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub">@l.Unit</span></td>
+                            <td><span class="vd-strong">@l.Name</span> @if (l.IsControlledDrug) { <span class="vd-cd">CD</span> } <span class="vd-cell-sub" style="display:block">@l.Unit</span></td>
                             <td class="vd-mono">@Fmt.Qty(l.OnHand) <span class="vd-muted">/ @Fmt.Qty(l.Reorder)</span></td>
                             <td>
                                 <div class="vd-stepper">
@@ -87,7 +87,7 @@
         if (Toasts.Check(suggestions))
             _lines = suggestions.Value.Select(s => new Line
             {
-                ProductId = s.ProductId, Name = s.Name, Unit = s.Unit, IsControlledDrug = s.IsControlledDrug, OnHand = s.OnHand, Reorder = s.ReorderLevel, Quantity = s.SuggestedQuantity
+                ProductId = s.ProductId, Name = s.Name, Unit = s.Unit, IsControlledDrug = s.IsControlledDrug, OnHand = s.OnHand, Reorder = s.ReorderLevel, Quantity = Fmt.Trim(s.SuggestedQuantity)
             }).ToList();
     }
 

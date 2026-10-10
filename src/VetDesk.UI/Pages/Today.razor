@@ -11,8 +11,8 @@
 <div class="vd-toolbar">
     <PatientSearch />
     <span class="vd-spacer"></span>
-    <div style="position:relative">
-        <button type="button" class="vd-btn vd-btn-secondary" style="width:40px;padding:0;position:relative" aria-label="Notifications" @onclick="ToggleBell">
+    <div style="position:relative" @onkeydown="BellKey">
+        <button type="button" class="vd-btn vd-btn-secondary" style="width:40px;padding:0;position:relative" aria-label="Notifications" aria-expanded="@Aria.Bool(_bellOpen)" @onclick="ToggleBell">
             <Icon Name="bell" Size="18" />
             @if (_feed?.UnreadCount > 0)
             {
@@ -21,8 +21,10 @@
         </button>
         @if (_bellOpen && _feed is not null)
         {
-            <div class="vd-dropdown" style="left:auto;right:0;width:360px">
-                <div class="vd-row-between" style="padding:12px 14px;border-bottom:1px solid var(--vd-border)">
+            @* Catches a click anywhere else, which closes the popover. *@
+            <div class="vd-click-away" @onclick="() => _bellOpen = false"></div>
+            <div class="vd-dropdown" style="left:auto;right:0;width:340px;max-width:calc(100vw - 32px)" role="region" aria-label="Notifications">
+                <div class="vd-row-between" style="padding:10px 14px;border-bottom:1px solid var(--vd-border)">
                     <span class="vd-strong">Notifications</span>
                     <button type="button" class="vd-btn-link" style="text-decoration:none" @onclick="MarkAllRead">Mark all read</button>
                 </div>
@@ -266,6 +268,7 @@
 
     private void OpenBooking(int? id)
     {
+        _bellOpen = false;
         _bookingId = id;
         _booking = true;
     }
@@ -296,6 +299,12 @@
     }
 
     private void ToggleBell() => _bellOpen = !_bellOpen;
+
+    private void BellKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            _bellOpen = false;
+    }
 
     private async Task MarkAllRead()
     {

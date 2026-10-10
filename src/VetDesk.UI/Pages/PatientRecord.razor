@@ -29,10 +29,10 @@
                     @if (_p.LatestWeightKg is { } w) { <span>@($"{w:0.0#} kg")</span> }
                 </div>
                 <div class="vd-muted vd-small" style="margin-top:2px">Chip <span class="vd-mono">@(_p.Microchip ?? "not recorded")</span></div>
-                <div class="vd-row" style="gap:6px;margin-top:10px;flex-wrap:wrap" aria-label="Alerts">
+                <div class="vd-row" style="gap:8px;margin-top:10px;flex-wrap:wrap" aria-label="Alerts">
                     @foreach (var a in _p.Allergies)
                     {
-                        <span class="vd-chip vd-chip-danger vd-chip-lg" title="Drug allergy@(a.DrugClass is null ? "" : $" (class: {a.DrugClass})")"><Icon Name="alert" Size="13" /> @a.Label</span>
+                        <span class="vd-chip vd-chip-danger vd-chip-lg" title="Drug allergy@(a.DrugClass is null ? "" : $" (class: {a.DrugClass})")"><Icon Name="alert" Size="14" /> @a.Label</span>
                     }
                     @foreach (var a in _p.Alerts)
                     {
@@ -40,7 +40,7 @@
                     }
                     @if (CanEdit)
                     {
-                        <button type="button" class="vd-btn vd-btn-ghost vd-btn-sm" @onclick="NewAlert"><Icon Name="plus" Size="14" /> Add alert</button>
+                        <button type="button" class="vd-chip-add" aria-label="Add alert" title="Add alert" @onclick="NewAlert"><Icon Name="plus" Size="13" /></button>
                     }
                 </div>
                 @if (_alert is not null)

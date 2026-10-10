@@ -3,7 +3,7 @@
 @inject ToastService Toasts
 @inject UserSession Session
 
-<Modal Title="Controlled drugs register" Subtitle="Every entry is permanent. Corrections are added as new entries." OnClose="OnClose" Size="xwide">
+<Modal Title="Controlled drugs register" Subtitle="Every entry is permanent. Corrections are added as new entries." OnClose="OnClose" Size="860">
     <ChildContent>
         <div class="vd-row" style="flex-wrap:wrap">
             <select class="vd-input" style="width:320px" aria-label="Drug" value="@(_productId?.ToString() ?? "")" @onchange="PickDrug">

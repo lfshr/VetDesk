@@ -12,6 +12,12 @@ public static class Fmt
 
     public static string Qty(decimal quantity) => quantity.ToString("0.###", Uk);
 
+    /// <summary>
+    /// Drops the trailing zeros a database decimal carries (100.000 → 100) so a number box shows it as typed.
+    /// Dividing by 1 written with many zeros is the standard way to normalise a decimal's scale.
+    /// </summary>
+    public static decimal Trim(decimal quantity) => quantity / 1.000000000000000000000000000000000m;
+
     public static DateTime Local(DateTime utc) => ClinicTime.ToLocal(utc);
 
     public static string Time(DateTime utc) => Local(utc).ToString("HH:mm", Uk);

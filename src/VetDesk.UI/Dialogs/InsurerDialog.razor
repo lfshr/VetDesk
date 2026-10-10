@@ -2,7 +2,7 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="Bill insurer" Subtitle="@($"{Invoice.Number} · {Invoice.PatientName ?? Invoice.ClientName} · claim {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose">
+<Modal Title="Bill insurer" Subtitle="@($"{Invoice.Number} · {Invoice.PatientName ?? Invoice.ClientName} · claim {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose" Size="600">
     <ChildContent>
         <div class="vd-form-grid">
             <div class="vd-field" style="margin-top:0"><label for="ins-name">Insurer</label><input id="ins-name" @bind="_insurer" @bind:event="oninput" maxlength="200" /></div>

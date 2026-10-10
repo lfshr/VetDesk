@@ -3,7 +3,7 @@
 @inject ToastService Toasts
 @inject UserSession Session
 
-<Modal Title="New invoice" Subtitle="For items not charged through a consultation, such as retail or repeat prescriptions." OnClose="OnClose" Size="wide">
+<Modal Title="New invoice" Subtitle="For items not charged through a consultation, such as retail or repeat prescriptions." OnClose="OnClose" Size="640">
     <ChildContent>
         <div class="vd-field" style="margin-top:0"><span class="vd-label">Client and patient</span><PatientPicker @bind-Selected="_patient" InputId="ni-patient" /></div>
         <div class="vd-field">

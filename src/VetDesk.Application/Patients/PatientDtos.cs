@@ -57,7 +57,9 @@ public record PatientOwner(
     string? Postcode,
     bool RemindersOptIn,
     decimal Balance,
-    IReadOnlyList<(int Id, string Name, string SpeciesAndBreed)> Pets);
+    IReadOnlyList<(int Id, string Name, string SpeciesAndBreed)> Pets,
+    int? OwedInvoiceId = null,
+    string? OwedInvoiceNumber = null);
 
 public record PatientDetail(
     int Id,
