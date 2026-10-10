@@ -61,7 +61,9 @@ public sealed class BackupScheduler : IAsyncDisposable
             await using var scope = _scopes.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<VetDeskDbContext>();
             var settings = await db.ClinicSettings.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
-            if (settings is null || string.IsNullOrWhiteSpace(settings.BackupFolder))
+            // No folder set still goes ahead: the backup command records it as a failure and raises a notice,
+            // so a practice without backups hears about it every day rather than never.
+            if (settings is null)
                 return;
 
             var now = _clock.UtcNow;

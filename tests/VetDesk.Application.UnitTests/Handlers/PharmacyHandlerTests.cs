@@ -43,7 +43,7 @@ public class PharmacyHandlerTests
     }
 
     private Task<SimpleResult.Result> DispenseAsync(int id, int? witnessId, string? pin) =>
-        new DispenseItemCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher)
+        new DispenseItemCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher, _database.DeviceLimit)
             .Handle(new DispenseItemCommand { Id = id, WitnessId = witnessId, WitnessPin = pin }, CancellationToken.None);
 
     [Test]
@@ -133,7 +133,7 @@ public class PharmacyHandlerTests
     [Test]
     public async Task BalanceCheck_Discrepancy_NeedsReason_ThenAdjustsAndKeepsItInTheRegister()
     {
-        var handler = new RecordBalanceCheckCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher);
+        var handler = new RecordBalanceCheckCommandHandler(_database.Db, _database.User, _database.Clock, _database.Hasher, _database.DeviceLimit);
         var command = new RecordBalanceCheckCommand { ProductId = _methadone.Id, Counted = 9.5m, WitnessId = _witness.Id, WitnessPin = WitnessPin };
 
         var withoutReason = await handler.Handle(command, CancellationToken.None);

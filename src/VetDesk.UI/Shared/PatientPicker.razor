@@ -44,6 +44,19 @@ else
                 <div class="vd-dropdown-item vd-muted">No match. Add them as a new client below.</div>
             }
         }
+        else if (_recent.Count > 0)
+        {
+            <div class="vd-small vd-muted" style="padding:8px 12px 4px">Recent patients</div>
+            @for (var i = 0; i < _recent.Count; i++)
+            {
+                var r = _recent[i];
+                var index = i;
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" style="border-top:1px solid var(--vd-border)" @onclick="() => Pick(r)">
+                    <span style="flex:1"><span class="vd-strong">@r.Name</span><span class="vd-cell-sub" style="display:block">@r.SpeciesAndBreed</span></span>
+                    <span>@r.OwnerName</span>
+                </button>
+            }
+        }
         else
         {
             <div class="vd-dropdown-item vd-muted vd-small">Type at least two letters of the pet's or owner's name, a phone number or a microchip.</div>
@@ -83,6 +96,7 @@ else
 
     private string _query = "";
     private List<PatientRow> _results = new();
+    private List<PatientRow> _recent = new();
     private bool _searching;
     private int _active = -1;
     private CancellationTokenSource? _debounce;
@@ -91,6 +105,20 @@ else
     private string _owner = "", _phone = "", _pet = "", _species = "Dog";
 
     private bool CanAdd => !string.IsNullOrWhiteSpace(_owner) && !string.IsNullOrWhiteSpace(_phone) && !string.IsNullOrWhiteSpace(_pet);
+
+    // The arrow keys and Enter work on whichever list is showing: search results, or recent patients before typing.
+    private List<PatientRow> Shown => _query.Trim().Length >= 2 ? _results : _recent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Selected is not null || Locked)
+            return;
+
+        // The patients seen most recently, since the next booking is often their recheck.
+        var recent = await Backend.Send(new SearchPatientsQuery { Sort = PatientSort.LastVisit, Take = 4, IncludeDeceased = false });
+        if (recent.IsSuccess)
+            _recent = recent.Value.ToList();
+    }
 
     private async Task OnInput(ChangeEventArgs e)
     {
@@ -123,12 +151,13 @@ else
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "ArrowDown" && _results.Count > 0)
-            _active = (_active + 1) % _results.Count;
-        else if (e.Key == "ArrowUp" && _results.Count > 0)
-            _active = _active <= 0 ? _results.Count - 1 : _active - 1;
-        else if (e.Key == "Enter" && _results.Count > 0)
-            await Pick(_results[Math.Max(_active, 0)]);
+        var shown = Shown;
+        if (e.Key == "ArrowDown" && shown.Count > 0)
+            _active = (_active + 1) % shown.Count;
+        else if (e.Key == "ArrowUp" && shown.Count > 0)
+            _active = _active <= 0 ? shown.Count - 1 : _active - 1;
+        else if (e.Key == "Enter" && shown.Count > 0)
+            await Pick(shown[Math.Max(_active, 0)]);
     }
 
     private Task Pick(PatientRow row) => SelectedChanged.InvokeAsync(row);

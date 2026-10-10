@@ -14,7 +14,7 @@
             {
                 var p = _results[i];
                 var index = i;
-                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@(index == _active)" @onmousedown="() => Pick(p)">
+                <button type="button" class="vd-dropdown-item @(index == _active ? "active" : "")" role="option" aria-selected="@Aria.Bool(index == _active)" @onmousedown="() => Pick(p)">
                     <span style="flex:1;min-width:0">
                         <span class="vd-strong">@p.Name</span>
                         @if (p.IsControlledDrug) { <span class="vd-cd">CD</span> }

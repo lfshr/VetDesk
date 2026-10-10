@@ -45,7 +45,7 @@
                     @foreach (var c in Enum.GetValues<AppointmentColour>())
                     {
                         var colour = c;
-                        <button type="button" role="radio" aria-checked="@(_colour == colour)" aria-label="@colour" @onclick="() => _colour = colour"
+                        <button type="button" role="radio" aria-checked="@Aria.Bool(_colour == colour)" aria-label="@colour" @onclick="() => _colour = colour"
                                 style="width:30px;height:30px;border-radius:50%;cursor:pointer;background:@Swatch(colour);border:3px solid @(_colour == colour ? "var(--vd-text)" : "transparent")"></button>
                     }
                 </div>

@@ -11,6 +11,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<UserSession>();
         services.AddScoped<CurrentUser>();
         services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<CurrentUser>());
+        services.AddScoped<DeviceAddress>();
+        services.AddScoped<IDeviceAddress>(sp => sp.GetRequiredService<DeviceAddress>());
         services.AddScoped<Backend>();
         services.AddScoped<ToastService>();
         services.AddScoped<DialogService>();

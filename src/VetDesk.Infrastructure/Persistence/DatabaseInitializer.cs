@@ -47,8 +47,14 @@ public class DatabaseInitializer
         if (!await _dbContext.RolePermissions.AnyAsync(cancellationToken))
             _dbContext.RolePermissions.AddRange(RolePermission.Defaults());
 
-        if (!await _dbContext.ClinicSettings.AnyAsync(cancellationToken))
-            _dbContext.ClinicSettings.Add(new ClinicSettings());
+        var settings = await _dbContext.ClinicSettings.FirstOrDefaultAsync(cancellationToken);
+        if (settings is null)
+        {
+            settings = new ClinicSettings();
+            _dbContext.ClinicSettings.Add(settings);
+        }
+        if (string.IsNullOrWhiteSpace(settings.BackupFolder) && !string.IsNullOrWhiteSpace(_options.DefaultBackupFolder))
+            settings.BackupFolder = _options.DefaultBackupFolder;
 
         if (!await _dbContext.AppointmentTypes.AnyAsync(cancellationToken))
             _dbContext.AppointmentTypes.AddRange(DefaultAppointmentTypes());

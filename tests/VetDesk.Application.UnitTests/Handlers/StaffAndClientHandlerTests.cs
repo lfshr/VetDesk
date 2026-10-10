@@ -3,6 +3,7 @@ using VetDesk.Application.Clients.Commands;
 using VetDesk.Application.Patients.Commands;
 using VetDesk.Application.Staff.Commands;
 using VetDesk.Domain.Entities.Staff;
+using VetDesk.Infrastructure.Services;
 
 namespace VetDesk.Application.UnitTests.Handlers;
 
@@ -17,7 +18,7 @@ public class StaffAndClientHandlerTests
     [TearDown]
     public void TearDown() => _database.Dispose();
 
-    private SignInCommandHandler SignInHandler() => new(_database.Db, _database.Hasher, _database.Clock);
+    private SignInCommandHandler SignInHandler() => new(_database.Db, _database.Hasher, _database.Clock, _database.DeviceLimit);
 
     [Test]
     public async Task FirstAdministrator_OnlyWhileNoStaffExist_AndStartsWithSettingsOpen()
@@ -74,6 +75,61 @@ public class StaffAndClientHandlerTests
         locked.IsFailure.ShouldBeTrue();
         locked.ToString().ShouldContain("Too many wrong PINs");
         later.IsSuccess.ShouldBeTrue(later.ToString());
+    }
+
+    /// <summary>Four wrong PINs each for five people: no one is locked out, but the device has made 20 guesses.</summary>
+    private async Task GuessAcrossStaffAsync()
+    {
+        for (var person = 0; person < 5; person++)
+        {
+            var staff = await _database.AddStaffAsync($"Guess{person}", "", StaffRole.Nurse);
+            for (var attempt = 0; attempt < StaffMember.MaxPinAttempts - 1; attempt++)
+                await SignInHandler().Handle(new SignInCommand { StaffId = staff.Id, Pin = "0000" }, CancellationToken.None);
+        }
+    }
+
+    [Test]
+    public async Task SignIn_TooManyWrongPinsFromOneDevice_BlocksThatDevice_ForEveryone_UntilTheBlockEnds()
+    {
+        var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
+        await GuessAcrossStaffAsync();
+
+        var blocked = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+        _database.Device.Address = "192.168.1.21";
+        var otherDesk = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+        _database.Device.Address = "192.168.1.20";
+        _database.Clock.UtcNow += WrongPinTracker.BlockFor;
+        var later = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+
+        blocked.IsFailure.ShouldBeTrue();
+        blocked.ToString().ShouldContain("on this device");
+        otherDesk.IsSuccess.ShouldBeTrue(otherDesk.ToString());
+        later.IsSuccess.ShouldBeTrue(later.ToString());
+    }
+
+    [Test]
+    public void DeviceBlock_OnlyCountsWrongPinsWithinTheWindow()
+    {
+        var tracker = _database.WrongPins;
+        var now = _database.Clock.UtcNow;
+        for (var i = 0; i < WrongPinTracker.MaxWrongPins - 1; i++)
+            tracker.RecordWrongPin("192.168.1.30", now);
+
+        tracker.RecordWrongPin("192.168.1.30", now + WrongPinTracker.Window);
+
+        tracker.IsBlocked("192.168.1.30", now + WrongPinTracker.Window).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task SignIn_InTheDesktopApp_HasNoDeviceBlock_OnlyEachPersonsLockout()
+    {
+        var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
+        _database.Device.Address = null;
+        await GuessAcrossStaffAsync();
+
+        var result = await SignInHandler().Handle(new SignInCommand { StaffId = nurse.Id, Pin = TestDatabase.Pin }, CancellationToken.None);
+
+        result.IsSuccess.ShouldBeTrue(result.ToString());
     }
 
     [Test]

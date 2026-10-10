@@ -28,4 +28,8 @@
     <ProjectReference Include="..\VetDesk.Application\VetDesk.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="VetDesk.Application.UnitTests" />
+  </ItemGroup>
+
 </Project>

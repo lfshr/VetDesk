@@ -25,7 +25,7 @@
         <div class="vd-pills" role="group" aria-label="Filter invoices">
             @foreach (var f in Enum.GetValues<InvoiceFilter>())
             {
-                <button type="button" class="vd-pill" aria-pressed="@(_filter == f)" @onclick="() => _filter = f">@f <span class="vd-pill-count">@Filtered(f).Count()</span></button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == f)" @onclick="() => _filter = f">@f <span class="vd-pill-count">@Filtered(f).Count()</span></button>
             }
         </div>
     </div>
@@ -79,11 +79,11 @@
                         <div class="vd-strong"><a href="clients/@s.ClientId">@s.ClientName</a>@(s.PatientName is null ? "" : $" · {s.PatientName}")</div>
                         <div class="vd-small vd-muted">Issued @Fmt.Date(s.IssuedUtc) · due @Fmt.Date(s.DueDate)</div>
                     </div>
-                    <table class="vd-table vd-table-compact">
+                    <table class="vd-table" style="border-top:1px solid var(--vd-border)">
                         <tbody>
                             @foreach (var l in s.Lines)
                             {
-                                <tr><td>@l.Description <span class="vd-cell-sub">Qty @Fmt.Qty(l.Quantity)@(l.VatRate == VatRate.Standard ? "" : $" · {l.VatRate.Label()}")</span></td><td class="vd-num vd-mono">@(l.Net == 0 ? "Included" : Fmt.Money(l.Net))</td></tr>
+                                <tr><td>@l.Description <div class="vd-cell-sub">Qty @Fmt.Qty(l.Quantity)@(l.VatRate == VatRate.Standard ? "" : $" · {l.VatRate.Label()}")</div></td><td class="vd-num vd-mono">@(l.Net == 0 ? "Included" : Fmt.Money(l.Net))</td></tr>
                             }
                         </tbody>
                     </table>
@@ -91,7 +91,12 @@
                         <dt class="vd-muted">Subtotal</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Net)</dd>
                         <dt class="vd-muted">VAT</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Vat)</dd>
                         <dt class="vd-strong">Total</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right">@Fmt.Money(s.Total)</dd>
-                        <dt class="vd-muted">Paid</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Paid)</dd>
+                        @{ var refunded = -s.Payments.Where(p => p.IsRefund).Sum(p => p.Amount); }
+                        <dt class="vd-muted">Paid</dt><dd class="vd-mono" style="margin:0;text-align:right">@Fmt.Money(s.Paid + refunded)</dd>
+                        @if (refunded > 0)
+                        {
+                            <dt class="vd-muted">Refunded</dt><dd class="vd-mono" style="margin:0;text-align:right">−@Fmt.Money(refunded)</dd>
+                        }
                         <dt class="vd-strong" style="font-size:15px">Amount due</dt><dd class="vd-mono vd-strong" style="margin:0;text-align:right;font-size:15px">@Fmt.Money(s.AmountDue)</dd>
                     </dl>
                     @if (s.Payments.Count > 0)
@@ -115,10 +120,11 @@
                     @if (s.AmountDue > 0)
                     {
                         <span class="vd-label">Take payment</span>
-                        <div class="vd-actions">
+                        @* One wide button per method, card first as the usual choice. *@
+                        <div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px">
                             @foreach (var m in Enum.GetValues<PaymentMethod>())
                             {
-                                <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" aria-haspopup="dialog" @onclick="() => Pay(m)"><Icon Name="@MethodIcon(m)" Size="16" /> @m</button>
+                                <button type="button" class="vd-btn @(m == PaymentMethod.Card ? "vd-btn-primary" : "vd-btn-secondary")" style="height:44px;padding:0 8px" aria-haspopup="dialog" @onclick="() => Pay(m)">@m</button>
                             }
                         </div>
                     }
@@ -185,13 +191,6 @@
         InvoiceFilter.Paid => r.Status == InvoiceStatus.Paid,
         _ => true
     });
-
-    private static string MethodIcon(PaymentMethod m) => m switch
-    {
-        PaymentMethod.Card => "card",
-        PaymentMethod.Cash => "cash",
-        _ => "bank"
-    };
 
     protected override async Task OnInitializedAsync()
     {

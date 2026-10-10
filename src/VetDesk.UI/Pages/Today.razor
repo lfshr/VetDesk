@@ -61,7 +61,7 @@
             <div class="vd-pills" role="group" aria-label="Filter appointments">
                 @foreach (var (filter, label, count) in Filters)
                 {
-                    <button type="button" class="vd-pill" aria-pressed="@(_filter == filter)" @onclick="() => _filter = filter">@label <span class="vd-pill-count">@count</span></button>
+                    <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == filter)" @onclick="() => _filter = filter">@label <span class="vd-pill-count">@count</span></button>
                 }
             </div>
         </div>
@@ -86,7 +86,7 @@
                         {
                             <tr class="vd-clickable @(a.Id == _selectedId ? "selected" : "")" @onclick="() => _selectedId = a.Id" @ondblclick="() => OpenRecord(a)">
                                 <td class="vd-mono">@Fmt.Time(a.StartUtc)</td>
-                                <td><div class="vd-cell-primary">@a.PatientName @if (a.HasAllergy) { <span class="vd-chip vd-chip-danger" style="height:18px;padding:0 6px;font-size:11px" title="Has a recorded drug allergy">Allergy</span> }</div><div class="vd-cell-sub">@(a.Breed ?? a.Species)</div></td>
+                                <td><div class="vd-cell-primary">@a.PatientName @if (a.HasAllergy) { <span class="vd-chip vd-chip-danger" style="height:18px;padding:0 6px;font-size:11px" title="Has a recorded drug allergy">Allergy</span> }</div><div class="vd-cell-sub">@(a.Breed is null ? a.Species : $"{a.Species} · {a.Breed}")</div></td>
                                 <td>@a.OwnerShortName</td>
                                 <td>@a.Reason</td>
                                 <td><AppointmentStatusChip Status="a.Status" Kind="a.Kind" /></td>

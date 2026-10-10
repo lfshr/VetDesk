@@ -29,13 +29,15 @@ public class DispenseItemCommandHandler : IRequestHandler<DispenseItemCommand, R
     private readonly ICurrentUser _user;
     private readonly IClock _clock;
     private readonly IPasswordHasher _hasher;
+    private readonly IDevicePinLimit _deviceLimit;
 
-    public DispenseItemCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IClock clock, IPasswordHasher hasher)
+    public DispenseItemCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IClock clock, IPasswordHasher hasher, IDevicePinLimit deviceLimit)
     {
         _dbContext = dbContext;
         _user = user;
         _clock = clock;
         _hasher = hasher;
+        _deviceLimit = deviceLimit;
     }
 
     public async Task<Result> Handle(DispenseItemCommand request, CancellationToken cancellationToken)
@@ -57,7 +59,7 @@ public class DispenseItemCommandHandler : IRequestHandler<DispenseItemCommand, R
         string? witnessName = null;
         if (item.Product.IsControlledDrug)
         {
-            var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
+            var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _deviceLimit, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
             if (problem is not null)
                 return Result.Failure(DispenseItemError.WitnessRequired, problem);
             witnessName = witness!.ShortName;

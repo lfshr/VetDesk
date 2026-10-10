@@ -10,13 +10,19 @@ namespace VetDesk.Application.Appointments.Queries;
 
 public enum GetBookingSlotsError { NotSignedIn, InvalidRequest }
 
-public enum SlotState { Free, Booked, Lunch, Past }
+/// <summary>Closed: outside the day's opening hours. Closed and lunch slots can still be booked; past ones can't.</summary>
+public enum SlotState { Free, Booked, Lunch, Past, Closed }
 
 public record BookingSlot(TimeOnly Time, DateTime StartUtc, SlotState State, int BookedCount);
 
-public record BookingDay(DateOnly Date, bool IsClosed, TimeOnly? Open, TimeOnly? Close, IReadOnlyList<BookingSlot> Slots);
+public record BookingDay(DateOnly Date, bool IsClosed, TimeOnly? Open, TimeOnly? Close, IReadOnlyList<BookingSlot> Slots,
+    TimeOnly? LunchStart = null, TimeOnly? LunchEnd = null);
 
-/// <summary>The time grid in the booking dialog: every 15 minutes in opening hours, with how busy each one is.</summary>
+/// <summary>
+/// The time grid in the booking dialog: every 15 minutes across the weekday hours (wider if the day's own hours are),
+/// with how busy each one is. Out-of-hours times are marked Closed rather than left out, so staff can still book an
+/// out-of-hours visit, as the design shows.
+/// </summary>
 public class GetBookingSlotsQuery : IRequest<Result<BookingDay>>
 {
     public DateOnly Date { get; init; }
@@ -48,9 +54,8 @@ public class GetBookingSlotsQueryHandler : IRequestHandler<GetBookingSlotsQuery,
 
         var settings = await _dbContext.ClinicSettings.AsNoTracking().FirstAsync(cancellationToken);
         var hours = settings.HoursOn(request.Date.DayOfWeek);
-        if (hours is not { } open)
-            return Result.Success(new BookingDay(request.Date, true, null, null, []));
-
+        var gridOpen = hours is { } h && h.Open < settings.WeekdayOpen ? h.Open : settings.WeekdayOpen;
+        var gridClose = hours is { } c && c.Close > settings.WeekdayClose ? c.Close : settings.WeekdayClose;
         var lunch = settings.LunchOn(request.Date.DayOfWeek);
         var (dayStart, dayEnd) = ClinicTime.DayRange(request.Date);
         var booked = await _dbContext.Appointments.AsNoTracking()
@@ -61,18 +66,19 @@ public class GetBookingSlotsQueryHandler : IRequestHandler<GetBookingSlotsQuery,
 
         var now = _clock.UtcNow;
         var slots = new List<BookingSlot>();
-        for (var time = open.Open; time < open.Close && time >= open.Open; time = time.AddMinutes(SlotMinutes))
+        for (var time = gridOpen; time < gridClose && time >= gridOpen; time = time.AddMinutes(SlotMinutes))
         {
             var startUtc = ClinicTime.ToUtc(request.Date, time);
             var endUtc = startUtc.AddMinutes(request.Minutes);
             var count = booked.Count(b => Utc.Mark(b.StartUtc) < endUtc && startUtc < Utc.Mark(b.StartUtc).AddMinutes(b.Minutes));
             var state = startUtc < now ? SlotState.Past
+                : hours is not { } open || time < open.Open || time >= open.Close ? SlotState.Closed
                 : lunch is { } l && time >= l.Start && time < l.End ? SlotState.Lunch
                 : count > 0 ? SlotState.Booked
                 : SlotState.Free;
             slots.Add(new BookingSlot(time, startUtc, state, count));
         }
 
-        return Result.Success(new BookingDay(request.Date, false, open.Open, open.Close, slots));
+        return Result.Success(new BookingDay(request.Date, hours is null, hours?.Open, hours?.Close, slots, lunch?.Start, lunch?.End));
     }
 }

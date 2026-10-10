@@ -59,14 +59,10 @@
                     <div class="vd-segmented" role="group" aria-label="Quick dates">
                         @foreach (var (label, date) in QuickDates)
                         {
-                            <button type="button" aria-pressed="@(_date == date)" @onclick="() => SetDate(date)">@label</button>
+                            <button type="button" aria-pressed="@Aria.Bool(_date == date)" @onclick="() => SetDate(date)">@label</button>
                         }
                     </div>
                 </div>
-                @if (_day?.IsClosed == true)
-                {
-                    <div class="vd-hint"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
-                }
             </div>
 
             <div class="vd-field">
@@ -76,13 +72,21 @@
                     <div class="vd-slots" role="group" aria-label="Start time">
                         @foreach (var s in _day.Slots)
                         {
-                            <button type="button" class="vd-slot @(s.State == SlotState.Booked ? "vd-slot-busy" : "")" aria-pressed="@(_startUtc == s.StartUtc)"
+                            <button type="button" class="vd-slot @(IsGreyed(s) ? "vd-slot-busy" : "")" aria-pressed="@Aria.Bool(_startUtc == s.StartUtc)"
                                     disabled="@(s.State == SlotState.Past && _startUtc != s.StartUtc)" @onclick="() => _startUtc = s.StartUtc">
                                 <strong>@s.Time.ToString("HH:mm")</strong>
                                 <span>@SlotNote(s)</span>
                             </button>
                         }
                     </div>
+                    @if (_day.IsClosed)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
+                    }
+                    @if (PickedSlotWarning is { } warning)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
+                    }
                     @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
                     {
                         <div class="vd-hint">Currently booked at @Fmt.Time(start), outside the usual slots.</div>
@@ -92,7 +96,7 @@
 
             <div class="vd-field">
                 <label for="appt-reason">Reason</label>
-                <input id="appt-reason" @bind="_reason" placeholder="e.g. Limping on back left leg" maxlength="400" />
+                <input id="appt-reason" @bind="_reason" @bind:event="oninput" placeholder="e.g. Limping on back left leg" maxlength="400" />
             </div>
             <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
             <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
@@ -155,7 +159,7 @@
         ("Next week", _today.AddDays(7)),
     ];
 
-    private string SlotHint => _day is null ? "" : _day.IsClosed ? "Closed" : $"{_day.Slots.Count(s => s.State == SlotState.Free)} free";
+    private string SlotHint => _day is null ? "" : _day.IsClosed ? "Closed all day" : $"{_day.Slots.Count(s => s.State == SlotState.Free)} free";
 
     private string Summary => _patient is null ? "Pick a patient to book." :
         _startUtc is null ? $"{_patient.Name}: pick a time." :
@@ -169,10 +173,34 @@
     private static string SlotNote(BookingSlot s) => s.State switch
     {
         SlotState.Booked => s.BookedCount == 1 ? "1 booked" : $"{s.BookedCount} booked",
-        SlotState.Lunch => "Lunch",
+        SlotState.Lunch or SlotState.Closed => $"{s.State}{(s.BookedCount > 0 ? $" · {s.BookedCount}" : "")}",
         SlotState.Past => "Past",
         _ => "Free"
     };
+
+    // As in the design: picking a lunch, out-of-hours or busy time says so, without stopping the booking.
+    // On a closed day the banner above the grid already says it, so only a busy time is called out there.
+    private string? PickedSlotWarning
+    {
+        get
+        {
+            if (_day?.Slots.FirstOrDefault(s => s.StartUtc == _startUtc) is not { } s)
+                return null;
+            var time = s.Time.ToString("HH:mm");
+            var parts = new List<string>();
+            if (s.State == SlotState.Lunch && _day.LunchStart is { } ls && _day.LunchEnd is { } le)
+                parts.Add($"{time} is during lunch ({ls:HH:mm}–{le:HH:mm}).");
+            else if (s.State == SlotState.Closed && !_day.IsClosed && _day.Open is { } o && _day.Close is { } c)
+                parts.Add($"{time} is outside opening hours ({_day.Date.DayOfWeek} {o:HH:mm}–{c:HH:mm}).");
+            if (s.BookedCount >= 2)
+                parts.Add($"{s.BookedCount} appointments are already booked at {time}.");
+            return parts.Count == 0 ? null : string.Join(" ", parts) + " You can still book it.";
+        }
+    }
+
+    // As in the design: closed, lunch and busy times (two or more already booked) are hatched but can still be picked.
+    private static bool IsGreyed(BookingSlot s) =>
+        s.State is SlotState.Closed or SlotState.Lunch || (s.State == SlotState.Booked && s.BookedCount >= 2);
 
     protected override async Task OnInitializedAsync()
     {

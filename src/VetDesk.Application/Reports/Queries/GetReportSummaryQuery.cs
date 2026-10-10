@@ -49,7 +49,8 @@ public class GetReportSummaryQueryHandler : IRequestHandler<GetReportSummaryQuer
 
         var invoices = await InvoicesAsync(from, today, cancellationToken);
         var bars = Buckets(request.Period, from).Select(b => new ReportBar(b.Label,
-            invoices.Where(i => i.Date >= b.Start && i.Date <= b.End).Sum(i => i.Net))).ToList();
+            invoices.Where(i => i.Date >= b.Start && i.Date <= b.End).Sum(i => i.Net),
+            today >= b.Start && today <= b.End)).ToList();
 
         var (start, _) = ClinicTime.DayRange(from);
         var (_, end) = ClinicTime.DayRange(today);

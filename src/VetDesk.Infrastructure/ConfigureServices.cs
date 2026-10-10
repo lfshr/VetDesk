@@ -36,8 +36,12 @@ public static class ConfigureServices
         services.AddScoped<IBackupService, BackupService>();
         services.AddScoped<DatabaseInitializer>();
         services.AddScoped<DemoDataSeeder>();
-        services.AddSingleton(new DatabaseOptions(configuration.GetValue("VetDesk:SeedDemoData", false)));
+        services.AddSingleton(new DatabaseOptions(
+            configuration.GetValue("VetDesk:SeedDemoData", false),
+            configuration["VetDesk:DefaultBackupFolder"]));
         services.AddSingleton<BackupScheduler>();
+        services.AddSingleton<WrongPinTracker>();
+        services.AddScoped<IDevicePinLimit, DevicePinLimit>();
 
         return services;
     }
@@ -53,4 +57,6 @@ public static class ConfigureServices
     }
 }
 
-public record DatabaseOptions(bool SeedDemoData);
+/// <param name="DefaultBackupFolder">Backup folder to use while Settings › Backup has none, so a new install is backed up
+/// from its first night. The server install sets it to the backup volume.</param>
+public record DatabaseOptions(bool SeedDemoData, string? DefaultBackupFolder = null);
