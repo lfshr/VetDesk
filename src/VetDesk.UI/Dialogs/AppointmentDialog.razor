@@ -63,10 +63,6 @@
                         }
                     </div>
                 </div>
-                @if (_day?.IsClosed == true)
-                {
-                    <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
-                }
             </div>
 
             <div class="vd-field">
@@ -83,6 +79,10 @@
                             </button>
                         }
                     </div>
+                    @if (_day.IsClosed)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
+                    }
                     @if (PickedSlotWarning is { } warning)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
