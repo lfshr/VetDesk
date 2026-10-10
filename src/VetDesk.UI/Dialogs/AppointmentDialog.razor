@@ -92,7 +92,7 @@
 
             <div class="vd-field">
                 <label for="appt-reason">Reason</label>
-                <input id="appt-reason" @bind="_reason" placeholder="e.g. Limping on back left leg" maxlength="400" />
+                <input id="appt-reason" @bind="_reason" @bind:event="oninput" placeholder="e.g. Limping on back left leg" maxlength="400" />
             </div>
             <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
             <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
