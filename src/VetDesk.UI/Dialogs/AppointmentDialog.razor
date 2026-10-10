@@ -76,7 +76,7 @@
                     <div class="vd-slots" role="group" aria-label="Start time">
                         @foreach (var s in _day.Slots)
                         {
-                            <button type="button" class="vd-slot @(s.State == SlotState.Booked ? "vd-slot-busy" : "")" aria-pressed="@Aria.Bool(_startUtc == s.StartUtc)"
+                            <button type="button" class="vd-slot @(IsGreyed(s) ? "vd-slot-busy" : "")" aria-pressed="@Aria.Bool(_startUtc == s.StartUtc)"
                                     disabled="@(s.State == SlotState.Past && _startUtc != s.StartUtc)" @onclick="() => _startUtc = s.StartUtc">
                                 <strong>@s.Time.ToString("HH:mm")</strong>
                                 <span>@SlotNote(s)</span>
@@ -155,7 +155,7 @@
         ("Next week", _today.AddDays(7)),
     ];
 
-    private string SlotHint => _day is null ? "" : $"{_day.Slots.Count(s => s.State == SlotState.Free)} free";
+    private string SlotHint => _day is null ? "" : _day.IsClosed ? "Closed all day" : $"{_day.Slots.Count(s => s.State == SlotState.Free)} free";
 
     private string Summary => _patient is null ? "Pick a patient to book." :
         _startUtc is null ? $"{_patient.Name}: pick a time." :
@@ -169,10 +169,14 @@
     private static string SlotNote(BookingSlot s) => s.State switch
     {
         SlotState.Booked => s.BookedCount == 1 ? "1 booked" : $"{s.BookedCount} booked",
-        SlotState.Lunch => "Lunch",
+        SlotState.Lunch or SlotState.Closed => $"{s.State}{(s.BookedCount > 0 ? $" · {s.BookedCount}" : "")}",
         SlotState.Past => "Past",
         _ => "Free"
     };
+
+    // As in the design: closed, lunch and busy times (two or more already booked) are hatched but can still be picked.
+    private static bool IsGreyed(BookingSlot s) =>
+        s.State is SlotState.Closed or SlotState.Lunch || (s.State == SlotState.Booked && s.BookedCount >= 2);
 
     protected override async Task OnInitializedAsync()
     {

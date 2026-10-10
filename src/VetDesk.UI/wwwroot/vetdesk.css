@@ -486,7 +486,7 @@ h1:focus { outline: none; }
 .vd-slot span { font-size: 11px; color: var(--vd-text-secondary); }
 .vd-slot[aria-pressed=true] { background: var(--vd-accent); border-color: var(--vd-accent); color: #fff; }
 .vd-slot[aria-pressed=true] span { color: #E3F3EF; }
-.vd-slot-busy { background: var(--vd-warning-bg); border-color: var(--vd-warning-border); }
+.vd-slot-busy { background: repeating-linear-gradient(45deg, #F6F8F7 0 6px, #EEF1F0 6px 12px); border-style: dashed; color: var(--vd-neutral-text); }
 .vd-slot:disabled { background: var(--vd-surface-muted); color: var(--vd-text-faint); cursor: default; }
 
 /* ---------- Charts (reports, weight) ---------- */

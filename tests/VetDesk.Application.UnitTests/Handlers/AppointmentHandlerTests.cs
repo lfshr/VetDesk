@@ -111,7 +111,7 @@ public class AppointmentHandlerTests
     }
 
     [Test]
-    public async Task Slots_Sunday_IsClosed_ButOffersTheWeekdayHours()
+    public async Task Slots_Sunday_IsClosed_ButOffersTheWeekdayHoursMarkedClosed()
     {
         var day = await new GetBookingSlotsQueryHandler(_database.Db, _database.User, _database.Clock)
             .Handle(new GetBookingSlotsQuery { Date = new DateOnly(2026, 10, 11) }, CancellationToken.None);
@@ -119,6 +119,21 @@ public class AppointmentHandlerTests
         day.Value.IsClosed.ShouldBeTrue();
         day.Value.Slots[0].Time.ShouldBe(new TimeOnly(8, 0));
         day.Value.Slots[^1].Time.ShouldBe(new TimeOnly(18, 45));
-        day.Value.Slots.ShouldNotContain(s => s.State == SlotState.Lunch);
+        day.Value.Slots.ShouldAllBe(s => s.State == SlotState.Closed);
+    }
+
+    [Test]
+    public async Task Slots_Saturday_MarksTimesOutsideItsHoursClosed()
+    {
+        var day = await new GetBookingSlotsQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new GetBookingSlotsQuery { Date = new DateOnly(2026, 10, 10) }, CancellationToken.None);
+
+        var slots = day.Value.Slots.ToDictionary(s => s.Time);
+        day.Value.IsClosed.ShouldBeFalse();
+        slots[new TimeOnly(8, 45)].State.ShouldBe(SlotState.Closed);
+        slots[new TimeOnly(9, 0)].State.ShouldBe(SlotState.Free);
+        slots[new TimeOnly(12, 45)].State.ShouldBe(SlotState.Free);
+        slots[new TimeOnly(13, 0)].State.ShouldBe(SlotState.Closed);
+        slots.ShouldContainKey(new TimeOnly(18, 45));
     }
 }
