@@ -356,3 +356,6 @@ MigrationBackup/
 # SQLite side files (the .db itself is ignored above)
 *.db-shm
 *.db-wal
+
+# Default output of "aspire publish" (generated Compose files)
+aspire-output/

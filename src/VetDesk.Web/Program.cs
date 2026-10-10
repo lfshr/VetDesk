@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using VetDesk.Application;
 using VetDesk.Infrastructure;
 using VetDesk.Infrastructure.Persistence;
@@ -15,6 +16,16 @@ builder.Services.AddRazorComponents()
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddVetDeskUi();
+
+// On the practice server the keys that protect Blazor's circuit state and antiforgery tokens must survive a container
+// restart, or every open form breaks after an update. The Compose file points this at a volume.
+var keysPath = builder.Configuration["VetDesk:DataProtectionKeysPath"];
+if (!string.IsNullOrWhiteSpace(keysPath))
+{
+    builder.Services.AddDataProtection()
+        .SetApplicationName("VetDesk")
+        .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
+}
 
 var app = builder.Build();
 
