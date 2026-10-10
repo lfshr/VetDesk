@@ -111,11 +111,14 @@ public class AppointmentHandlerTests
     }
 
     [Test]
-    public async Task Slots_Sunday_IsClosed()
+    public async Task Slots_Sunday_IsClosed_ButOffersTheWeekdayHours()
     {
         var day = await new GetBookingSlotsQueryHandler(_database.Db, _database.User, _database.Clock)
             .Handle(new GetBookingSlotsQuery { Date = new DateOnly(2026, 10, 11) }, CancellationToken.None);
 
         day.Value.IsClosed.ShouldBeTrue();
+        day.Value.Slots[0].Time.ShouldBe(new TimeOnly(8, 0));
+        day.Value.Slots[^1].Time.ShouldBe(new TimeOnly(18, 45));
+        day.Value.Slots.ShouldNotContain(s => s.State == SlotState.Lunch);
     }
 }

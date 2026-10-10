@@ -48,10 +48,11 @@ public class GetBookingSlotsQueryHandler : IRequestHandler<GetBookingSlotsQuery,
 
         var settings = await _dbContext.ClinicSettings.AsNoTracking().FirstAsync(cancellationToken);
         var hours = settings.HoursOn(request.Date.DayOfWeek);
-        if (hours is not { } open)
-            return Result.Success(new BookingDay(request.Date, true, null, null, []));
-
-        var lunch = settings.LunchOn(request.Date.DayOfWeek);
+        var isClosed = hours is null;
+        // Staff can still book on a closed day (an out-of-hours surgery, a Sunday recheck), so offer the weekday hours
+        // rather than no times at all. The dialog says the practice is closed.
+        var open = hours ?? (settings.WeekdayOpen, settings.WeekdayClose);
+        var lunch = isClosed ? null : settings.LunchOn(request.Date.DayOfWeek);
         var (dayStart, dayEnd) = ClinicTime.DayRange(request.Date);
         var booked = await _dbContext.Appointments.AsNoTracking()
             .Where(a => a.StartUtc >= dayStart && a.StartUtc < dayEnd && a.Id != request.IgnoreAppointmentId)
@@ -73,6 +74,6 @@ public class GetBookingSlotsQueryHandler : IRequestHandler<GetBookingSlotsQuery,
             slots.Add(new BookingSlot(time, startUtc, state, count));
         }
 
-        return Result.Success(new BookingDay(request.Date, false, open.Open, open.Close, slots));
+        return Result.Success(new BookingDay(request.Date, isClosed, open.Open, open.Close, slots));
     }
 }
