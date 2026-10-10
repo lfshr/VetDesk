@@ -16,21 +16,23 @@ else
 {
     <NavigationLock OnBeforeInternalNavigation="SaveBeforeLeaving" ConfirmExternalNavigation="_dirty" />
 
-    <div class="vd-toolbar" style="flex-wrap:wrap">
+    <div class="vd-toolbar">
         <span class="vd-avatar">@_c.PatientName[..1]</span>
         <div>
             <a class="vd-strong" href="patients/@_c.PatientId" style="font-size:16px">@_c.PatientName</a>
             <div class="vd-small vd-muted">@_c.SpeciesAndBreed · @_c.Age@(_c.WeightKg is { } w ? $" · {w:0.0#} kg" : "") · @_c.OwnerName</div>
         </div>
-        @foreach (var a in _c.Allergies)
-        {
-            <span class="vd-chip vd-chip-danger"><Icon Name="alert" Size="13" /> Allergy: @a</span>
-        }
-        @foreach (var (text, severity) in _c.Alerts)
-        {
-            <AlertChip Text="@text" Severity="severity" />
-        }
-        <span class="vd-spacer"></span>
+        @* The alerts wrap onto a second line rather than pushing the buttons off the row, and are never cut off. *@
+        <div class="vd-row" style="flex:1;min-width:0;flex-wrap:wrap;gap:6px">
+            @foreach (var a in _c.Allergies)
+            {
+                <span class="vd-chip vd-chip-danger"><Icon Name="alert" Size="13" /> Allergy: @a</span>
+            }
+            @foreach (var (text, severity) in _c.Alerts)
+            {
+                <AlertChip Text="@text" Severity="severity" />
+            }
+        </div>
         @if (_c.IsLocked)
         {
             <span class="vd-chip vd-chip-success"><Icon Name="check" Size="13" /> Completed @Fmt.Time(_c.CompletedUtc!.Value)@(_c.InvoiceNumber is null ? "" : $" · {_c.InvoiceNumber}")</span>
@@ -41,7 +43,7 @@ else
         }
         else
         {
-            <span class="vd-small vd-muted vd-mono">Started @Fmt.Time(_c.StartedUtc) · @((int)(DateTime.UtcNow - _c.StartedUtc).TotalMinutes) min · @_c.ClinicianName</span>
+            <span class="vd-small vd-muted vd-mono" style="white-space:nowrap">Started @Fmt.Time(_c.StartedUtc) · @((int)(DateTime.UtcNow - _c.StartedUtc).TotalMinutes) min · @_c.ClinicianName</span>
             <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_dirty ? "Save draft" : "Saved")</button>
             <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenComplete" aria-haspopup="dialog" title="Ctrl+Enter">Complete and invoice</button>
         }

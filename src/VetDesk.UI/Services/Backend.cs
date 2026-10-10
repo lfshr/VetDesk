@@ -15,12 +15,14 @@ public class Backend
 {
     private readonly IServiceScopeFactory _scopes;
     private readonly UserSession _session;
+    private readonly DeviceAddress _device;
     private readonly ILogger<Backend> _logger;
 
-    public Backend(IServiceScopeFactory scopes, UserSession session, ILogger<Backend> logger)
+    public Backend(IServiceScopeFactory scopes, UserSession session, DeviceAddress device, ILogger<Backend> logger)
     {
         _scopes = scopes;
         _session = session;
+        _device = device;
         _logger = logger;
     }
 
@@ -56,6 +58,7 @@ public class Backend
     {
         var scope = _scopes.CreateAsyncScope();
         scope.ServiceProvider.GetRequiredService<CurrentUser>().Set(_session.IsLocked ? null : _session.Staff);
+        scope.ServiceProvider.GetRequiredService<DeviceAddress>().Address = _device.Address;
         return scope;
     }
 

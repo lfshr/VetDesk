@@ -15,7 +15,7 @@
     <div class="vd-segmented" role="group" aria-label="View">
         @foreach (var v in Enum.GetValues<View>())
         {
-            <button type="button" aria-pressed="@(_view == v)" @onclick="() => SetView(v)">@v</button>
+            <button type="button" aria-pressed="@Aria.Bool(_view == v)" @onclick="() => SetView(v)">@v</button>
         }
     </div>
     <button type="button" class="vd-btn vd-btn-primary" @onclick="() => OpenNew(null)"><Icon Name="plus" Size="18" /> New appointment</button>

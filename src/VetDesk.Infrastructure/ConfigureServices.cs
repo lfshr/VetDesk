@@ -38,6 +38,8 @@ public static class ConfigureServices
         services.AddScoped<DemoDataSeeder>();
         services.AddSingleton(new DatabaseOptions(configuration.GetValue("VetDesk:SeedDemoData", false)));
         services.AddSingleton<BackupScheduler>();
+        services.AddSingleton<WrongPinTracker>();
+        services.AddScoped<IDevicePinLimit, DevicePinLimit>();
 
         return services;
     }

@@ -272,11 +272,15 @@ public class DemoDataSeeder
             Book(pepper, "Consultation", 0, 10, 15, "Itchy skin", douglas);
             Book(clover, "Nurse clinic", 0, 10, 45, "Nail clip and weight check", null);
             Book(ziggy, "Consultation", 0, 11, 30, "Breathing noisily", heather);
-            Book(nala, "Vaccination", 0, 14, 0, "Second kitten vaccination", jen);
-            Book(rufus, "Recheck", 0, 14, 30, "Murmur recheck", heather);
-            Book(bramble, "Dental", 0, 15, 0, "Dental scale and polish", douglas);
-            Book(max, "Consultation", 0, 16, 15, "Skin recheck", douglas);
-            Book(luna, "Nurse clinic", 0, 17, 0, "Insulin technique check", null);
+            // Saturday closes at lunchtime.
+            if (today.DayOfWeek != DayOfWeek.Saturday)
+            {
+                Book(nala, "Vaccination", 0, 14, 0, "Second kitten vaccination", jen);
+                Book(rufus, "Recheck", 0, 14, 30, "Murmur recheck", heather);
+                Book(bramble, "Dental", 0, 15, 0, "Dental scale and polish", douglas);
+                Book(max, "Consultation", 0, 16, 15, "Skin recheck", douglas);
+                Book(luna, "Nurse clinic", 0, 17, 0, "Insulin technique check", null);
+            }
         }
 
         // The rest of the week.

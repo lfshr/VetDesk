@@ -34,7 +34,7 @@
             <div class="vd-segmented" role="group" aria-label="Severity">
                 @foreach (var s in Enum.GetValues<AlertSeverity>())
                 {
-                    <button type="button" aria-pressed="@(_severity == s)" @onclick="() => _severity = s">@s</button>
+                    <button type="button" aria-pressed="@Aria.Bool(_severity == s)" @onclick="() => _severity = s">@s</button>
                 }
             </div>
         </div>

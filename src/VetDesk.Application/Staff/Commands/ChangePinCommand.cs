@@ -20,13 +20,15 @@ public class ChangePinCommandHandler : IRequestHandler<ChangePinCommand, Result>
     private readonly ICurrentUser _user;
     private readonly IPasswordHasher _hasher;
     private readonly IClock _clock;
+    private readonly IDevicePinLimit _deviceLimit;
 
-    public ChangePinCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IPasswordHasher hasher, IClock clock)
+    public ChangePinCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IPasswordHasher hasher, IClock clock, IDevicePinLimit deviceLimit)
     {
         _dbContext = dbContext;
         _user = user;
         _hasher = hasher;
         _clock = clock;
+        _deviceLimit = deviceLimit;
     }
 
     public async Task<Result> Handle(ChangePinCommand request, CancellationToken cancellationToken)
@@ -37,7 +39,7 @@ public class ChangePinCommandHandler : IRequestHandler<ChangePinCommand, Result>
             return Result.Failure(ChangePinError.InvalidRequest, problem);
 
         var staff = await _dbContext.StaffMembers.FirstAsync(s => s.Id == staffId, cancellationToken);
-        if (await StaffRules.CheckPinAsync(_dbContext, _hasher, staff, request.CurrentPin, _clock.UtcNow, cancellationToken) is { } wrong)
+        if (await StaffRules.CheckPinAsync(_dbContext, _hasher, _deviceLimit, staff, request.CurrentPin, _clock.UtcNow, cancellationToken) is { } wrong)
             return Result.Failure(ChangePinError.WrongPin, wrong);
 
         staff.PinHash = _hasher.Hash(request.NewPin);

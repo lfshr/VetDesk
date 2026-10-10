@@ -13,7 +13,8 @@
         AppointmentStatus.CheckedIn => "vd-chip-warning",
         AppointmentStatus.Cancelled or AppointmentStatus.NoShow => "vd-chip-danger",
         _ when Kind == AppointmentKind.Surgery => "vd-chip-surgery",
-        _ => "vd-chip-success"
+        // Booked and not yet arrived: outlined, so the ones that need attention (waiting, in consult) stand out.
+        _ => "vd-chip-outline"
     };
 
     private string Label => Status switch

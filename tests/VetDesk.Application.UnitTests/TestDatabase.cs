@@ -21,6 +21,9 @@ public sealed class TestDatabase : IDisposable
     public TestUser User { get; } = new();
     public TestClock Clock { get; } = new();
     public IPasswordHasher Hasher { get; } = new PasswordHasher();
+    public TestDevice Device { get; } = new();
+    public WrongPinTracker WrongPins { get; } = new(NullLogger<WrongPinTracker>.Instance);
+    public IDevicePinLimit DeviceLimit => new DevicePinLimit(Device, WrongPins);
     public VetDeskDbContext Db { get; }
 
     private TestDatabase()
@@ -120,6 +123,12 @@ public class TestUser : ICurrentUser
         Name = string.Empty;
         _permissions.Clear();
     }
+}
+
+/// <summary>The device requests come from: a desk on the practice network unless a test changes it.</summary>
+public class TestDevice : IDeviceAddress
+{
+    public string? Address { get; set; } = "192.168.1.20";
 }
 
 public class TestClock : IClock

@@ -32,7 +32,7 @@
         <div class="vd-pills" role="group" aria-label="Filter stock">
             @foreach (var f in Enum.GetValues<StockFilter>())
             {
-                <button type="button" class="vd-pill" aria-pressed="@(_filter == f)" @onclick="() => _filter = f">@FilterLabel(f) <span class="vd-pill-count">@Filtered(f).Count()</span></button>
+                <button type="button" class="vd-pill" aria-pressed="@Aria.Bool(_filter == f)" @onclick="() => _filter = f">@FilterLabel(f) <span class="vd-pill-count">@Filtered(f).Count()</span></button>
             }
         </div>
     </div>

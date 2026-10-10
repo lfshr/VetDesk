@@ -29,13 +29,15 @@ public class RecordBalanceCheckCommandHandler : IRequestHandler<RecordBalanceChe
     private readonly ICurrentUser _user;
     private readonly IClock _clock;
     private readonly IPasswordHasher _hasher;
+    private readonly IDevicePinLimit _deviceLimit;
 
-    public RecordBalanceCheckCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IClock clock, IPasswordHasher hasher)
+    public RecordBalanceCheckCommandHandler(IVetDeskDbContext dbContext, ICurrentUser user, IClock clock, IPasswordHasher hasher, IDevicePinLimit deviceLimit)
     {
         _dbContext = dbContext;
         _user = user;
         _clock = clock;
         _hasher = hasher;
+        _deviceLimit = deviceLimit;
     }
 
     /// <returns>The difference between counted and expected (zero when it balances).</returns>
@@ -51,7 +53,7 @@ public class RecordBalanceCheckCommandHandler : IRequestHandler<RecordBalanceChe
         if (product is null)
             return Result.Failure(RecordBalanceCheckError.NotFound, "Choose a controlled drug.");
 
-        var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
+        var (witness, problem) = await WitnessCheck.VerifyAsync(_dbContext, _hasher, _deviceLimit, _user, request.WitnessId, request.WitnessPin, _clock.UtcNow, cancellationToken);
         if (problem is not null)
             return Result.Failure(RecordBalanceCheckError.WitnessRequired, problem);
 
