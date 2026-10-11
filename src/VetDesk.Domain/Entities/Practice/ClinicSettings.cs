@@ -11,6 +11,20 @@ public class ClinicSettings : BaseAuditableEntity, IHasVersion
     public string? Email { get; set; }
     public string? VatNumber { get; set; }
 
+    /// <summary>
+    /// A limited company must show its registered name, number, place of registration and registered office on its
+    /// invoices (Companies Act 2006). Left empty for a practice that isn't a company, and then not printed.
+    /// </summary>
+    public string? CompanyName { get; set; }
+    public string? CompanyNumber { get; set; }
+    public CompanyRegistration? CompanyRegisteredIn { get; set; }
+    public string? RegisteredOffice { get; set; }
+
+    /// <summary>Printed on invoices so clients can pay by transfer. Left empty to leave the section off.</summary>
+    public string? BankAccountName { get; set; }
+    public string? BankSortCode { get; set; }
+    public string? BankAccountNumber { get; set; }
+
     public TimeOnly WeekdayOpen { get; set; } = new(8, 0);
     public TimeOnly WeekdayClose { get; set; } = new(19, 0);
     public TimeOnly? SaturdayOpen { get; set; } = new(9, 0);
@@ -41,4 +55,12 @@ public class ClinicSettings : BaseAuditableEntity, IHasVersion
         day is DayOfWeek.Saturday or DayOfWeek.Sunday || LunchStart is null || LunchEnd is null
             ? null
             : (LunchStart.Value, LunchEnd.Value);
+}
+
+/// <summary>The part of the UK a company is registered in, as Companies House records it.</summary>
+public enum CompanyRegistration
+{
+    EnglandAndWales,
+    Scotland,
+    NorthernIreland
 }

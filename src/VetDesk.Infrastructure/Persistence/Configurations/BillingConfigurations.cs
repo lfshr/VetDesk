@@ -85,6 +85,12 @@ public class ClinicSettingsConfiguration : IEntityTypeConfiguration<ClinicSettin
     public void Configure(EntityTypeBuilder<ClinicSettings> builder)
     {
         builder.Property(s => s.BackupFolder).HasMaxLength(1000);
+        builder.Property(s => s.CompanyName).HasMaxLength(200);
+        builder.Property(s => s.CompanyNumber).HasMaxLength(8);
+        builder.Property(s => s.RegisteredOffice).HasMaxLength(400);
+        builder.Property(s => s.BankAccountName).HasMaxLength(200);
+        builder.Property(s => s.BankSortCode).HasMaxLength(8);
+        builder.Property(s => s.BankAccountNumber).HasMaxLength(8);
         builder.Property(s => s.LastBackupResult).HasMaxLength(2000);
     }
 }

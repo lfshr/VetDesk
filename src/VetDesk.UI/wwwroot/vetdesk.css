@@ -555,12 +555,73 @@ h1:focus { outline: none; }
 
 .vd-print-only { display: none; }
 
+/* The A4 invoice printout (InvoicePrintSheet). Hidden on screen; sized in millimetres and points for paper. Black on white
+   with the one teal accent, so it still reads on a mono laser printer. vetdesk.printA4 sets the page size and margins. */
+.vd-inv { display: none; color: var(--vd-text); background: #fff; font-size: 9pt; line-height: 1.45; }
+.vd-inv-mono, .vd-inv-num, .vd-inv-facts dd, .vd-inv-totals dd, .vd-inv-bank dd, .vd-inv-number { font-family: var(--vd-font-mono); font-variant-numeric: tabular-nums; }
+.vd-inv-num { text-align: right; white-space: nowrap; }
+.vd-inv-muted { color: var(--vd-text-secondary); }
+.vd-inv-faint { color: var(--vd-text-faint); }
+.vd-inv-label { font-size: 7pt; text-transform: uppercase; letter-spacing: .06em; color: var(--vd-text-faint); font-weight: 500; }
+.vd-inv-head { display: grid; grid-template-columns: 1fr auto; gap: 8mm; align-items: start; padding-bottom: 5mm; border-bottom: .5mm solid var(--vd-accent); }
+.vd-inv-practice { display: grid; grid-template-columns: auto 1fr; gap: 3mm; align-items: start; }
+.vd-inv-mark { width: 9mm; height: 9mm; border-radius: 2mm; background: var(--vd-accent); color: #fff; display: grid; place-items: center; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.vd-inv-practice-name { font-size: 13pt; font-weight: 600; line-height: 1.2; }
+.vd-inv-vatno { margin-top: 1.2mm; }
+.vd-inv-doc { display: grid; gap: 1mm; justify-items: end; text-align: right; }
+.vd-inv-doc h1 { font-size: 18pt; line-height: 1.1; letter-spacing: -.01em; }
+.vd-inv-number { font-size: 11pt; font-weight: 600; }
+.vd-inv-stamp { font-size: 7pt; font-weight: 600; padding: .5mm 2mm; border: .3mm solid currentColor; border-radius: 99px; color: var(--vd-text-secondary); }
+.vd-inv-parties { display: grid; grid-template-columns: 1fr 1fr .95fr; gap: 6mm; margin-top: 7mm; }
+.vd-inv-parties > div { display: grid; gap: .8mm; align-content: start; }
+.vd-inv-name { font-size: 10pt; font-weight: 600; }
+.vd-inv-claim { margin-top: 1.5mm; color: var(--vd-text-secondary); }
+.vd-inv-facts { display: grid; grid-template-columns: auto auto; gap: .8mm 4mm; justify-content: end; margin: 0; }
+.vd-inv-facts dt { color: var(--vd-text-faint); }
+.vd-inv-facts dd { margin: 0; text-align: right; }
+.vd-inv-lines { width: 100%; border-collapse: collapse; margin-top: 7mm; font-size: inherit; }
+.vd-inv-lines th { text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: .06em; color: var(--vd-text-faint); font-weight: 500; padding: 0 0 2mm; border-bottom: .3mm solid var(--vd-border-strong); vertical-align: bottom; }
+.vd-inv-lines th.vd-inv-num { text-align: right; }
+.vd-inv-lines td { padding: 2.2mm 0; border-bottom: .25mm solid var(--vd-border); vertical-align: top; }
+.vd-inv-lines td + td, .vd-inv-lines th + th, .vd-inv-vat td + td, .vd-inv-vat th + th { padding-left: 3mm; }
+.vd-inv-lines tr { break-inside: avoid; }
+.vd-inv-desc { font-weight: 500; }
+.vd-inv-sums { display: grid; grid-template-columns: 1fr 74mm; gap: 8mm; align-items: start; margin-top: 7mm; break-inside: avoid; }
+.vd-inv-vat { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.vd-inv-vat caption { text-align: left; padding-bottom: 1.5mm; }
+.vd-inv-vat th { font-weight: 500; color: var(--vd-text-faint); text-align: left; padding: 1mm 0; border-bottom: .25mm solid var(--vd-border-strong); }
+.vd-inv-vat th.vd-inv-num { text-align: right; }
+.vd-inv-vat td { padding: 1.2mm 0; border-bottom: .25mm solid var(--vd-border); }
+.vd-inv-totals { display: grid; grid-template-columns: 1fr auto; gap: 1mm 4mm; margin: 0; }
+.vd-inv-totals dt { color: var(--vd-text-secondary); }
+.vd-inv-totals dd { margin: 0; text-align: right; white-space: nowrap; }
+.vd-inv-totals .vd-inv-grand { padding-top: 1.6mm; margin-top: .6mm; border-top: .3mm solid var(--vd-border-strong); font-weight: 600; color: var(--vd-text); }
+.vd-inv-due { margin-top: 2.4mm; border: .3mm solid var(--vd-accent); background: var(--vd-accent-wash); border-radius: 1.5mm; padding: 2.6mm 3.2mm; display: flex; justify-content: space-between; align-items: baseline; gap: 3mm; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.vd-inv-due b { font-size: 10pt; }
+.vd-inv-due small { display: block; font-size: 7.5pt; color: var(--vd-text-secondary); }
+.vd-inv-due-amount { font-family: var(--vd-font-mono); font-size: 15pt; font-weight: 600; }
+.vd-inv-due-settled { justify-content: center; }
+.vd-inv-howto { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 7mm; padding-top: 4mm; border-top: .25mm solid var(--vd-border); break-inside: avoid; }
+.vd-inv-howto p { margin: .8mm 0 0; color: var(--vd-text-secondary); }
+.vd-inv-bank { display: grid; grid-template-columns: auto 1fr; gap: .5mm 3mm; margin: 1mm 0 0; }
+.vd-inv-bank dt { color: var(--vd-text-faint); }
+.vd-inv-bank dd { margin: 0; }
+.vd-inv-foot { margin-top: 10mm; padding-top: 3mm; border-top: .25mm solid var(--vd-border); font-size: 7pt; color: var(--vd-text-faint); break-inside: avoid; }
+
 @media print {
     body * { visibility: hidden; }
     .vd-printable, .vd-printable * { visibility: visible; }
     .vd-printable { position: absolute; left: 0; top: 0; width: 100%; }
     .vd-no-print { display: none !important; }
     .vd-print-only { display: block; }
+    .vd-inv { display: block; }
+
+    /* An A4 print (vetdesk.printA4) drops everything but the printout from the layout, so the app behind it can't add
+       blank pages or a grey page background. */
+    html.vd-print-a4, html.vd-print-a4 body { height: auto; background: #fff; }
+    html.vd-print-a4 body *:not(:has(.vd-printable)):not(.vd-printable):not(.vd-printable *) { display: none !important; }
+    html.vd-print-a4 :has(.vd-printable) { display: block !important; height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: visible !important; position: static !important; }
+    html.vd-print-a4 .vd-printable { position: static; }
 }
 
 .vd-label-preview { border: 1px dashed var(--vd-border-strong); border-radius: var(--vd-radius-sm); padding: 14px 16px; font-size: 13px; line-height: 1.5; background: #fff; }

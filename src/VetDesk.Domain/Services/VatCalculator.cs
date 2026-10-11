@@ -14,18 +14,26 @@ public static class VatCalculator
 {
     public static VatBreakdown Calculate(IEnumerable<(decimal Net, VatRate Rate)> lines)
     {
-        var byRate = lines
-            .GroupBy(l => l.Rate)
-            .Select(g => (Rate: g.Key, Net: g.Sum(l => Money.Round(l.Net))))
-            .ToList();
-
-        var net = byRate.Sum(g => g.Net);
-        var vat = byRate.Sum(g => Money.Round(g.Net * g.Rate.Percentage()));
-        return new VatBreakdown(net, vat);
+        var byRate = ByRate(lines);
+        return new VatBreakdown(byRate.Sum(r => r.Net), byRate.Sum(r => r.Vat));
     }
+
+    /// <summary>The net and VAT for each rate the lines use, in rate order. These always add up to <see cref="Calculate"/>.</summary>
+    public static IReadOnlyList<VatRateTotal> ByRate(IEnumerable<(decimal Net, VatRate Rate)> lines) => lines
+        .GroupBy(l => l.Rate)
+        .OrderBy(g => g.Key)
+        .Select(g =>
+        {
+            var net = g.Sum(l => Money.Round(l.Net));
+            return new VatRateTotal(g.Key, net, Money.Round(net * g.Key.Percentage()));
+        })
+        .ToList();
 
     public static VatBreakdown For(IEnumerable<InvoiceLine> lines) =>
         Calculate(lines.Select(l => (l.Net, l.VatRate)));
+
+    public static IReadOnlyList<VatRateTotal> ByRate(IEnumerable<InvoiceLine> lines) =>
+        ByRate(lines.Select(l => (l.Net, l.VatRate)));
 
     /// <summary>A single price including VAT, for showing gross prices next to a product.</summary>
     public static decimal Gross(decimal net, VatRate rate) => Money.Round(net) + Money.Round(Money.Round(net) * rate.Percentage());

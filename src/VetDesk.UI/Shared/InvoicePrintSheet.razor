@@ -1,0 +1,186 @@
+@using VetDesk.Application.Invoices
+@using VetDesk.Domain.Entities.Invoices
+@using VetDesk.Domain.Entities.Products
+
+@* The A4 invoice. Only shown when printing (see .vd-inv in vetdesk.css). A UK VAT invoice must show everything HMRC
+   lists in VAT Notice 700 section 16: our number, name, address and VAT number, the date (which is also the tax point,
+   since the invoice is raised when the visit ends), the client's name and address, and per line the description,
+   quantity, unit price ex VAT and VAT rate, with net and VAT totals by rate. *@
+<article class="vd-inv" aria-label="Invoice @I.Number">
+    <header class="vd-inv-head">
+        <div class="vd-inv-practice">
+            <div class="vd-inv-mark"><Icon Name="paw" Size="22" /></div>
+            <div>
+                <div class="vd-inv-practice-name">@P.Name</div>
+                @if (P.Address is not null)
+                {
+                    <div class="vd-inv-muted">@P.Address</div>
+                }
+                @if (Contact is { Length: > 0 } contact)
+                {
+                    <div class="vd-inv-muted">@contact</div>
+                }
+                @if (P.IsVatRegistered)
+                {
+                    <div class="vd-inv-vatno">VAT registration no. <span class="vd-inv-mono">@P.VatNumber</span></div>
+                }
+            </div>
+        </div>
+        <div class="vd-inv-doc">
+            <h1>@(P.IsVatRegistered ? "VAT invoice" : "Invoice")</h1>
+            <div class="vd-inv-number">@I.Number</div>
+            <span class="vd-inv-stamp">@(I.Status == InvoiceStatus.Paid ? "Paid in full" : I.Status.Label())</span>
+        </div>
+    </header>
+
+    <section class="vd-inv-parties">
+        <div>
+            <span class="vd-inv-label">Bill to</span>
+            <span class="vd-inv-name">@I.ClientName</span>
+            @if (I.ClientAddress is not null)
+            {
+                <span>@I.ClientAddress</span>
+            }
+            @if (I.ClientPostcode is not null)
+            {
+                <span>@I.ClientPostcode</span>
+            }
+            <span class="vd-inv-mono vd-inv-faint">@I.ClientNumber</span>
+        </div>
+        <div>
+            @if (Model.Patient is { } pet)
+            {
+                <span class="vd-inv-label">Patient</span>
+                <span class="vd-inv-name">@pet.Name</span>
+                <span>@pet.SpeciesAndBreed</span>
+                @if (pet.SeenBy is not null && pet.SeenUtc is { } seen)
+                {
+                    <span>Seen by @pet.SeenBy, @Fmt.Date(seen)</span>
+                }
+                <span class="vd-inv-mono vd-inv-faint">@pet.PatientNumber</span>
+            }
+            @if (I.Claim is { } claim)
+            {
+                <span class="vd-inv-claim">Insurance claim to @claim.Insurer, policy @claim.PolicyNumber, excess @Fmt.Money(claim.Excess)</span>
+            }
+        </div>
+        <dl class="vd-inv-facts">
+            <dt>Date and tax point</dt><dd>@Fmt.Date(I.IssuedUtc)</dd>
+            <dt>Due by</dt><dd>@Fmt.Date(I.DueDate)</dd>
+            <dt>Terms</dt><dd>@(P.PaymentTermsDays == 0 ? "On receipt" : $"{P.PaymentTermsDays} days")</dd>
+        </dl>
+    </section>
+
+    <table class="vd-inv-lines">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="vd-inv-num">Qty</th>
+                <th class="vd-inv-num">Unit price<br />ex VAT</th>
+                <th class="vd-inv-num">VAT rate</th>
+                <th class="vd-inv-num">Amount<br />ex VAT</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var l in I.Lines)
+            {
+                <tr>
+                    <td class="vd-inv-desc">@l.Description</td>
+                    <td class="vd-inv-num">@Fmt.Qty(l.Quantity)</td>
+                    <td class="vd-inv-num">@Fmt.Money(l.UnitPrice)</td>
+                    <td class="vd-inv-num">@RateText(l.VatRate)</td>
+                    <td class="vd-inv-num">@(l.Net == 0 ? "Included" : Fmt.Money(l.Net))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <section class="vd-inv-sums">
+        <table class="vd-inv-vat">
+            <caption class="vd-inv-label">VAT summary</caption>
+            <thead><tr><th>Rate</th><th class="vd-inv-num">Net</th><th class="vd-inv-num">VAT</th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.VatByRate)
+                {
+                    <tr><td>@r.Rate.Label()</td><td class="vd-inv-num">@Fmt.Money(r.Net)</td><td class="vd-inv-num">@Fmt.Money(r.Vat)</td></tr>
+                }
+            </tbody>
+        </table>
+        <div>
+            <dl class="vd-inv-totals">
+                <dt>Total ex VAT</dt><dd>@Fmt.Money(I.Net)</dd>
+                <dt>VAT</dt><dd>@Fmt.Money(I.Vat)</dd>
+                <dt class="vd-inv-grand">Total inc VAT</dt><dd class="vd-inv-grand">@Fmt.Money(I.Total)</dd>
+                @foreach (var p in I.Payments)
+                {
+                    @if (p.IsRefund)
+                    {
+                        <dt class="vd-inv-pay">Refunded · @Fmt.DateTime(p.TakenUtc)</dt><dd class="vd-inv-pay">@Fmt.Money(-p.Amount)</dd>
+                    }
+                    else
+                    {
+                        <dt class="vd-inv-pay">@p.Method · @Fmt.DateTime(p.TakenUtc)</dt><dd class="vd-inv-pay">−@Fmt.Money(p.Amount)</dd>
+                    }
+                }
+            </dl>
+            @if (I.AmountDue > 0)
+            {
+                <div class="vd-inv-due">
+                    <span><b>Amount due</b><small>by @Fmt.Date(I.DueDate)</small></span>
+                    <span class="vd-inv-due-amount">@Fmt.Money(I.AmountDue)</span>
+                </div>
+            }
+            else
+            {
+                <div class="vd-inv-due vd-inv-due-settled"><b>@(I.Status == InvoiceStatus.Paid ? "Paid in full. Thank you." : "Nothing to pay")</b></div>
+            }
+        </div>
+    </section>
+
+    @if (I.AmountDue > 0)
+    {
+        <section class="vd-inv-howto">
+            <div>
+                <span class="vd-inv-label">How to pay</span>
+                @if (P.HasBankDetails)
+                {
+                    <p>At reception by card or cash, or by bank transfer quoting <span class="vd-inv-mono">@I.Number</span> as the reference.</p>
+                }
+                else
+                {
+                    <p>At reception by card or cash.</p>
+                }
+            </div>
+            @if (P.HasBankDetails)
+            {
+                <div>
+                    <span class="vd-inv-label">Bank transfer</span>
+                    <dl class="vd-inv-bank">
+                        <dt>Account name</dt><dd>@P.BankAccountName</dd>
+                        <dt>Sort code</dt><dd>@P.BankSortCode</dd>
+                        <dt>Account no.</dt><dd>@P.BankAccountNumber</dd>
+                    </dl>
+                </div>
+            }
+        </section>
+    }
+
+    @if (P.HasCompanyDetails)
+    {
+        <footer class="vd-inv-foot">
+            @P.CompanyName · Registered in @(P.CompanyRegisteredIn?.Label()) no. @P.CompanyNumber · Registered office: @P.RegisteredOffice
+        </footer>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public InvoicePrintout Model { get; set; } = null!;
+
+    private InvoiceDetail I => Model.Invoice;
+    private PracticeDetails P => Model.Practice;
+
+    private string Contact => string.Join(" · ", new[] { P.Phone, P.Email }.Where(v => !string.IsNullOrWhiteSpace(v)));
+
+    // Each line shows its own rate, so zero-rated and exempt items read apart from standard-rated ones.
+    private static string RateText(VatRate rate) => rate == VatRate.Exempt ? "Exempt" : $"{rate.Percentage() * 100:0.#}%";
+}

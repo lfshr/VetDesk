@@ -49,6 +49,13 @@ public class DemoDataSeeder
         settings.Phone = "0117 496 0321";
         settings.Email = "hello@northfieldvets.example";
         settings.VatNumber = "GB123456789";
+        settings.CompanyName = "Northfield Veterinary Clinic Ltd";
+        settings.CompanyNumber = "01234567";
+        settings.CompanyRegisteredIn = CompanyRegistration.EnglandAndWales;
+        settings.RegisteredOffice = "14 Gloucester Road, Bristol";
+        settings.BankAccountName = "Northfield Veterinary Clinic Ltd";
+        settings.BankSortCode = "12-34-56";
+        settings.BankAccountNumber = "12345678";
         settings.BackupFolder = Path.Combine(Path.GetTempPath(), "VetDesk", "Backups");
 
         // People: the practice's own team, by first name. Everyone signs in with DemoPin; administrators open
