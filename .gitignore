@@ -359,3 +359,6 @@ MigrationBackup/
 
 # Default output of "aspire publish" (generated Compose files)
 aspire-output/
+
+# Design sync output (rebuilt by .design-sync/build.mjs)
+ds-bundle/
