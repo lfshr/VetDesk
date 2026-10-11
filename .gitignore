@@ -359,3 +359,15 @@ MigrationBackup/
 
 # Default output of "aspire publish" (generated Compose files)
 aspire-output/
+
+# design-sync (Claude Design) build state
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/react/node_modules/
+.design-sync/react/dist/
+.design-sync/verify/.out/
+.design-sync/verify/RefRender/bin/
+.design-sync/verify/RefRender/obj/

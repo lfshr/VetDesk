@@ -1,0 +1,134 @@
+// Writes cases.json: what compare.mjs renders on both sides. Edit the data here, then run `node make-cases.mjs`.
+import { readFileSync, writeFileSync } from "node:fs";
+
+const icons = [...readFileSync(new URL("../../src/VetDesk.UI/Shared/Icon.razor", import.meta.url), "utf8").matchAll(/case "([^"]+)":/g)].map(m => m[1]);
+
+const patients = [
+  { id: 1, name: "Biscuit", patientNumber: "P-00412", species: "Dog", speciesAndBreed: "Dog · Border Terrier", ownerName: "Sarah Whitfield", ownerPhone: "07700 900461", microchip: "985112004567812", allergyLabels: ["Penicillin"] },
+  { id: 2, name: "Bramble", patientNumber: "P-00388", species: "Cat", speciesAndBreed: "Cat · Domestic Shorthair", ownerName: "Tom Bishop", ownerPhone: "0113 496 0721", allergyLabels: [] },
+  { id: 3, name: "Bilbo", patientNumber: "P-01027", species: "Rabbit", speciesAndBreed: "Rabbit · Netherland Dwarf", ownerName: "Amira Khan", ownerPhone: "07700 900188", allergyLabels: [] },
+];
+const recent = [
+  { id: 4, name: "Mittens", patientNumber: "P-00211", species: "Cat", speciesAndBreed: "Cat · Maine Coon", ownerName: "Helen Ashby", ownerPhone: "07700 900733" },
+  { id: 5, name: "Rolo", patientNumber: "P-00967", species: "Dog", speciesAndBreed: "Dog · Labrador Retriever", ownerName: "Gareth Price", ownerPhone: "07700 900914" },
+];
+const products = [
+  { id: 1, code: "AMX250", name: "Amoxicillin 250 mg tablets", category: "Medicine", grossPrice: 0.84, unit: "tablet", isStocked: true, onHand: 412, allergyConflicts: ["Penicillin"] },
+  { id: 2, code: "AMXCL", name: "Amoxicillin/clavulanate 50 mg tablets", category: "Medicine", grossPrice: 1.12, unit: "tablet", isStocked: true, onHand: 96.5, allergyConflicts: ["Penicillin"] },
+  { id: 3, code: "AMXINJ", name: "Amoxicillin injection 150 mg/ml", category: "Medicine", grossPrice: 3.6, unit: "ml", isStocked: false, allergyConflicts: [] },
+];
+const methadone = { id: 9, code: "METH10", name: "Methadone 10 mg/ml injection", category: "Medicine", grossPrice: 4.8, unit: "ml", isControlledDrug: true, isStocked: true, onHand: 18 };
+const witnesses = [{ id: 2, shortName: "Janet", jobTitle: "Registered veterinary nurse" }, { id: 3, shortName: "Heather", jobTitle: "Veterinary surgeon" }];
+
+const cases = [
+  ...icons.map(name => ({ id: `icon-${name}`, component: "Icon", props: { name } })),
+  { id: "icon-size-16", component: "Icon", props: { name: "back", size: 16 } },
+  { id: "icon-size-32", component: "Icon", props: { name: "paw", size: 32 } },
+
+  ...["Alert", "Warning", "Note"].map(severity => ({ id: `alert-${severity}`, component: "AlertChip", props: { text: "Bites when restrained", severity } })),
+  { id: "alert-allergy", component: "AlertChip", props: { text: "Penicillin", severity: "Note", isAllergy: true } },
+  { id: "alert-large", component: "AlertChip", props: { text: "Diabetic — on insulin", severity: "Alert", large: true } },
+
+  ...["Booked", "CheckedIn", "InConsult", "Done", "Cancelled", "NoShow"].flatMap(status => ["Consultation", "Surgery"].map(kind =>
+    ({ id: `appt-${status}-${kind}`, component: "AppointmentStatusChip", props: { status, kind } }))),
+  ...["Unpaid", "Overdue", "PartPaid", "ClaimSent", "Paid", "Refunded"].map(status => ({ id: `invoice-${status}`, component: "InvoiceStatusChip", props: { status } })),
+  ...["InStock", "Low", "Out", "Expiring", "Expired"].map(status => ({ id: `stock-${status}`, component: "StockStatusChip", props: { status } })),
+  { id: "vaccine-none", component: "VaccineDueChip", props: {} },
+  { id: "vaccine-due", component: "VaccineDueChip", props: { dueDate: "2027-03-14" } },
+  { id: "vaccine-soon", component: "VaccineDueChip", props: { dueDate: "2026-11-02", isDueSoon: true } },
+  { id: "vaccine-overdue", component: "VaccineDueChip", props: { dueDate: "2026-09-21", isOverdue: true } },
+
+  { id: "kpi-up", component: "Kpi", props: { label: "Takings", value: "£4,210.00", change: 12.34 } },
+  { id: "kpi-down", component: "Kpi", props: { label: "Appointments", value: "38", change: -4.05 } },
+  { id: "kpi-flat", component: "Kpi", props: { label: "New clients", value: "6", change: 0 } },
+  { id: "kpi-none", component: "Kpi", props: { label: "Average invoice", value: "£86.40" } },
+  { id: "check-ok", component: "Check", props: { ok: true, text: "Weight recorded" } },
+  { id: "check-fail", component: "Check", props: { ok: false, text: "Clinical notes are empty" } },
+  { id: "formerror-none", component: "FormError", props: {} },
+  { id: "formerror", component: "FormError", props: { text: "That time is already booked for Heather." } },
+  ...["S", "O", "A", "P"].map(letter => ({ id: `soap-${letter}`, component: "SoapLetter", props: { letter } })),
+  { id: "vital-unit", component: "Vital", props: { label: "Heart rate", unit: "bpm", id: "v-hr", value: "96" } },
+  { id: "vital-empty", component: "Vital", props: { label: "Temperature", unit: "°C", id: "v-temp" } },
+  { id: "vital-text", component: "Vital", props: { label: "Mucous membranes", id: "v-mm", value: "Pink, moist", text: true } },
+  { id: "vital-disabled", component: "Vital", props: { label: "Weight", unit: "kg", id: "v-wt", value: "12.4", disabled: true } },
+  { id: "weights", component: "WeightChart", props: { weights: [
+    { recordedUtc: "2026-10-08T09:20:00Z", kg: 12.4, context: "Consultation" },
+    { recordedUtc: "2026-07-14T14:05:00Z", kg: 12.85, context: "Nurse clinic" },
+    { recordedUtc: "2026-03-02T10:40:00Z", kg: 13.1, context: "Vaccination" },
+    { recordedUtc: "2025-11-19T16:30:00Z", kg: 12, context: "Consultation" },
+    { recordedUtc: "2025-06-03T11:00:00Z", kg: 11.6, context: "Consultation" },
+    { recordedUtc: "2024-12-01T11:00:00Z", kg: 10.9, context: "Puppy check" },
+  ] } },
+  { id: "weights-one", component: "WeightChart", props: { weights: [{ recordedUtc: "2026-10-08T09:20:00Z", kg: 4.2, context: "Consultation" }] } },
+  { id: "weights-none", component: "WeightChart", props: { weights: [] } },
+
+  { id: "modal-form", component: "Modal", props: { title: "New appointment", subtitle: "Biscuit · Sarah Whitfield",
+    children: { $html: '<div class="vd-form-grid"><div class="vd-field"><label for="m-date">Date</label><input id="m-date" type="date" value="2026-10-12"></div><div class="vd-field"><label for="m-time">Time</label><input id="m-time" value="09:20"></div></div>' },
+    footer: { $html: '<button type="button" class="vd-btn vd-btn-secondary">Cancel</button><button type="button" class="vd-btn vd-btn-primary">Book</button>' } } },
+  { id: "modal-narrow", component: "Modal", props: { title: "Cash-up", size: "narrow", children: { $html: "<p>Count the till before closing.</p>" } } },
+  { id: "modal-flush", component: "Modal", props: { title: "Controlled drug register", size: "wide", flush: true, onTop: true, children: { $html: '<table class="vd-table"><thead><tr><th>Date</th><th>Drug</th></tr></thead><tbody><tr><td>8 Oct</td><td>Methadone</td></tr></tbody></table>' } } },
+
+  { id: "confirm-danger", component: "ConfirmDialog", props: { title: "Are you sure you want to delete “Bites when restrained”?", confirmLabel: "Delete", danger: true } },
+  { id: "confirm-info", component: "ConfirmDialog", props: { title: "Check Biscuit in?", message: "Sarah Whitfield is at the desk with Biscuit.", confirmLabel: "Check in", cancelLabel: "Not yet" } },
+  { id: "confirm-alert", component: "ConfirmDialog", props: { title: "Booking saved", message: "Biscuit is booked with Heather at 09:20.", cancelLabel: null } },
+
+  { id: "toasts", component: "Toasts", props: { toasts: [
+    { id: "a", text: "Biscuit checked in", kind: "Success" },
+    { id: "b", text: "Low stock: Amoxicillin 250 mg tablets", kind: "Warning" },
+    { id: "c", text: "VetDesk couldn't save the invoice. Try again.", kind: "Error" } ] } },
+
+  { id: "pinpad", component: "PinPad", props: {} },
+  { id: "pinpad-busy", component: "PinPad", props: { id: "lock-pin", label: "Your PIN", busy: true } },
+  { id: "pinpad-typed", component: "PinPad", props: {}, actions: [{ selector: ".vd-pin-key >> nth=0", click: true }, { selector: ".vd-pin-key >> nth=4", click: true }],
+    blazorActions: [{ selector: ".vd-pin-key:nth-child(1)", click: true }, { selector: ".vd-pin-key:nth-child(5)", click: true }] },
+
+  { id: "charge-add", component: "ChargeForm", props: { product: { name: "Meloxicam 1.5 mg/ml oral suspension", grossPrice: 14.4, unit: "bottle", isStocked: true, onHand: 23 } } },
+  { id: "charge-prescribe", component: "ChargeForm", props: { product: { name: "Meloxicam 1.5 mg/ml oral suspension", grossPrice: 14.4, unit: "bottle", isStocked: true, onHand: 23 }, isPrescription: true } },
+  { id: "charge-prescribe-filled", component: "ChargeForm", props: { product: { name: "Meloxicam 1.5 mg/ml oral suspension", grossPrice: 14.4, unit: "bottle" }, isPrescription: true },
+    actions: [{ selector: "#cf-dir", fill: "0.4 ml once daily with food" }] },
+  { id: "charge-cd", component: "ChargeForm", props: { product: methadone } },
+  { id: "charge-conflict", component: "ChargeForm", props: { product: products[0], isPrescription: true, conflicts: ["Penicillin"] } },
+  { id: "charge-conflict-nurse", component: "ChargeForm", props: { product: products[0], conflicts: ["Penicillin"], canOverride: false } },
+
+  { id: "alert-new", component: "AlertEditor", props: { alert: { text: "", severity: "Alert" } } },
+  { id: "alert-new-picked", component: "AlertEditor", props: { alert: { text: "", severity: "Alert" } }, actions: [{ selector: "#alert-preset", select: "6" }] },
+  { id: "alert-new-custom", component: "AlertEditor", props: { alert: { text: "", severity: "Alert" } }, actions: [{ selector: "#alert-preset", select: "custom" }] },
+  { id: "alert-edit", component: "AlertEditor", props: { alert: { id: 7, presetKey: "1", text: "Bites when restrained", severity: "Alert" } } },
+  { id: "alert-edit-severity", component: "AlertEditor", props: { alert: { id: 7, presetKey: "custom", text: "Hates the scales", severity: "Note" } },
+    actions: [{ selector: ".vd-segmented button >> nth=1", click: true }], blazorActions: [{ selector: ".vd-segmented button:nth-child(2)", click: true }] },
+  { id: "alert-delete", component: "AlertEditor", props: { alert: { id: 7, presetKey: "1", text: "Bites when restrained", severity: "Alert" } },
+    actions: [{ selector: ".vd-btn-danger-outline", click: true }],
+    pixelsOnly: "In the app ConfirmHost sits in the layout, so the dialog is a sibling here; the mirror renders it inside the editor. Both are the same position:fixed overlay." },
+
+  { id: "witness", component: "WitnessPicker", props: { witnesses } },
+  { id: "witness-chosen", component: "WitnessPicker", props: { id: "cd", witnesses, witnessId: 3, pin: "12" } },
+
+  { id: "psearch-empty", component: "PatientSearch", props: { patients } },
+  { id: "psearch-results", component: "PatientSearch", props: { patients }, actions: [{ selector: "input", fill: "bi" }] },
+  { id: "psearch-default", component: "PatientSearch", reactProps: { patients, defaultQuery: "bi" }, props: { patients }, blazorActions: [{ selector: "input", fill: "bi" }], reactActions: [] },
+  { id: "psearch-arrow", component: "PatientSearch", props: { patients }, actions: [{ selector: "input", fill: "bi" }, { selector: "input", key: "ArrowDown" }, { selector: "input", key: "ArrowDown" }] },
+  { id: "psearch-none", component: "PatientSearch", props: { patients: [] }, actions: [{ selector: "input", fill: "Zebedee" }] },
+
+  { id: "prod-results", component: "ProductSearch", props: { products }, actions: [{ selector: "input", fill: "amox" }] },
+  { id: "prod-cd", component: "ProductSearch", props: { products: [methadone], placeholder: "Search controlled drugs", inputId: "cd-search" }, actions: [{ selector: "input", fill: "meth" }] },
+  { id: "prod-stocked", component: "ProductSearch", props: { products, stockedOnly: true }, actions: [{ selector: "input", fill: "amox" }, { selector: "input", key: "ArrowDown" }] },
+  { id: "prod-none", component: "ProductSearch", props: { products: [] }, actions: [{ selector: "input", fill: "zz" }] },
+  { id: "prod-default", component: "ProductSearch", reactProps: { products, defaultQuery: "amox" }, props: { products }, blazorActions: [{ selector: "input", fill: "amox" }], reactActions: [] },
+
+  { id: "picker-recent", component: "PatientPicker", props: { patients, recent } },
+  { id: "picker-norecent", component: "PatientPicker", props: { patients } },
+  { id: "picker-results", component: "PatientPicker", props: { patients, recent }, actions: [{ selector: "input", fill: "bi" }, { selector: "input", key: "ArrowDown" }] },
+  { id: "picker-nomatch", component: "PatientPicker", props: { patients: [], recent }, actions: [{ selector: "input", fill: "Zebedee" }] },
+  { id: "picker-new", component: "PatientPicker", props: { patients, recent }, actions: [{ selector: ".vd-dropdown-foot", click: true }] },
+  { id: "picker-new-default", component: "PatientPicker", reactProps: { patients, recent, defaultNewOpen: true }, props: { patients, recent },
+    blazorActions: [{ selector: ".vd-dropdown-foot", click: true }], reactActions: [] },
+  { id: "picker-new-filled", component: "PatientPicker", props: { patients, recent }, actions: [{ selector: ".vd-dropdown-foot", click: true },
+    { selector: "#np-owner", fill: "Priya Nair" }, { selector: "#np-phone", fill: "07700 900352" }, { selector: "#np-pet", fill: "Pickle" }, { selector: "#np-species", select: "Guinea pig" }],
+    blazorActions: [{ selector: ".vd-dropdown-foot", click: true }, { selector: "#np-owner", select: "Priya Nair" }, { selector: "#np-phone", select: "07700 900352" },
+      { selector: "#np-pet", select: "Pickle" }, { selector: "#np-species", select: "Guinea pig" }] },
+  { id: "picker-selected", component: "PatientPicker", props: { selected: patients[0] } },
+  { id: "picker-selected-locked", component: "PatientPicker", props: { selected: patients[1], locked: true } },
+];
+
+writeFileSync(new URL("./cases.json", import.meta.url), JSON.stringify(cases, null, 1) + "\n");
+console.log(`wrote ${cases.length} cases`);

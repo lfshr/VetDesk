@@ -1,0 +1,97 @@
+{
+  "shape": "package",
+  "pkg": "@vetdesk/ui",
+  "globalName": "VetDesk",
+  "buildCmd": "cd .design-sync/react && npm ci && npm run build",
+  "cssEntry": "dist/vetdesk.css",
+  "extraFonts": [
+    "node_modules/@fontsource/ibm-plex-sans/latin-400.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-500.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-600.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-700.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-ext-400.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-ext-500.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-ext-600.css",
+    "node_modules/@fontsource/ibm-plex-sans/latin-ext-700.css",
+    "node_modules/@fontsource/ibm-plex-mono/latin-400.css",
+    "node_modules/@fontsource/ibm-plex-mono/latin-ext-400.css"
+  ],
+  "docsDir": "../docs",
+  "overrides": {
+    "AlertChip": {
+      "cardMode": "column"
+    },
+    "AlertEditor": {
+      "cardMode": "column"
+    },
+    "AppointmentStatusChip": {
+      "cardMode": "column"
+    },
+    "ChargeForm": {
+      "cardMode": "column"
+    },
+    "Check": {
+      "cardMode": "column"
+    },
+    "ConfirmDialog": {
+      "cardMode": "single",
+      "primaryStory": "Delete"
+    },
+    "FormError": {
+      "cardMode": "column"
+    },
+    "Icon": {
+      "cardMode": "column"
+    },
+    "InvoiceStatusChip": {
+      "cardMode": "column"
+    },
+    "Kpi": {
+      "cardMode": "column"
+    },
+    "Modal": {
+      "cardMode": "single",
+      "primaryStory": "NewAppointment"
+    },
+    "PatientPicker": {
+      "cardMode": "column"
+    },
+    "PatientSearch": {
+      "cardMode": "column"
+    },
+    "ProductSearch": {
+      "cardMode": "column"
+    },
+    "SoapLetter": {
+      "cardMode": "column"
+    },
+    "StockStatusChip": {
+      "cardMode": "column"
+    },
+    "Toasts": {
+      "cardMode": "single",
+      "primaryStory": "Kinds"
+    },
+    "VaccineDueChip": {
+      "cardMode": "column"
+    },
+    "Vital": {
+      "cardMode": "column"
+    },
+    "WitnessPicker": {
+      "cardMode": "column"
+    }
+  },
+  "dtsPropsFor": {
+    "Icon": "/** Which icon (the app's full set). */\n  name: \"today\" | \"schedule\" | \"paw\" | \"owners\" | \"stethoscope\" | \"pill\" | \"receipt\" | \"chart\" | \"settings\" | \"search\" | \"plus\" | \"back\" | \"chevron-left\" | \"chevron-right\" | \"refresh\" | \"alert\" | \"shield\" | \"home\" | \"bell\" | \"close\" | \"check\" | \"trash\" | \"print\" | \"mail\" | \"download\" | \"lock\" | \"clock\" | \"info\" | \"warning\" | \"minus\" | \"card\" | \"cash\" | \"bank\" | \"syringe\" | \"truck\" | \"clipboard\" | \"label\" | \"sign-out\" | \"file\" | \"weight\" | \"edit\";\n  /** Width and height in pixels. Defaults to 20. */\n  size?: number;",
+    "PatientSearch": "/** The practice's patients to search (name, owner, phone, microchip). The top five matches show, in this order. */\n  patients: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] }[];\n  /** Picking a match (click, or Enter). */\n  onOpen?: (patient: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] }) => void;\n  /** \"Search all patients\", or Enter with no single match. */\n  onSearchAll?: (text: string) => void;\n  /** Text already in the box, with its dropdown open (for a static mockup of the search in use). */\n  defaultQuery?: string;",
+    "PatientPicker": "/** The chosen patient: shows as a card with a Change button instead of the search. */\n  selected?: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] } | null;\n  /** Picking a patient, or null for Change. */\n  onSelectedChange?: (patient: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] } | null) => void;\n  /** The patient can't be changed. */\n  locked?: boolean;\n  /** Defaults to \"picker-search\". */\n  inputId?: string;\n  /** The practice's patients to search (up to six matches show). */\n  patients?: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] }[];\n  /** Shown before anything is typed: the four patients seen most recently. */\n  recent?: { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] }[];\n  /** \"Add and select\" in the new client form. Return the new patient to select it. */\n  onAddNew?: (draft: { ownerName: string; phone: string; petName: string; species: string }) => { id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] } | void | Promise<{ id: number; name: string; patientNumber?: string; species: string; speciesAndBreed: string; ownerName: string; ownerPhone?: string; microchip?: string | null; allergyLabels?: string[] } | void>;\n  /** Text already in the box (static mockup). */\n  defaultQuery?: string;\n  /** Start with the \"New client and patient\" form open. */\n  defaultNewOpen?: boolean;",
+    "ProductSearch": "/** The price list to search by name or code (up to twelve matches show, in this order). allergyConflicts are the current patient's allergies the product conflicts with. */\n  products: { id: number; code: string; name: string; category: \"Service\" | \"Medicine\" | \"Vaccine\" | \"Retail\"; grossPrice: number; unit: string; isControlledDrug?: boolean; isStocked?: boolean; onHand?: number; allergyConflicts?: string[] }[];\n  /** Only these categories, e.g. [\"Medicine\"] when prescribing. */\n  categories?: (\"Service\" | \"Medicine\" | \"Vaccine\" | \"Retail\")[];\n  /** Only products kept in stock. */\n  stockedOnly?: boolean;\n  /** Defaults to \"Search the price list\". */\n  placeholder?: string;\n  /** Defaults to \"product-search\". */\n  inputId?: string;\n  /** Picking a product;\n  the box then clears. */ onPick?: (product: { id: number; code: string; name: string; category: \"Service\" | \"Medicine\" | \"Vaccine\" | \"Retail\"; grossPrice: number; unit: string; isControlledDrug?: boolean; isStocked?: boolean; onHand?: number; allergyConflicts?: string[] }) => void;\n  /** Text already in the box, with its dropdown open (static mockup). */\n  defaultQuery?: string;",
+    "ChargeForm": "/** The product picked from the price list. grossPrice is per unit including VAT, in pounds. */\n  product: { name: string; grossPrice: number; unit: string; isControlledDrug?: boolean; isStocked?: boolean; onHand?: number };\n  /** A prescription: asks for label directions and the button reads \"Prescribe\". */\n  isPrescription?: boolean;\n  /** Allergies the product conflicts with, e.g. [\"Penicillin\"]. Any conflict needs a written reason to go ahead. */\n  conflicts?: string[];\n  /** The signed-in person may prescribe (a vet), so may override an allergy warning. Defaults to true. */\n  canOverride?: boolean;\n  onCancel?: () => void;\n  onAdd?: (charge: { product: { name: string; grossPrice: number; unit: string; isControlledDrug?: boolean; isStocked?: boolean; onHand?: number }; quantity: number; isPrescription: boolean; directions: string | null; overrideReason: string | null }) => void;",
+    "AlertEditor": "/** The alert being edited. Leave out id for a new alert;\n  presetKey null starts at the pick-list, \"custom\" for typed-in text. */ alert: { id?: number | null; presetKey?: string | null; text: string; severity: \"Alert\" | \"Warning\" | \"Note\" };\n  onClose?: () => void;\n  onSave?: (alert: { id?: number | null; presetKey?: string | null; text: string; severity: \"Alert\" | \"Warning\" | \"Note\" }) => void;\n  /** After the user confirms in the delete dialog. */\n  onDelete?: (id: number) => void;",
+    "WitnessPicker": "/** Prefix for the two input ids. Defaults to \"witness\". */\n  id?: string;\n  /** Staff who may witness (not whoever is signed in). shortName is the first name. */\n  witnesses: { id: number; shortName: string; jobTitle: string }[];\n  witnessId?: number | null;\n  onWitnessIdChange?: (id: number | null) => void;\n  pin?: string | null;\n  onPinChange?: (pin: string) => void;",
+    "WeightChart": "/** Weights, newest first: recordedUtc is an ISO timestamp, kg the weight, context where it came from (\"Consultation\"). The list shows the first five;\n  the chart plots all, oldest on the left. */ weights: { recordedUtc: string; kg: number; context: string }[];",
+    "Toasts": "/** The toasts showing now, oldest first (the app keeps at most four). kind defaults to Success. */\n  toasts: { id: string; text: string; kind?: \"Success\" | \"Warning\" | \"Error\" }[];\n  /** The close button on a toast. */\n  onDismiss?: (id: string) => void;"
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
