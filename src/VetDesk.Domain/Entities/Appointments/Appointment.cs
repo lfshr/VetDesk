@@ -20,6 +20,12 @@ public class Appointment : BaseAuditableEntity, IHasVersion
     /// <summary>The owner asked for a text reminder. Recorded only: SMS is not connected in v1.</summary>
     public bool SmsReminder { get; set; }
 
+    /// <summary>
+    /// The vet or administrator who approved a closed-day, out-of-hours or busy booking made by someone who can't book
+    /// those times alone. Null when no approval was needed.
+    /// </summary>
+    public string? ApprovedBy { get; set; }
+
     public Guid Version { get; set; }
 
     public DateTime EndUtc => StartUtc.AddMinutes(Minutes);

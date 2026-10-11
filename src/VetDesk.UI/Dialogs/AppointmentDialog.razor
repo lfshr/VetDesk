@@ -3,6 +3,7 @@
 @inject ToastService Toasts
 @inject DialogService Dialogs
 @inject NavigationManager Nav
+@inject UserSession Session
 
 <Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="640">
     <ChildContent>
@@ -73,19 +74,24 @@
                         @foreach (var s in _day.Slots)
                         {
                             <button type="button" class="vd-slot @(IsGreyed(s) ? "vd-slot-busy" : "")" aria-pressed="@Aria.Bool(_startUtc == s.StartUtc)"
-                                    disabled="@(s.State == SlotState.Past && _startUtc != s.StartUtc)" @onclick="() => _startUtc = s.StartUtc">
+                                    disabled="@(s.State == SlotState.Past && _startUtc != s.StartUtc)" @onclick="() => PickSlot(s.StartUtc)">
                                 <strong>@s.Time.ToString("HH:mm")</strong>
                                 <span>@SlotNote(s)</span>
                             </button>
                         }
                     </div>
-                    @if (_day.IsClosed)
+                    @* Once saving has asked for approval, its reason takes this place; the approver and PIN go below Reason. *@
+                    @if (_day.IsClosed && _approval is null)
                     {
-                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. You can still book an appointment.</div>
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. @CanStillBook</div>
                     }
-                    @if (PickedSlotWarning is { } warning)
+                    @if (_approval is null && PickedSlotWarning is { } warning)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
+                    }
+                    @if (_approval is not null)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @_approval</div>
                     }
                     @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
                     {
@@ -98,8 +104,33 @@
                 <label for="appt-reason">Reason</label>
                 <input id="appt-reason" @bind="_reason" @bind:event="oninput" placeholder="e.g. Limping on back left leg" maxlength="400" />
             </div>
+            @if (_approval is not null)
+            {
+                <div class="vd-form-grid">
+                    <div class="vd-field">
+                        <label for="appt-approver">Approved by</label>
+                        <select id="appt-approver" value="@(_approverId?.ToString() ?? "")" @onchange="PickApprover">
+                            <option value="">Choose a vet or administrator</option>
+                            @foreach (var s in _approvers)
+                            {
+                                <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="vd-field">
+                        <label for="appt-approver-pin">Their PIN</label>
+                        <input id="appt-approver-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_approverPin" @bind:event="oninput" />
+                    </div>
+                </div>
+                <div class="vd-hint">They type their own PIN at this desk. Their name is kept on the appointment; the PIN isn't stored.</div>
+            }
             <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
             <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
+
+            @if (_existing?.ApprovedBy is { } approvedBy && _approval is null)
+            {
+                <div class="vd-hint">Booked out of hours or into a busy time with @approvedBy's approval.</div>
+            }
         }
     </ChildContent>
     <Footer>
@@ -119,7 +150,7 @@
             <span class="vd-small vd-muted" style="margin-right:auto">@Summary</span>
         }
         <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
-        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanBook || _saving)" @onclick="Save">@(IsEdit ? "Save changes" : "Book appointment")</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanBook || _saving || (_approval is not null && (_approverId is null || string.IsNullOrEmpty(_approverPin))))" @onclick="Save">@SaveLabel</button>
     </Footer>
 </Modal>
 
@@ -149,6 +180,18 @@
     private string _reason = "";
     private bool _sms = true;
     private BookingDay? _day;
+    private IReadOnlyList<StaffDto> _approvers = [];
+
+    // Set when the server says this time needs a vet or administrator's approval; the approver then confirms with their PIN.
+    private string? _approval;
+    private int? _approverId;
+    private string? _approverPin;
+
+    private bool CanBookAnyTime => Session.Staff is { } me && StaffMember.ApprovesBookings(me.Role, me.IsAdministrator);
+
+    private string CanStillBook => CanBookAnyTime ? "You can still book an appointment." : "A vet or administrator can approve a booking.";
+
+    private string SaveLabel => _approval is not null ? (IsEdit ? "Approve and save" : "Approve and book") : IsEdit ? "Save changes" : "Book appointment";
 
     private bool CanBook => _patient is not null && _typeId > 0 && _startUtc is not null && !string.IsNullOrWhiteSpace(_reason);
 
@@ -178,7 +221,8 @@
         _ => "Free"
     };
 
-    // As in the design: picking a lunch, out-of-hours or busy time says so, without stopping the booking.
+    // As in the design: picking a lunch, out-of-hours or busy time says so, without stopping the booking (closed and busy
+    // times booked by a nurse or receptionist then ask for a vet or administrator's approval on saving).
     // On a closed day the banner above the grid already says it, so only a busy time is called out there.
     private string? PickedSlotWarning
     {
@@ -194,7 +238,11 @@
                 parts.Add($"{time} is outside opening hours ({_day.Date.DayOfWeek} {o:HH:mm}–{c:HH:mm}).");
             if (s.BookedCount >= 2)
                 parts.Add($"{s.BookedCount} appointments are already booked at {time}.");
-            return parts.Count == 0 ? null : string.Join(" ", parts) + " You can still book it.";
+            if (parts.Count == 0)
+                return null;
+            // Lunch alone is bookable by anyone; closed and busy times need a vet or administrator.
+            var needsApproval = !CanBookAnyTime && (s.State == SlotState.Closed || s.BookedCount >= 2);
+            return string.Join(" ", parts) + (needsApproval ? " A vet or administrator will need to approve it." : " You can still book it.");
         }
     }
 
@@ -215,6 +263,7 @@
 
         _types = types.Value;
         _staff = staff.Value.Where(s => s.Role is StaffRole.Vet or StaffRole.Nurse).ToList();
+        _approvers = staff.Value.Where(s => s.CanApproveBookings && s.Id != Session.Staff?.StaffId).ToList();
 
         if (AppointmentId is { } id)
         {
@@ -257,11 +306,28 @@
         _day = day.IsSuccess ? day.Value : null;
     }
 
+    private void PickSlot(DateTime startUtc)
+    {
+        _startUtc = startUtc;
+        ClearApproval();
+    }
+
+    // A different time or length may not need approval, or need it for another reason; the server says on saving.
+    private void ClearApproval()
+    {
+        _approval = null;
+        _approverPin = null;
+    }
+
+    private void PickApprover(ChangeEventArgs e) =>
+        _approverId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+
     private async Task SetDate(DateOnly date)
     {
         if (date == _date)
             return;
         _date = date;
+        ClearApproval();
         // A different day means a different time; keep the choice only when editing within the same day.
         _startUtc = _existing is not null && DateOnly.FromDateTime(Fmt.Local(_existing.StartUtc)) == date ? _existing.StartUtc : null;
         await LoadSlots();
@@ -281,6 +347,7 @@
         if (_types.FirstOrDefault(t => t.Id == id) is { } type)
         {
             _minutes = type.Minutes;
+            ClearApproval();
             await LoadSlots();
         }
     }
@@ -290,6 +357,7 @@
         if (int.TryParse(e.Value?.ToString(), out var m))
         {
             _minutes = m;
+            ClearApproval();
             await LoadSlots();
         }
     }
@@ -307,9 +375,17 @@
             Minutes = _minutes,
             Reason = _reason,
             SmsReminder = _sms,
-            Version = _existing?.Version
+            Version = _existing?.Version,
+            ApproverId = _approval is not null ? _approverId : null,
+            ApproverPin = _approval is not null ? _approverPin : null
         });
         _saving = false;
+        _approverPin = null;
+        if (result.ErrorCode is SaveAppointmentError.NeedsApproval)
+        {
+            _approval = result.ToString();
+            return;
+        }
         if (Toasts.Check(result, IsEdit ? "Appointment updated" : $"{_patient.Name} booked for {Fmt.Time(_startUtc.Value)}, {Fmt.Date(_date)}"))
             await OnSaved.InvokeAsync();
     }

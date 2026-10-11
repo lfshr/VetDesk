@@ -26,7 +26,8 @@ public record AppointmentDto(
     bool SmsReminder,
     bool HasAllergy,
     int? ConsultationId,
-    Guid Version)
+    Guid Version,
+    string? ApprovedBy = null)
 {
     public DateTime EndUtc => StartUtc.AddMinutes(Minutes);
 
@@ -34,7 +35,7 @@ public record AppointmentDto(
         a.Id, Utc.Mark(a.StartUtc), a.Minutes, a.Patient.Id, a.Patient.Name, a.Patient.Breed, a.Patient.Species,
         a.Patient.Client.Id, a.Patient.Client.ShortName, a.Patient.Client.Phone, a.Reason, a.Type.Id, a.Type.Name,
         a.Type.Kind, a.Type.Colour, a.Status, a.Clinician?.Id, a.Clinician?.ShortName, Utc.Mark(a.CheckedInUtc),
-        a.SmsReminder, hasAllergy, consultationId, a.Version);
+        a.SmsReminder, hasAllergy, consultationId, a.Version, a.ApprovedBy);
 }
 
 public record AppointmentTypeDto(int Id, string Name, AppointmentKind Kind, int Minutes, string SeenBy, bool OnlineBooking, AppointmentColour Colour, bool IsActive)
