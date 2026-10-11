@@ -80,7 +80,7 @@
                             </button>
                         }
                     </div>
-                    @* Once saving has asked for approval, the approval box takes this place and says why. *@
+                    @* Once saving has asked for approval, its reason takes this place; the approver and PIN go below Reason. *@
                     @if (_day.IsClosed && _approval is null)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. @CanStillBook</div>
@@ -92,23 +92,6 @@
                     @if (_approval is not null)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @_approval</div>
-                        <div class="vd-form-grid">
-                            <div class="vd-field">
-                                <label for="appt-approver">Approved by</label>
-                                <select id="appt-approver" value="@(_approverId?.ToString() ?? "")" @onchange="PickApprover">
-                                    <option value="">Choose a vet or administrator</option>
-                                    @foreach (var s in _approvers)
-                                    {
-                                        <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="vd-field">
-                                <label for="appt-approver-pin">Their PIN</label>
-                                <input id="appt-approver-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_approverPin" @bind:event="oninput" />
-                            </div>
-                        </div>
-                        <div class="vd-hint">They type their own PIN at this desk. Their name is kept on the appointment; the PIN isn't stored.</div>
                     }
                     @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
                     {
@@ -121,6 +104,26 @@
                 <label for="appt-reason">Reason</label>
                 <input id="appt-reason" @bind="_reason" @bind:event="oninput" placeholder="e.g. Limping on back left leg" maxlength="400" />
             </div>
+            @if (_approval is not null)
+            {
+                <div class="vd-form-grid">
+                    <div class="vd-field">
+                        <label for="appt-approver">Approved by</label>
+                        <select id="appt-approver" value="@(_approverId?.ToString() ?? "")" @onchange="PickApprover">
+                            <option value="">Choose a vet or administrator</option>
+                            @foreach (var s in _approvers)
+                            {
+                                <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="vd-field">
+                        <label for="appt-approver-pin">Their PIN</label>
+                        <input id="appt-approver-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_approverPin" @bind:event="oninput" />
+                    </div>
+                </div>
+                <div class="vd-hint">They type their own PIN at this desk. Their name is kept on the appointment; the PIN isn't stored.</div>
+            }
             <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
             <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
 
