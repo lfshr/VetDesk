@@ -80,7 +80,7 @@
                             </button>
                         }
                     </div>
-                    @* Once saving has asked for approval, the approval banner below says why; don't repeat it here. *@
+                    @* Once saving has asked for approval, the approval box takes this place and says why. *@
                     @if (_day.IsClosed && _approval is null)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. @CanStillBook</div>
@@ -88,6 +88,27 @@
                     @if (_approval is null && PickedSlotWarning is { } warning)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
+                    }
+                    @if (_approval is not null)
+                    {
+                        <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @_approval</div>
+                        <div class="vd-form-grid">
+                            <div class="vd-field">
+                                <label for="appt-approver">Approved by</label>
+                                <select id="appt-approver" value="@(_approverId?.ToString() ?? "")" @onchange="PickApprover">
+                                    <option value="">Choose a vet or administrator</option>
+                                    @foreach (var s in _approvers)
+                                    {
+                                        <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="vd-field">
+                                <label for="appt-approver-pin">Their PIN</label>
+                                <input id="appt-approver-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_approverPin" @bind:event="oninput" />
+                            </div>
+                        </div>
+                        <div class="vd-hint">They type their own PIN at this desk. Their name is kept on the appointment; the PIN isn't stored.</div>
                     }
                     @if (_startUtc is { } start && !_day.Slots.Any(s => s.StartUtc == start))
                     {
@@ -103,28 +124,7 @@
             <label class="vd-check"><input type="checkbox" @bind="_sms" /> Text a confirmation to the owner</label>
             <div class="vd-hint">VetDesk doesn't send texts yet; this records that the owner asked for one.</div>
 
-            @if (_approval is not null)
-            {
-                <div class="vd-banner vd-banner-warning vd-banner-compact" style="margin-top:16px"><Icon Name="info" Size="14" /> @_approval</div>
-                <div class="vd-form-grid">
-                    <div class="vd-field">
-                        <label for="appt-approver">Approved by</label>
-                        <select id="appt-approver" value="@(_approverId?.ToString() ?? "")" @onchange="PickApprover">
-                            <option value="">Choose a vet or administrator</option>
-                            @foreach (var s in _approvers)
-                            {
-                                <option value="@s.Id">@s.ShortName (@s.JobTitle)</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="vd-field">
-                        <label for="appt-approver-pin">Their PIN</label>
-                        <input id="appt-approver-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="vd-mono" @bind="_approverPin" @bind:event="oninput" />
-                    </div>
-                </div>
-                <div class="vd-hint">They type their own PIN at this desk. Their name is kept on the appointment; the PIN isn't stored.</div>
-            }
-            else if (_existing?.ApprovedBy is { } approvedBy)
+            @if (_existing?.ApprovedBy is { } approvedBy && _approval is null)
             {
                 <div class="vd-hint">Booked out of hours or into a busy time with @approvedBy's approval.</div>
             }
