@@ -35,10 +35,16 @@ window.vetdesk = (() => {
         focus: (id) => { const el = document.getElementById(id); if (el) { el.focus(); if (el.select) el.select(); } },
         print: () => window.print(),
         // Prints on A4 with page numbers (the invoice). The page size is only set for this print so labels and other
-        // printouts keep the printer's own paper.
-        printA4: () => {
+        // printouts keep the printer's own paper. An optional footer line goes in the page's bottom margin, so it sits
+        // at the foot of every page; a position: fixed footer would overlap the content instead.
+        printA4: (footer) => {
+            const box = "font: 7pt Consolas, monospace; color: #7A8683; vertical-align: top; padding-top: 4mm;"
+                + (footer ? " border-top: .25mm solid #DDE3E1;" : "");
+            const footerBox = footer
+                ? `@bottom-left { content: "${footer.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\s+/g, " ")}"; ${box} width: 155mm; font-family: "IBM Plex Sans", "Segoe UI", sans-serif; }`
+                : "";
             const style = document.createElement("style");
-            style.textContent = "@page { size: A4; margin: 14mm 16mm 16mm; @bottom-right { content: 'Page ' counter(page) ' of ' counter(pages); font: 7pt Consolas, monospace; color: #7A8683; } }";
+            style.textContent = `@page { size: A4; margin: 14mm 16mm 18mm; ${footerBox} @bottom-right { content: 'Page ' counter(page) ' of ' counter(pages); ${box} } }`;
             document.head.appendChild(style);
             document.documentElement.classList.add("vd-print-a4");
             window.addEventListener("afterprint", () => {

@@ -84,9 +84,11 @@ public class InvoicePrintoutTests
         var after = (await PrintoutAsync(id)).Value.Practice;
 
         before.HasCompanyDetails.ShouldBeFalse();
+        before.CompanyFooter.ShouldBeNull();
         before.HasBankDetails.ShouldBeFalse();
         after.HasCompanyDetails.ShouldBeTrue();
         after.CompanyNumber.ShouldBe("SC123456");
+        after.CompanyFooter.ShouldBe("Northfield Veterinary Clinic Ltd · Registered in Scotland no. SC123456 · Registered office: 14 Gloucester Road, Bristol");
         after.HasBankDetails.ShouldBeTrue();
         after.BankSortCode.ShouldBe("12-34-56");
         after.BankAccountNumber.ShouldBe("12345678");

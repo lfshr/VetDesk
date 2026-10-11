@@ -606,7 +606,6 @@ h1:focus { outline: none; }
 .vd-inv-bank { display: grid; grid-template-columns: auto 1fr; gap: .5mm 3mm; margin: 1mm 0 0; }
 .vd-inv-bank dt { color: var(--vd-text-faint); }
 .vd-inv-bank dd { margin: 0; }
-.vd-inv-foot { margin-top: 10mm; padding-top: 3mm; border-top: .25mm solid var(--vd-border); font-size: 7pt; color: var(--vd-text-faint); break-inside: avoid; }
 
 @media print {
     body * { visibility: hidden; }

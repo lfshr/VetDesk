@@ -165,12 +165,8 @@
         </section>
     }
 
-    @if (P.HasCompanyDetails)
-    {
-        <footer class="vd-inv-foot">
-            @P.CompanyName · Registered in @(P.CompanyRegisteredIn?.Label()) no. @P.CompanyNumber · Registered office: @P.RegisteredOffice
-        </footer>
-    }
+    @* The company footer (PracticeDetails.CompanyFooter) isn't part of the sheet: vetdesk.printA4 puts it in the page's
+       bottom margin so it sits at the foot of every page. *@
 </article>
 
 @code {

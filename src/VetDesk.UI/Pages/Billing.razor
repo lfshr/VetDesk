@@ -281,6 +281,6 @@
         if (!_printPending)
             return;
         _printPending = false;
-        await JS.InvokeVoidAsync("vetdesk.printA4");
+        await JS.InvokeVoidAsync("vetdesk.printA4", _printout!.Practice.CompanyFooter);
     }
 }

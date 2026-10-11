@@ -82,6 +82,11 @@ public record PracticeDetails(
     public bool IsVatRegistered => !string.IsNullOrWhiteSpace(VatNumber);
     public bool HasCompanyDetails => !string.IsNullOrWhiteSpace(CompanyNumber);
     public bool HasBankDetails => !string.IsNullOrWhiteSpace(BankSortCode) && !string.IsNullOrWhiteSpace(BankAccountNumber);
+
+    /// <summary>The company's registered details, printed at the foot of every invoice page. Null when not a company.</summary>
+    public string? CompanyFooter => HasCompanyDetails
+        ? $"{CompanyName} · Registered in {CompanyRegisteredIn?.Label()} no. {CompanyNumber} · Registered office: {RegisteredOffice}"
+        : null;
 }
 
 public static class CompanyRegistrationLabels
