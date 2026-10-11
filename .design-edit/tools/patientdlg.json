@@ -1,0 +1,6 @@
+[
+  ["<Modal Title=\"@(Patient is null ? \"Add a pet\" : $\"Edit {Patient.Name}\")\" OnClose=\"OnClose\" Size=\"wide\">", "<Modal Title=\"@(Patient is null ? (OwnerName is null ? \"Add a pet\" : $\"Add pet for {OwnerName}\") : $\"Edit {Patient.Name}\")\"\n       Subtitle=\"@(Patient is null ? \"The pet gets its own patient record and PT number.\" : null)\" OnClose=\"OnClose\" Size=\"@(Patient is null ? \"560\" : \"wide\")\">"],
+  ["<label for=\"pd-name\">Name</label><input id=\"pd-name\" @bind=\"_name\" maxlength=\"100\" />", "<label for=\"pd-name\">Pet name</label><input id=\"pd-name\" @bind=\"_name\" maxlength=\"100\" placeholder=\"e.g. Pip\" />"],
+  ["<input id=\"pd-chip\" class=\"vd-mono\" @bind=\"_chip\" maxlength=\"40\" />", "<input id=\"pd-chip\" class=\"vd-mono\" @bind=\"_chip\" maxlength=\"40\" placeholder=\"15 digits, optional\" />"],
+  ["    [Parameter] public int ClientId { get; set; }", "    [Parameter] public int ClientId { get; set; }\n    /// <summary>Names the owner in the title when adding a pet, as the design does.</summary>\n    [Parameter] public string? OwnerName { get; set; }"]
+]

@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VetDesk — Patient record</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EDEB}
+a{color:#0B6E63}a:hover{color:#08524A}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F3F5F4; color: #17201E; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<div style="height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0E2A2A; color: #CFE0DC; padding-left: 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD1C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+<span style="font-weight: 600; color: #FFFFFF">VetDesk</span>
+<span>Patients › Biscuit</span>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding-right: 10px; font-size: 13px">
+<a href="SignIn.dc.html" style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; color: #CFE0DC; text-decoration: none">Sign out</a>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Main" style="flex: 1 1 224px; background: #0E2A2A; color: #CFE0DC; padding: 12px 10px 20px; display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Schedule.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Schedule</a>
+<a href="Patients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; background: #1C4442; color: #FFFFFF; text-decoration: none; font-weight: 500; box-shadow: inset 3px 0 0 #7FD1C3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>Patients</a>
+<a href="Clients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.6 3.1 2.4 3.5 5.2"></path></svg>Clients</a>
+<a href="Pharmacy.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"></path><path d="M7 7l7 7"></path></svg>Pharmacy</a>
+<a href="Billing.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Billing</a>
+<a href="Reports.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Reports</a>
+<div style="flex: 1; min-height: 16px"></div>
+<a href="Settings.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border-top: 1px solid #1F4644">
+<div style="width: 32px; height: 32px; border-radius: 50%; background: #7FD1C3; color: #0E2A2A; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</div>
+<div style="display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 500">Dr Asha Patel</span><span>Veterinary surgeon</span></div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<div style="background: #FFFFFF; border-bottom: 1px solid #DDE3E1; padding: 20px 24px 0; display: flex; flex-direction: column; gap: 16px">
+<a href="Patients.dc.html" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin-bottom: -6px; font-size: 13px; font-weight: 500; text-decoration: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>All patients</a>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="width: 72px; height: 72px; border-radius: 12px; background: #E3EFEC; color: #0B5E55; display: flex; align-items: center; justify-content: center; flex: none">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+</div>
+<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600">Biscuit</h1>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #55615E">PT-004182</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 18px; color: #3F4A47">
+<span>Dog · Labrador retriever</span>
+<span>Male, neutered</span>
+<span>6 yrs 2 mths</span>
+<span>31.4 kg</span>
+<span>Chip <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">985 112 004 381 220</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px">
+<div role="list" aria-label="Alerts" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<sc-for list="{{alerts}}" as="c" hint-placeholder-count="3">
+<span role="listitem" style="display: inline-flex; align-items: center; height: 28px; border-radius: 14px; font-size: 12.5px; {{c.style}}">
+<button onClick="{{c.edit}}" aria-label="{{c.aria}}" title="Edit" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px 0 10px; border: 0; border-radius: 14px; background: transparent; color: inherit; font: inherit; font-weight: inherit; cursor: pointer">
+<sc-if value="{{c.high}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18v.5"></path></svg></sc-if>
+<sc-if value="{{c.medium}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5v.5"></path></svg></sc-if>
+<sc-if value="{{c.low}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></sc-if>
+{{c.text}}</button>
+</span>
+</sc-for>
+<button onClick="{{addAlert}}" aria-label="Add alert" title="Add alert" style="width: 28px; height: 28px; padding: 0; border: 1px dashed #A9B5B1; border-radius: 14px; background: #FFFFFF; color: #3F4A47; display: inline-flex; align-items: center; justify-content: center; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+</div>
+<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="{{editTitle}}" style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 12px; padding: 12px; border: 1px solid #C9D2CF; border-radius: 8px; background: #F8FAF9; max-width: 680px">
+<div style="flex: 1 1 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 36px"><span style="font-size: 13.5px; font-weight: 600; color: #17201E">{{editTitle}}</span><sc-if value="{{canDelete}}" hint-placeholder-val="{{false}}"><button onClick="{{askDelete}}" aria-label="Delete alert" title="Delete alert" style="width: 36px; height: 36px; padding: 0; border: 1px solid #F3B8B0; border-radius: 6px; background: #FFFFFF; color: #A3200F; display: inline-flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button></sc-if></div>
+<sc-if value="{{showPicker}}" hint-placeholder-val="{{false}}">
+<label style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Alert
+<select value="{{presetVal}}" onChange="{{pickPreset}}" style="height: 36px; padding: 0 8px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E">
+<option value="" disabled>Select an alert…</option>
+<optgroup label="Alerts">
+<option value="0">Aggressive — handle with care</option>
+<option value="1">Bites when restrained</option>
+<option value="2">Diabetic — on insulin</option>
+<option value="3">Epileptic</option>
+<option value="4">Heart murmur — anaesthetic risk</option>
+</optgroup>
+<optgroup label="Warnings">
+<option value="5">Nervous — muzzle for nail clips</option>
+<option value="6">Brachycephalic — airway risk</option>
+<option value="7">Escape risk — keep doors closed</option>
+<option value="8">Payment required upfront</option>
+</optgroup>
+<optgroup label="Notes">
+<option value="9">Insured</option>
+<option value="10">Prefers a female vet</option>
+<option value="11">Owner hard of hearing</option>
+<option value="12">Microchip details need updating</option>
+</optgroup>
+<option value="custom">Other (type your own)…</option>
+</select>
+</label>
+</sc-if>
+<sc-if value="{{showText}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px"><label for="alert-text" style="font-size: 12.5px; line-height: 18px; color: #55615E">{{textLabel}}</label><sc-if value="{{canRepick}}" hint-placeholder-val="{{false}}"><button onClick="{{repick}}" style="padding: 0; border: 0; background: transparent; color: #0B6E63; font: inherit; font-size: 12.5px; line-height: 18px; font-weight: 500; text-decoration: underline; cursor: pointer">Choose from list instead</button></sc-if></div>
+<input id="alert-text" value="{{editText}}" onChange="{{onAlertText}}" placeholder="e.g. Bites when restrained" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E; background: #FFFFFF">
+</div>
+</sc-if>
+<sc-if value="{{showSeverity}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12.5px; line-height: 18px; color: #55615E">Severity</span>
+<div role="group" aria-label="Severity" style="display: flex; border: 1px solid #C9D2CF; border-radius: 6px; overflow: hidden">
+<sc-for list="{{sevBtns}}" as="v" hint-placeholder-count="3">
+<button onClick="{{v.pick}}" aria-pressed="{{v.pressed}}" style="height: 36px; padding: 0 12px; border: 0; font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; {{v.style}}"><span style="width: 10px; height: 10px; border-radius: 50%; {{v.dot}}"></span>{{v.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="flex: 1 1 100%; display: flex; justify-content: flex-end; align-items: center; gap: 8px">
+<button onClick="{{cancelEdit}}" style="height: 36px; padding: 0 14px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px; font-weight: 500">Cancel</button>
+<button onClick="{{saveAlert}}" disabled="{{cantSave}}" style="height: 36px; padding: 0 16px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; {{saveStyle}}">{{saveLabel}}</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="flex: 0 1 280px; min-width: 220px; border: 1px solid #DDE3E1; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 13px">
+<span style="color: #55615E; font-size: 12px">Owner</span>
+<button onClick="{{openOwner}}" aria-haspopup="dialog" style="align-self: flex-start; padding: 0; border: 0; background: transparent; color: #0B6E63; font: inherit; font-weight: 600; font-size: 14px; text-decoration: underline; cursor: pointer">Hannah Clarke</button>
+<span>07700 900 412</span>
+<span style="color: #55615E">Balance £57.30 due · 2 pets</span>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<a href="Schedule.dc.html" style="height: 40px; padding: 0 14px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font-weight: 500; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Book</a>
+<a href="Consult.dc.html" style="height: 40px; padding: 0 16px; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Start consultation</a>
+</div>
+</div>
+
+<div role="tablist" aria-label="Record sections" style="display: flex; gap: 4px; overflow-x: auto">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="7">
+<button role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="height: 44px; padding: 0 14px; border: 0; background: transparent; font: inherit; white-space: nowrap; {{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="padding: 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="flex: 1 1 100%; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border: 1px solid #9FD3C7; border-radius: 8px; background: #E3F3EF; color: #0A3F39">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span style="flex: 1; font-weight: 500">{{toastText}}</span>
+<button onClick="{{dismissToast}}" aria-label="Dismiss" style="width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #0A3F39; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+
+<sc-if value="{{showPanel}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="panel-title" style="flex: 1 1 100%; min-width: 0; background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="panel-title" style="margin: 0; font-size: 15px; font-weight: 600">{{panelTitle}}</h2><span style="font-size: 12.5px; color: #55615E">{{panelCount}}</span></div>
+<sc-for list="{{panelRows}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-bottom: 1px solid #EEF1F0">
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{r.title}}</span><span style="font-size: 12.5px; color: #55615E">{{r.sub}}</span></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #3F4A47; white-space: nowrap">{{r.meta}}</span>
+<span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; {{r.chip}}">{{r.status}}</span>
+<sc-if value="{{r.hasLink}}" hint-placeholder-val="{{false}}"><a href="{{r.href}}" style="font-size: 13px; font-weight: 500">{{r.linkLabel}}</a></sc-if>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<sc-if value="{{showHistory}}" hint-placeholder-val="{{true}}">
+<section aria-labelledby="hist" style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #DDE3E1">
+<h2 id="hist" style="margin: 0; font-size: 15px; font-weight: 600">Clinical history</h2>
+<button onClick="{{toggleNote}}" aria-expanded="{{noteExpanded}}" style="height: 32px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; color: #17201E; cursor: pointer">Add note</button>
+</div>
+<sc-if value="{{noteOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #DDE3E1; background: #F8FAF9">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Note title
+<input value="{{noteTitle}}" onChange="{{onNoteTitle}}" placeholder="e.g. Phone call with owner" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E; background: #FFFFFF"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Note
+<textarea rows="3" value="{{noteBody}}" onChange="{{onNoteBody}}" style="padding: 8px 10px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; line-height: 1.5; color: #17201E; background: #FFFFFF; resize: vertical"></textarea></label>
+<div style="display: flex; justify-content: flex-end; gap: 8px">
+<button onClick="{{toggleNote}}" style="height: 36px; padding: 0 14px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Cancel</button>
+<button onClick="{{saveNote}}" disabled="{{cantSaveNote}}" style="height: 36px; padding: 0 16px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; {{saveNoteStyle}}">Save note</button>
+</div>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; padding: 8px 16px 16px">
+<sc-for list="{{history}}" as="h" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 96px 16px minmax(0, 1fr); gap: 12px; padding-top: 12px">
+<div style="display: flex; flex-direction: column; font-size: 12.5px; color: #55615E; padding-top: 1px"><span style="font-family: 'IBM Plex Mono', monospace; color: #17201E">{{h.date}}</span><span>{{h.who}}</span></div>
+<div style="display: flex; flex-direction: column; align-items: center"><span style="width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; {{h.dot}}"></span><span style="flex: 1; width: 2px; background: #E4E9E7; margin-top: 4px"></span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px"><span style="font-weight: 600">{{h.title}}</span><sc-if value="{{h.hasWeight}}" hint-placeholder-val="{{true}}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: #EEF1F0; color: #3F4A47; white-space: nowrap">{{h.weight}}</span></sc-if></div>
+<span style="color: #3F4A47; line-height: 1.5">{{h.body}}</span>
+<sc-if value="{{h.hasConsult}}" hint-placeholder-val="{{true}}"><a href="Consult.dc.html" style="align-self: flex-start; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 4px">Open consultation<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a></sc-if>
+<sc-if value="{{h.hasDrugs}}" hint-placeholder-val="{{false}}">
+<div style="border: 1px solid #DDE3E1; border-radius: 6px; overflow-x: auto; margin-top: 2px">
+<table style="width: 100%; min-width: 460px; border-collapse: collapse; font-size: 12.5px">
+<caption style="text-align: left; padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: #3F4A47">Administered</caption>
+<thead><tr style="text-align: left; color: #55615E; font-size: 11.5px"><th style="padding: 4px 10px; font-weight: 500">Time</th><th style="padding: 4px 10px; font-weight: 500">Drug</th><th style="padding: 4px 10px; font-weight: 500">Dose</th><th style="padding: 4px 10px; font-weight: 500">Route</th><th style="padding: 4px 10px; font-weight: 500">Given by</th></tr></thead>
+<tbody>
+<sc-for list="{{h.drugs}}" as="d" hint-placeholder-count="3">
+<tr style="border-top: 1px solid #EEF1F0">
+<td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{d.time}}</td>
+<td style="padding: 6px 10px"><span style="display: inline-flex; align-items: center; gap: 6px">{{d.name}}<sc-if value="{{d.cd}}" hint-placeholder-val="{{false}}"><span style="font-size: 10.5px; font-weight: 600; padding: 0 5px; border-radius: 4px; background: #17201E; color: #FFFFFF">CD</span></sc-if></span></td>
+<td style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace">{{d.dose}}</td>
+<td style="padding: 6px 10px">{{d.route}}</td>
+<td style="padding: 6px 10px; color: #3F4A47">{{d.by}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{showSide}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="wt" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="wt" style="margin: 0; font-size: 15px; font-weight: 600">Weight</h2><span style="font-size: 12.5px; color: #55615E">last 12 months</span></div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 24px; font-weight: 600">31.4 kg</span><span style="font-size: 12.5px; color: #8A4204">+1.2 kg since March</span></div>
+<svg viewBox="0 0 280 72" width="100%" height="72" aria-label="Weight trend rising from 30.2 to 31.4 kg" role="img"><path d="M0 70H280" stroke="#E4E9E7" stroke-width="1"></path><polyline points="6,56 60,52 114,50 168,38 222,30 274,16" fill="none" stroke="#0B6E63" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="274" cy="16" r="4" fill="#0B6E63"></circle></svg>
+<div style="display: flex; flex-direction: column; border-top: 1px solid #EEF1F0; padding-top: 4px">
+<sc-for list="{{weights}}" as="w" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13px"><span style="color: #55615E"><span style="font-family: 'IBM Plex Mono', monospace; color: #17201E">{{w.date}}</span> · {{w.context}}</span><span style="font-family: 'IBM Plex Mono', monospace">{{w.kg}}</span></div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="vax" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="vax" style="margin: 0; font-size: 15px; font-weight: 600">Vaccinations</h2></div>
+<sc-for list="{{vax}}" as="v" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #EEF1F0">
+<div style="display: flex; flex-direction: column"><span style="font-weight: 500">{{v.name}}</span><span style="font-size: 12.5px; color: #55615E">Given {{v.given}}</span></div>
+<span style="height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; white-space: nowrap; {{v.style}}">{{v.due}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="meds" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="meds" style="margin: 0; font-size: 15px; font-weight: 600">Current medication</h2></div>
+<div style="padding: 10px 16px; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid #EEF1F0"><span style="font-weight: 500">Chlorhexidine oral gel</span><span style="font-size: 12.5px; color: #55615E">Apply twice daily · 10 days · ends 14 Oct</span></div>
+<div style="padding: 10px 16px; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Flea and worm spot-on</span><span style="font-size: 12.5px; color: #55615E">Monthly · next due 22 Oct</span></div>
+</section>
+
+</div>
+</sc-if>
+</div>
+</main>
+</div>
+
+<sc-if value="{{ownerOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 15">
+<div role="dialog" aria-modal="true" aria-labelledby="own-title" style="width: 100%; max-width: 480px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="own-title" style="margin: 0; font-size: 18px; font-weight: 600">Hannah Clarke</h2><span style="font-size: 12.5px; color: #55615E">Client since 2019</span></div>
+<button onClick="{{closeOwner}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<dl style="margin: 0; padding: 14px 20px; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px 12px; font-size: 13.5px">
+<dt style="color: #55615E">Phone</dt><dd style="margin: 0"><a href="tel:+447700900412">07700 900 412</a></dd>
+<dt style="color: #55615E">Email</dt><dd style="margin: 0">[OWNER EMAIL]</dd>
+<dt style="color: #55615E">Address</dt><dd style="margin: 0">[OWNER ADDRESS]</dd>
+<dt style="color: #55615E">Contact by</dt><dd style="margin: 0">Text message</dd>
+<dt style="color: #55615E">Balance</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace">£57.30 due · INV-20418</dd>
+</dl>
+<div style="padding: 0 20px 14px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12.5px; color: #55615E">Pets</span>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #9FD3C7; border-radius: 6px; background: #F3FAF8"><span style="font-weight: 600">Biscuit</span><span style="font-size: 12.5px; color: #55615E">Dog · Labrador retriever · this record</span></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #DDE3E1; border-radius: 6px"><span style="font-weight: 600">Mabel</span><span style="font-size: 12.5px; color: #55615E">Cat · Domestic shorthair · 11 yrs</span></div>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeOwner}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; cursor: pointer">Close</button>
+<a href="Clients.dc.html" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font-weight: 500; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Open client</a>
+<a href="Billing.dc.html" style="height: 40px; padding: 0 16px; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Take payment</a>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirming}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 120px 16px 24px; box-sizing: border-box; z-index: 20">
+<div role="alertdialog" aria-modal="true" aria-labelledby="del-title" style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="padding: 20px 20px 16px; display: flex; gap: 14px; align-items: flex-start">
+<span style="width: 40px; height: 40px; border-radius: 50%; background: #FDECEA; color: #A3200F; display: flex; align-items: center; justify-content: center; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></span>
+<h2 id="del-title" style="margin: 0; padding-top: 8px; font-size: 16px; font-weight: 600; line-height: 1.4; color: #17201E">Are you sure you want to delete “{{editText}}”?</h2>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{cancelDelete}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{deleteAlert}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: #A3200F; color: #FFFFFF; font: inherit; font-weight: 600">Delete</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B6E63","options":["#0B6E63","#1F4FA8","#7A3E9D","#9A4A06"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'Overview', ownerOpen: false, noteOpen: false, noteTitle: '', noteBody: '', notes: [], toast: null, alerts: [['Allergy: amoxicillin','high',null], ['Nervous — muzzle for nail clips','medium','5'], ['Insured','low','9']], editing: null }; }
+  renderVals() {
+    const accent = this.props.accent ?? '#0B6E63';
+    const tabs = ['Overview','History','Vaccinations','Prescriptions','Labs & imaging','Documents','Billing'].map((label) => {
+      const on = this.state.tab === label;
+      return { label, selected: on ? 'true' : 'false', pick: () => this.setState({ tab: label }),
+        style: on ? 'color:#17201E;font-weight:600;box-shadow:inset 0 -3px 0 ' + accent : 'color:#55615E;font-weight:500' };
+    });
+    const dots = { visit: 'background:' + accent, surgery: 'background:#6A2E8A', lab: 'background:#1D3F9E', vax: 'background:#FFFFFF;border:2px solid ' + accent + ';box-sizing:border-box' };
+    const history = this.state.notes.concat([
+      ['07 Oct 26','Dr Patel','Dental scale and polish, 2 extractions','GA uneventful. 108 and 208 extracted. Recovered well; discharged same day with oral gel.','surgery','31.2 kg',[
+        ['08:40','Methadone 10 mg/ml','[dose]','IM','Dr Patel',true],
+        ['09:05','Propofol 10 mg/ml','[dose]','IV','Dr Patel',false],
+        ['09:10','Isoflurane','To effect','Inhaled','Nurse Reid',false],
+        ['10:25','Meloxicam 5 mg/ml','[dose]','SC','Dr Patel',false]
+      ]],
+      ['30 Sep 26','Lab','Pre-anaesthetic bloods','Biochemistry and haematology within reference ranges.','lab','',[]],
+      ['28 Sep 26','Dr Okafor','Consultation — bad breath, reluctance to chew','Grade 3 periodontal disease. Dental booked.','visit','31.0 kg',[]],
+      ['12 Mar 26','Nurse Reid','Annual booster','DHPPi and Lepto 4 given.','vax','30.2 kg',[
+        ['14:20','DHPPi vaccine','1 dose','SC','Nurse Reid',false],
+        ['14:21','Leptospirosis L4 vaccine','1 dose','SC','Nurse Reid',false]
+      ]],
+      ['04 Nov 25','Dr Patel','Lameness, left fore','Mild soft-tissue strain. Rest 2 weeks; resolved at recheck.','visit','30.0 kg',[
+        ['11:15','Meloxicam 5 mg/ml','[dose]','SC','Dr Patel',false]
+      ]]
+    ]).map((h) => ({ date: h[0], who: h[1], title: h[2], body: h[3], dot: dots[h[4]],
+      weight: h[5], hasWeight: !!h[5], hasDrugs: h[6].length > 0, hasConsult: ['visit', 'surgery', 'vax'].includes(h[4]),
+      drugs: h[6].map((d) => ({ time: d[0], name: d[1], dose: d[2], route: d[3], by: d[4], cd: d[5] })) }));
+    const weights = [
+      ['09 Oct 26','Post-op check','31.4 kg'],
+      ['07 Oct 26','Dental (pre-GA)','31.2 kg'],
+      ['28 Sep 26','Consultation','31.0 kg'],
+      ['12 Mar 26','Annual booster','30.2 kg'],
+      ['04 Nov 25','Consultation','30.0 kg']
+    ].map((w) => ({ date: w[0], context: w[1], kg: w[2] }));
+    const vax = [
+      ['DHPPi','12 Mar 26','Due 12 Mar 29','background:#EEF1F0;color:#3F4A47'],
+      ['Leptospirosis L4','12 Mar 26','Due 12 Mar 27','background:#E3F3EF;color:#0B5E55'],
+      ['Kennel cough','18 Oct 25','Overdue','background:#FDF1E3;color:#8A4204']
+    ].map((v) => ({ name: v[0], given: v[1], due: v[2], style: v[3] }));
+    // ---- Alert chips: free text + severity ----
+    const SEV = {
+      high: { label: 'Alert', rank: 0, style: 'background:#FDECEA;color:#A3200F;font-weight:600;border:1px solid #F3B8B0', dot: 'background:#A3200F' },
+      medium: { label: 'Warning', rank: 1, style: 'background:#FDF1E3;color:#8A4204;font-weight:500;border:1px solid #F0CDA5', dot: 'background:#B45309' },
+      low: { label: 'Note', rank: 2, style: 'background:#E3F3EF;color:#0B5E55;font-weight:500;border:1px solid #9FD3C7', dot: 'background:#0B6E63' }
+    };
+    const list = this.state.alerts.map((a, i) => ({ a, i })).sort((x, y) => SEV[x.a[1]].rank - SEV[y.a[1]].rank || x.i - y.i);
+    const alerts = list.map(({ a, i }) => ({
+      text: a[0], style: SEV[a[1]].style, high: a[1] === 'high', medium: a[1] === 'medium', low: a[1] === 'low',
+      aria: SEV[a[1]].label + ': ' + a[0] + '. Edit',
+      edit: () => this.setState({ editing: { index: i, text: a[0], sev: a[1], preset: a[2] != null ? a[2] : 'custom' } })
+    }));
+    const PRESETS = [["Aggressive — handle with care", "high"], ["Bites when restrained", "high"], ["Diabetic — on insulin", "high"], ["Epileptic", "high"], ["Heart murmur — anaesthetic risk", "high"], ["Nervous — muzzle for nail clips", "medium"], ["Brachycephalic — airway risk", "medium"], ["Escape risk — keep doors closed", "medium"], ["Payment required upfront", "medium"], ["Insured", "low"], ["Prefers a female vet", "low"], ["Owner hard of hearing", "low"], ["Microchip details need updating", "low"]];
+    const ed = this.state.editing;
+    const setEd = (patch) => this.setState((st) => st.editing ? ({ editing: Object.assign({}, st.editing, patch) }) : ({}));
+    const sevBtns = ['high', 'medium', 'low'].map((k) => {
+      const on = !!ed && ed.sev === k;
+      return { label: SEV[k].label, dot: SEV[k].dot, pressed: on ? 'true' : 'false',
+        style: on ? 'background:#17201E;color:#FFFFFF;font-weight:500' : 'background:#FFFFFF;color:#17201E',
+        pick: () => setEd({ sev: k }) };
+    });
+    const canSave = !!ed && ed.text.trim().length > 0;
+    const alertVals = {
+      alerts, sevBtns,
+      editing: !!ed, editText: ed ? ed.text : '',
+      editTitle: ed && ed.index >= 0 ? 'Edit alert' : 'New alert',
+      saveLabel: ed && ed.index >= 0 ? 'Save' : 'Add alert',
+      addAlert: () => this.setState({ editing: { index: -1, text: '', sev: 'medium', preset: '' } }),
+      showPicker: !!ed && !ed.preset,
+      showText: !!ed && !!ed.preset,
+      canRepick: !!ed && ed.index < 0 && !!ed.preset,
+      repick: () => setEd({ preset: '', text: '', sev: 'medium' }),
+      showSeverity: !!ed && !!ed.preset,
+      textLabel: 'Alert',
+      presetVal: ed && ed.preset ? ed.preset : '',
+      pickPreset: (e) => { const v = e.target.value; if (v === 'custom') { setEd({ preset: 'custom', text: '' }); } else { const pr = PRESETS[Number(v)]; setEd({ preset: v, text: pr[0], sev: pr[1] }); } },
+      cancelEdit: () => this.setState({ editing: null }),
+      canDelete: !!ed && ed.index >= 0,
+      confirming: !!ed && !!ed.confirm,
+      notConfirming: !(ed && ed.confirm),
+      askDelete: () => setEd({ confirm: true }),
+      cancelDelete: () => setEd({ confirm: false }),
+      deleteAlert: () => { if (ed) this.setState((st) => ({ alerts: st.alerts.filter((_, j) => j !== ed.index), editing: null })); },
+      onAlertText: (e) => setEd({ text: e.target.value }),
+      cantSave: !canSave,
+      saveStyle: canSave ? 'background:' + accent + ';cursor:pointer' : 'background:#9AA5A2;cursor:not-allowed',
+      saveAlert: () => {
+        if (!canSave) return;
+        const item = [ed.text.trim(), ed.sev, ed.preset === 'custom' ? null : ed.preset];
+        this.setState((st) => ({
+          alerts: ed.index >= 0 ? st.alerts.map((a, j) => j === ed.index ? item : a) : st.alerts.concat([item]),
+          editing: null
+        }));
+      }
+    };
+    // ---- tabs, notes, owner ----
+    const st = this.state;
+    const tab = st.tab;
+    const chip = { ok: 'background:#E3F3EF;color:#0B5E55', warn: 'background:#FDF1E3;color:#8A4204', info: 'background:#EEF1F0;color:#3F4A47', bad: 'background:#FDECEA;color:#A3200F' };
+    const panels = {
+      'Vaccinations': [
+        ['DHPPi', 'Given 12 Mar 26 by Nurse Reid · batch DH4471', 'Due 12 Mar 29', 'Up to date', 'ok'],
+        ['Leptospirosis L4', 'Given 12 Mar 26 by Nurse Reid · batch LP9902', 'Due 12 Mar 27', 'Up to date', 'ok'],
+        ['Kennel cough (intranasal)', 'Given 18 Oct 25 by Dr Okafor', 'Due 18 Oct 26', 'Overdue', 'warn']
+      ],
+      'Prescriptions': [
+        ['Chlorhexidine oral gel', 'Apply twice daily for 10 days · Dr Patel', '07 Oct 26', 'Current', 'ok'],
+        ['Flea and worm spot-on', 'Monthly · repeat prescription', '22 Sep 26', 'Current', 'ok'],
+        ['Meloxicam 5 mg/ml injection', 'Single dose in clinic · Dr Patel', '04 Nov 25', 'Completed', 'info']
+      ],
+      'Labs & imaging': [
+        ['Pre-anaesthetic bloods', 'Biochemistry and haematology · external lab', '30 Sep 26', 'Normal', 'ok'],
+        ['Dental radiographs', '4 images · Dr Patel', '07 Oct 26', 'Reviewed', 'info']
+      ],
+      'Documents': [
+        ['Anaesthetic consent form', 'Signed by Hannah Clarke', '07 Oct 26', 'Signed', 'ok'],
+        ['Discharge instructions — dental', 'Given to owner at collection', '07 Oct 26', 'Sent', 'info'],
+        ['Insurance claim form', 'Dental procedure', '08 Oct 26', 'Awaiting vet', 'warn']
+      ],
+      'Billing': [
+        ['INV-20418', 'Post-op check, kennel cough vaccine, toothbrush kit', '09 Oct 26 · £57.30', 'Unpaid', 'warn', 'Billing.dc.html', 'Take payment'],
+        ['INV-20409', 'Dental, anaesthetic, bloods, oral gel', '07 Oct 26 · £761.28', 'Paid', 'ok', 'Billing.dc.html', 'View']
+      ]
+    };
+    const panel = panels[tab] || [];
+    const panelRows = panel.map((r) => ({ title: r[0], sub: r[1], meta: r[2], status: r[3], chip: chip[r[4]], hasLink: !!r[5], href: r[5] || '#', linkLabel: r[6] || '' }));
+    const canSaveNote = st.noteTitle.trim().length > 0;
+    const tabVals = {
+      showHistory: tab === 'Overview' || tab === 'History',
+      showSide: tab === 'Overview',
+      showPanel: tab !== 'Overview' && tab !== 'History',
+      panelTitle: tab, panelRows, panelCount: panelRows.length + (panelRows.length === 1 ? ' item' : ' items'),
+      noteOpen: st.noteOpen, noteExpanded: st.noteOpen ? 'true' : 'false',
+      toggleNote: () => this.setState({ noteOpen: !st.noteOpen, noteTitle: '', noteBody: '' }),
+      noteTitle: st.noteTitle, noteBody: st.noteBody,
+      onNoteTitle: (e) => this.setState({ noteTitle: e.target.value }),
+      onNoteBody: (e) => this.setState({ noteBody: e.target.value }),
+      cantSaveNote: !canSaveNote,
+      saveNoteStyle: canSaveNote ? 'background:' + accent + ';cursor:pointer' : 'background:#9AA5A2;cursor:not-allowed',
+      saveNote: () => {
+        if (!canSaveNote) return;
+        const note = ['09 Oct 26', 'Dr Patel', st.noteTitle.trim(), st.noteBody.trim() || '—', 'visit', '', []];
+        this.setState((s2) => ({ notes: [note].concat(s2.notes), noteOpen: false, noteTitle: '', noteBody: '', toast: 'Note added to the clinical history.' }));
+      },
+      ownerOpen: st.ownerOpen,
+      openOwner: () => this.setState({ ownerOpen: true }),
+      closeOwner: () => this.setState({ ownerOpen: false }),
+      toast: !!st.toast, toastText: st.toast || '', dismissToast: () => this.setState({ toast: null })
+    };
+    return Object.assign({ accent, tabs, history, vax, weights }, alertVals, tabVals);
+  }
+}
+</script>
+</body>
+</html>

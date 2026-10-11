@@ -63,9 +63,13 @@ public partial class App : System.Windows.Application
         }
     }
 
-    protected override void OnExit(ExitEventArgs e)
+    protected override async void OnExit(ExitEventArgs e)
     {
-        _services?.Dispose();
+        if (_services is not null)
+        {
+            await _services.DisposeAsync();
+        }
+
         base.OnExit(e);
     }
 }

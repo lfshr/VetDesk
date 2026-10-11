@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VetDesk — Today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EDEB}
+a{color:#0B6E63}a:hover{color:#08524A}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F3F5F4; color: #17201E; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<div style="height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0E2A2A; color: #CFE0DC; padding-left: 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD1C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+<span style="font-weight: 600; color: #FFFFFF">VetDesk</span>
+<span>Today</span>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding-right: 10px; font-size: 13px">
+<a href="SignIn.dc.html" style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; color: #CFE0DC; text-decoration: none">Sign out</a>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Main" style="flex: 1 1 224px; background: #0E2A2A; color: #CFE0DC; padding: 12px 10px 20px; display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; background: #1C4442; color: #FFFFFF; text-decoration: none; font-weight: 500; box-shadow: inset 3px 0 0 {{accentLight}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Schedule.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Schedule</a>
+<a href="Patients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>Patients</a>
+<a href="Clients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.6 3.1 2.4 3.5 5.2"></path></svg>Clients</a>
+<a href="Pharmacy.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"></path><path d="M7 7l7 7"></path></svg>Pharmacy</a>
+<a href="Billing.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Billing</a>
+<a href="Reports.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Reports</a>
+<div style="flex: 1; min-height: 16px"></div>
+<a href="Settings.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border-top: 1px solid #1F4644">
+<div style="width: 32px; height: 32px; border-radius: 50%; background: #7FD1C3; color: #0E2A2A; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</div>
+<div style="display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 500">Dr Asha Patel</span><span>Veterinary surgeon</span></div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #DDE3E1">
+<div style="position: relative; flex: 1 1 320px; max-width: 520px">
+<label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; background: #F8FAF9; color: #55615E">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search</span>
+<input type="search" value="{{query}}" onChange="{{onSearch}}" placeholder="Find a patient: pet or owner name, phone, postcode, microchip" aria-label="Find a patient" aria-expanded="{{qsOpen}}" aria-controls="qs-results" autocomplete="off" onInput="{{onSearch}}" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: #17201E; outline: none">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; border: 1px solid #C9D2CF; border-radius: 4px; padding: 1px 5px">Ctrl K</span>
+</label>
+<sc-if value="{{qsOpen}}" hint-placeholder-val="{{false}}">
+<div id="qs-results" role="listbox" aria-label="Patients" style="position: absolute; left: 0; right: 0; top: 42px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 12px 32px rgba(14, 42, 42, 0.18); z-index: 6; overflow: hidden">
+<sc-for list="{{qsResults}}" as="r" hint-placeholder-count="3"><a role="option" href="Patient.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px; border-bottom: 1px solid #EEF1F0; color: #17201E; text-decoration: none"><span style="width: 30px; height: 30px; border-radius: 50%; background: #E3EFEC; color: #0B5E55; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex: none">{{r.initial}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-weight: 600">{{r.name}} <span style="font-weight: 400; color: #55615E">· {{r.species}}</span></span><span style="font-size: 12.5px; color: #55615E">{{r.owner}} · {{r.phone}}</span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #55615E">{{r.pt}}</span></a></sc-for>
+<sc-if value="{{qsNone}}" hint-placeholder-val="{{false}}"><div style="padding: 14px; color: #55615E; font-size: 13.5px">No patients match “{{query}}”.</div></sc-if>
+<a href="Patients.dc.html" style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 14px; background: #F8FAF9; font-size: 13px; font-weight: 500; text-decoration: none">Search all patients<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+</div>
+</sc-if>
+</div>
+<div style="flex: 1"></div>
+<div style="position: relative">
+<button onClick="{{toggleNotes}}" aria-label="{{notesAria}}" aria-expanded="{{notesExpanded}}" aria-haspopup="true" style="position: relative; width: 40px; height: 40px; border: 1px solid #DDE3E1; border-radius: 6px; background: #FFFFFF; color: #17201E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10 21h4"></path></svg>
+<sc-if value="{{hasUnread}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: #A3200F; color: #FFFFFF; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{unread}}</span></sc-if>
+</button>
+<sc-if value="{{notesOpen}}" hint-placeholder-val="{{false}}">
+<div role="region" aria-label="Notifications" style="position: absolute; top: 46px; right: 0; width: 340px; max-width: calc(100vw - 32px); z-index: 5; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 12px 32px rgba(14, 42, 42, 0.18); overflow: hidden">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid #DDE3E1"><span style="font-weight: 600">Notifications</span><button onClick="{{markAllRead}}" style="padding: 0; border: 0; background: transparent; color: #0B6E63; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Mark all read</button></div>
+<sc-for list="{{notes}}" as="n" hint-placeholder-count="3">
+<a href="{{n.href}}" style="display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #EEF1F0; color: #17201E; text-decoration: none; {{n.bg}}"><span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; flex: none; {{n.dot}}"></span><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 13.5px">{{n.title}}</span><span style="font-size: 12.5px; color: #3F4A47">{{n.body}}</span></span><span style="font-size: 12px; color: #55615E; white-space: nowrap">{{n.when}}</span></a>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<a href="Schedule.dc.html" style="height: 40px; padding: 0 16px; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New appointment</a>
+</div>
+
+<div style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; border: 1px solid #9FD3C7; border-radius: 8px; background: #E3F3EF; color: #0A3F39">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span style="flex: 1; font-weight: 500">{{toastText}}</span>
+<button onClick="{{dismissToast}}" aria-label="Dismiss" style="width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #0A3F39; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Friday 9 October</h1>
+<p style="margin: 0; color: #55615E">Open 08:00 – 19:00</p>
+</div>
+<div style="display: flex; gap: 6px" role="group" aria-label="Filter appointments">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="height: 36px; padding: 0 14px; border-radius: 18px; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; {{f.style}}">{{f.label}}<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; opacity: 0.8">{{f.count}}</span></button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><span style="color: #55615E; font-size: 12.5px">Appointments</span><span style="font-size: 24px; font-weight: 600">18</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><span style="color: #55615E; font-size: 12.5px">Still to see</span><span style="font-size: 24px; font-weight: 600">{{toSeeCount}}</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><span style="color: #55615E; font-size: 12.5px">In-patients</span><span style="font-size: 24px; font-weight: 600">3</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><span style="color: #55615E; font-size: 12.5px">Lab results to review</span><span style="font-size: 24px; font-weight: 600; color: #9A4A06">5</span></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section aria-labelledby="appts" style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #DDE3E1">
+<h2 id="appts" style="margin: 0; font-size: 15px; font-weight: 600">Appointments</h2>
+<a href="Schedule.dc.html" style="font-size: 13px; font-weight: 500">Open schedule</a>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 660px; border-collapse: collapse; font-size: 13.5px">
+<thead>
+<tr style="text-align: left; color: #55615E; font-size: 12px; background: #F8FAF9">
+<th style="padding: 10px 16px; font-weight: 500">Time</th>
+<th style="padding: 10px 12px; font-weight: 500">Patient</th>
+<th style="padding: 10px 12px; font-weight: 500">Owner</th>
+<th style="padding: 10px 12px; font-weight: 500">Reason</th>
+<th style="padding: 10px 16px; font-weight: 500">Status</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{appts}}" as="a" hint-placeholder-count="8">
+<tr onClick="{{a.pick}}" style="vertical-align: middle; {{a.rowStyle}}">
+<td style="padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{a.time}}</td>
+<td style="padding: 10px 12px"><div style="display: flex; flex-direction: column"><a href="Patient.dc.html" style="font-weight: 600; color: #17201E; text-decoration: none">{{a.pet}}</a><span style="color: #55615E; font-size: 12.5px">{{a.breed}}</span></div></td>
+<td style="padding: 10px 12px">{{a.owner}}</td>
+<td style="padding: 10px 12px">{{a.reason}}</td>
+<td style="padding: 10px 16px"><span style="white-space: nowrap; {{a.chipStyle}}">{{a.status}}</span></td>
+</tr>
+</sc-for>
+<sc-if value="{{noAppts}}" hint-placeholder-val="{{false}}">
+<tr><td colspan="5" style="padding: 24px 16px; text-align: center; color: #55615E">No appointments match this filter.</td></tr>
+</sc-if>
+</tbody>
+</table>
+</div>
+</section>
+
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section aria-labelledby="tasks" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="tasks" style="margin: 0; font-size: 15px; font-weight: 600">Follow-ups</h2></div>
+<div style="display: flex; flex-direction: column; padding: 6px 0">
+<label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; min-height: 44px; box-sizing: border-box"><input type="checkbox" style="margin-top: 3px; width: 16px; height: 16px; accent-color: #0B6E63"><span style="display: flex; flex-direction: column"><span>Review bloods — Pepper (feline)</span><span style="color: #55615E; font-size: 12.5px">Results in from external lab</span></span></label>
+<label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; min-height: 44px; box-sizing: border-box"><input type="checkbox" style="margin-top: 3px; width: 16px; height: 16px; accent-color: #0B6E63"><span style="display: flex; flex-direction: column"><span>Post-op call — Hannah Clarke</span><span style="color: #55615E; font-size: 12.5px">Biscuit, dental, 2 days ago</span></span></label>
+<label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; min-height: 44px; box-sizing: border-box"><input type="checkbox" style="margin-top: 3px; width: 16px; height: 16px; accent-color: #0B6E63"><span style="display: flex; flex-direction: column"><span>Authorise repeat prescription</span><span style="color: #55615E; font-size: 12.5px">Meloxicam · Juniper</span></span></label>
+</div>
+</section>
+</div>
+
+</div>
+</div>
+</main>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B6E63","options":["#0B6E63","#1F4FA8","#7A3E9D","#9A4A06"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      picked: 2, filter: 'All', query: '', notesOpen: false, read: false, toast: null
+    };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#0B6E63';
+    const st = this.state;
+    const chips = {
+      'Done': 'background:#EEF1F0;color:#3F4A47',
+      'In consult': 'background:#E6EDFC;color:#1D3F9E',
+      'Booked': 'background:#FFFFFF;color:#3F4A47;border:1px solid #C9D2CF',
+      'Surgery': 'background:#F3E8F8;color:#6A2E8A'
+    };
+    const base = [
+      ['08:30','Juniper','Cat · Domestic shorthair','R. Osei','Arthritis review','Done'],
+      ['09:00','Biscuit','Dog · Labrador retriever','H. Clarke','Dental check, post-op','In consult'],
+      ['09:15','Miso','Rabbit · Netherland dwarf','L. Tanaka','Not eating','Booked'],
+      ['09:30','Pepper','Cat · Bengal','S. Novak','Booster vaccination','Booked'],
+      ['09:45','Rufus','Dog · Border terrier','M. Hughes','Ear infection','Booked'],
+      ['10:00','Clover','Guinea pig','A. Byrne','Nail clip','Booked'],
+      ['10:30','Atlas','Dog · German shepherd','J. Ferreira','TPLO, right stifle','Surgery'],
+      ['11:00','Luna','Cat · British shorthair','K. Adeyemi','Second opinion — cough','Booked']
+    ];
+    const rows = base;
+    const q = st.query.trim().toLowerCase();
+    const tests = {
+      'All': () => true,
+      'To see': (r) => r[5] === 'Booked',
+      'Surgery': (r) => r[5] === 'Surgery'
+    };
+    const filters = Object.keys(tests).map((label) => {
+      const on = st.filter === label;
+      return { label, count: rows.filter(tests[label]).length, pressed: on ? 'true' : 'false',
+        pick: () => this.setState({ filter: label }),
+        style: on ? 'border:1px solid #17201E;background:#17201E;color:#FFFFFF' : 'border:1px solid #C9D2CF;background:#FFFFFF;color:#17201E' };
+    });
+    const shown = rows.map((r, i) => ({ r, i })).filter(({ r }) => tests[st.filter](r));
+    const PATIENTS = [
+      ['Biscuit','Dog','Hannah Clarke','07700 900 412','985112004381220','PT-004182'],['Mabel','Cat','Hannah Clarke','07700 900 412','985112004117806','PT-004183'],
+      ['Juniper','Cat','Rachel Osei','07700 900 218','985112003552914','PT-003377'],['Miso','Rabbit','Leo Tanaka','07700 900 733','','PT-005021'],
+      ['Pepper','Cat','Sam Novak','07700 900 145','985112004602377','PT-004490'],['Rufus','Dog','Mark Hughes','07700 900 584','985112002980113','PT-002968'],
+      ['Clover','Guinea pig','Aoife Byrne','07700 900 361','','PT-005310'],['Atlas','Dog','Jorge Ferreira','07700 900 927','985112004751640','PT-004751'],
+      ['Luna','Cat','Kemi Adeyemi','07700 900 052','985112005144208','PT-005144'],['Bramble','Dog','Dan Moore','07700 900 690','985112004877331','PT-004877'],
+      ['Ziggy','Dog','Tom Evans','07700 900 813','985112005402559','PT-005402'],['Nala','Cat','Priya Singh','07700 900 276','985112003850477','PT-003850'],
+      ['Max','Dog','Grace Wright','07700 900 449','985112002411095','PT-002411']
+    ];
+    const dq = q.replace(/[\s-]/g, '');
+    const PC = { 'Hannah Clarke': 'BS6 5QT', 'Rachel Osei': 'BS7 8LP', 'Leo Tanaka': 'BS3 1RE', 'Sam Novak': 'BS6 7HN', 'Mark Hughes': 'BS5 9AX', 'Aoife Byrne': 'BS8 4DW', 'Jorge Ferreira': 'BS16 2JF', 'Kemi Adeyemi': 'BS7 9NB', 'Dan Moore': 'BS3 4TU', 'Tom Evans': 'BS6 6BG', 'Priya Singh': 'BS9 3QR', 'Grace Wright': 'BS4 2PL' };
+    const qpc = q.replace(/\s/g, '');
+    const isPc = /^[a-z]{1,2}\d[a-z\d]*$/.test(qpc);
+    const pcMatch = (owner) => isPc && (PC[owner] || '').replace(/\s/g, '').toLowerCase().startsWith(qpc);
+    const qsAll = q ? PATIENTS.filter((p) => (p[0] + ' ' + p[2] + ' ' + p[5]).toLowerCase().includes(q) || pcMatch(p[2]) || (dq.length >= 3 && /^\d+$/.test(dq) && (p[3].replace(/\s/g, '') + ' ' + p[4]).includes(dq))) : [];
+    const qsResults = qsAll.slice(0, 5).map((p) => ({ name: p[0], species: p[1], owner: p[2], phone: p[3], pt: p[5], initial: p[0][0] }));
+    const appts = shown.map(({ r, i }) => ({
+      time: r[0], pet: r[1], breed: r[2], owner: r[3], reason: r[4], status: r[5],
+      chipStyle: 'display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:500;white-space:nowrap;box-sizing:border-box;' + chips[r[5]],
+      rowStyle: 'cursor:default;border-top:1px solid #EEF1F0;' + (st.picked === i ? 'background:#E3F3EF;box-shadow:inset 3px 0 0 ' + accent : (r[5] === 'Done' ? 'color:#55615E' : '')),
+      pick: () => this.setState({ picked: i })
+    }));
+    const notesBase = [
+      ['Lab results ready', 'Pepper · feline bloods from the external lab', '10 min ago', 'Patient.dc.html'],
+      ['Delivery due today', 'Kennel cough vaccine order', '1 h ago', 'Pharmacy.dc.html'],
+      ['Invoice overdue', 'INV-20352 · Mark Hughes · 13 days', 'Yesterday', 'Billing.dc.html']
+    ];
+    const notes = notesBase.map((n) => ({ title: n[0], body: n[1], when: n[2], href: n[3],
+      bg: st.read ? 'background:#FFFFFF' : 'background:#F3FAF8', dot: st.read ? 'background:transparent' : 'background:' + accent }));
+    const unread = st.read ? 0 : notesBase.length;
+    return {
+      accent, accentLight: '#7FD1C3', appts, filters, noAppts: appts.length === 0,
+      toSeeCount: rows.filter((r) => r[5] === 'Booked').length,
+      query: st.query, onSearch: (e) => this.setState({ query: e.target.value, notesOpen: false }),
+      qsOpen: !!q, qsResults, qsNone: !!q && qsAll.length === 0,
+      notes, unread, hasUnread: unread > 0, notesOpen: st.notesOpen, notesExpanded: st.notesOpen ? 'true' : 'false',
+      notesAria: unread ? 'Notifications, ' + unread + ' unread' : 'Notifications',
+      toggleNotes: () => this.setState({ notesOpen: !st.notesOpen }),
+      markAllRead: () => this.setState({ read: true }),
+      toast: !!st.toast, toastText: st.toast || '', dismissToast: () => this.setState({ toast: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VetDesk — Consultation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EDEB}
+a{color:#0B6E63}a:hover{color:#08524A}
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; display: flex; flex-direction: column; background: #F3F5F4; color: #17201E; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<div style="height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0E2A2A; color: #CFE0DC; padding-left: 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD1C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+<span style="font-weight: 600; color: #FFFFFF">VetDesk</span>
+<span>Patients › Biscuit › Consultation</span>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding-right: 10px; font-size: 13px">
+<a href="SignIn.dc.html" style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; color: #CFE0DC; text-decoration: none">Sign out</a>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Main" style="flex: 1 1 224px; background: #0E2A2A; color: #CFE0DC; padding: 12px 10px 20px; display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Schedule.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Schedule</a>
+<a href="Patients.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; background: #1C4442; color: #FFFFFF; text-decoration: none; font-weight: 500; box-shadow: inset 3px 0 0 #7FD1C3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>Patients</a>
+<a href="Clients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.6 3.1 2.4 3.5 5.2"></path></svg>Clients</a>
+<a href="Pharmacy.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"></path><path d="M7 7l7 7"></path></svg>Pharmacy</a>
+<a href="Billing.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Billing</a>
+<a href="Reports.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Reports</a>
+<div style="flex: 1; min-height: 16px"></div>
+<a href="Settings.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border-top: 1px solid #1F4644">
+<div style="width: 32px; height: 32px; border-radius: 50%; background: #7FD1C3; color: #0E2A2A; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</div>
+<div style="display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 500">Dr Asha Patel</span><span>Veterinary surgeon</span></div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 14px 24px; background: #FFFFFF; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="width: 44px; height: 44px; border-radius: 10px; background: #E3EFEC; color: #0B5E55; display: flex; align-items: center; justify-content: center; font-weight: 700">B</div>
+<div style="display: flex; flex-direction: column; line-height: 1.3"><a href="Patient.dc.html" style="font-weight: 600; font-size: 16px; color: #17201E; text-decoration: none">Biscuit</a><span style="font-size: 12.5px; color: #55615E">Labrador · 6 yrs · 31.4 kg · H. Clarke</span></div>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: #FDECEA; color: #A3200F; font-size: 12.5px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18v.5"></path></svg>Allergy: amoxicillin</span>
+<div style="flex: 1"></div>
+<sc-if value="{{isOpen}}" hint-placeholder-val="{{true}}">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #55615E">Started 09:02 · 18 min</span>
+<button onClick="{{saveDraft}}" style="height: 40px; padding: 0 14px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; cursor: pointer">Save draft</button>
+<button onClick="{{openConfirm}}" aria-haspopup="dialog" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600">Complete and invoice</button>
+</sc-if>
+<sc-if value="{{isInvoiced}}" hint-placeholder-val="{{false}}">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 14px; background: #E3F3EF; color: #0B5E55; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Completed 09:24 · INV-20418</span>
+<a href="Billing.dc.html" style="height: 40px; padding: 0 16px; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Take payment</a>
+</sc-if>
+</div>
+
+<div style="padding: 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="flex: 1 1 100%; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border: 1px solid #9FD3C7; border-radius: 8px; background: #E3F3EF; color: #0A3F39">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span style="flex: 1; font-weight: 500">{{toastText}}</span>
+<button onClick="{{dismissToast}}" aria-label="Dismiss" style="width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #0A3F39; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+
+<form aria-label="Consultation note" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+<section style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<label for="subj" style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: {{accent}}">S</span><span style="font-weight: 600; font-size: 15px">Subjective</span><span style="color: #55615E; font-size: 12.5px">History from owner</span></label>
+<textarea id="subj" rows="3" style="font: inherit; line-height: 1.5; padding: 10px 12px; border: 1px solid #C9D2CF; border-radius: 6px; resize: vertical; color: #17201E">Eating well since dental on 7 Oct. Owner reports mild drooling on day 1, now resolved. Using oral gel twice daily. No pawing at mouth.</textarea>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: {{accent}}">O</span><h2 style="margin: 0; font-weight: 600; font-size: 15px">Objective</h2><span style="color: #55615E; font-size: 12.5px">Examination</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{vitals}}" as="v" hint-placeholder-count="6">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: #55615E">{{v.label}}
+<span style="display: flex; align-items: center; height: 40px; border: 1px solid #C9D2CF; border-radius: 6px; padding: 0 10px; gap: 6px; background: #FFFFFF">
+<input value="{{v.value}}" style="flex: 1; min-width: 0; border: 0; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #17201E; outline: none; background: transparent">
+<span style="color: #55615E; font-size: 12px; white-space: nowrap">{{v.unit}}</span>
+</span>
+</label>
+</sc-for>
+</div>
+<label for="obj" style="font-size: 12.5px; color: #55615E">Findings</label>
+<textarea id="obj" rows="3" style="font: inherit; line-height: 1.5; padding: 10px 12px; border: 1px solid #C9D2CF; border-radius: 6px; resize: vertical; color: #17201E">Extraction sites healing well, no swelling or discharge. Gingiva pink and moist. Mild plaque on 104. Bright, alert, responsive.</textarea>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<label for="assess" style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: {{accent}}">A</span><span style="font-weight: 600; font-size: 15px">Assessment</span></label>
+<textarea id="assess" rows="2" style="font: inherit; line-height: 1.5; padding: 10px 12px; border: 1px solid #C9D2CF; border-radius: 6px; resize: vertical; color: #17201E">Uncomplicated post-dental recovery.</textarea>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<label for="plan" style="display: flex; align-items: baseline; gap: 10px"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: {{accent}}">P</span><span style="font-weight: 600; font-size: 15px">Plan</span></label>
+<textarea id="plan" rows="3" style="font: inherit; line-height: 1.5; padding: 10px 12px; border: 1px solid #C9D2CF; border-radius: 6px; resize: vertical; color: #17201E">Finish oral gel course. Introduce daily tooth brushing. Recheck in 6 months with annual booster; kennel cough vaccine overdue — offer today.</textarea>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<button type="button" onClick="{{toggleRecheckBooked}}" aria-pressed="{{recheckPressed}}" style="height: 36px; padding: 0 12px; border-radius: 18px; font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; {{recheckStyle}}"><sc-if value="{{recheckBooked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{recheckLabel}}</button>
+<button type="button" onClick="{{toggleReminder}}" aria-pressed="{{reminderPressed}}" style="height: 36px; padding: 0 12px; border-radius: 18px; font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; {{reminderStyle}}"><sc-if value="{{reminderSet}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{reminderLabel}}</button>
+<button type="button" onClick="{{openSummary}}" aria-haspopup="dialog" style="height: 36px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 18px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px; cursor: pointer">Print owner summary</button>
+</div>
+</section>
+</form>
+
+<aside aria-labelledby="charges" style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1; display: flex; justify-content: space-between; align-items: center">
+<h2 id="charges" style="margin: 0; font-size: 15px; font-weight: 600">Charges</h2>
+<button onClick="{{toggleAddItem}}" aria-expanded="{{addItemExpanded}}" style="height: 32px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add item</button>
+</div>
+<sc-if value="{{addItemOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #DDE3E1; background: #F8FAF9">
+<label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Item
+<select value="{{newItem}}" onChange="{{pickItem}}" style="height: 36px; padding: 0 8px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E">
+<option value="0">Consultation · £52.00</option><option value="1">Nail clip · £14.00</option><option value="2">Microchip implant · £22.00</option><option value="3">Flea and worm spot-on · £16.40</option><option value="4">Dental chews · £9.80</option>
+</select></label>
+<label style="width: 72px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Qty
+<input type="number" min="1" value="{{newQty}}" onChange="{{pickQty}}" style="height: 36px; padding: 0 8px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<button onClick="{{addItem}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Add</button>
+</div>
+</sc-if>
+<sc-for list="{{charges}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #EEF1F0">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-weight: 500">{{c.name}}</span><span style="font-size: 12px; color: #55615E; font-family: 'IBM Plex Mono', monospace">{{c.code}} · qty {{c.qty}}</span></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{c.amount}}</span>
+<button onClick="{{c.remove}}" aria-label="{{c.removeAria}}" title="Remove" style="width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: #55615E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-for>
+<div style="padding: 14px 16px; display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-weight: 600">Total incl. VAT</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">{{total}}</span>
+</div>
+</section>
+
+<section aria-labelledby="rx" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="rx" style="margin: 0; font-size: 15px; font-weight: 600">Prescribe</h2>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; color: #55615E">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input placeholder="Search formulary" aria-label="Search formulary" style="flex: 1; min-width: 0; border: 0; font: inherit; color: #17201E; outline: none">
+</label>
+<p style="margin: 0; font-size: 12.5px; color: #3F4A47; line-height: 1.5">Penicillin-class products are flagged for this patient and need a reason to override.</p>
+</section>
+</aside>
+
+</div>
+</main>
+</div>
+
+<sc-if value="{{summaryOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 56px 16px 24px; box-sizing: border-box; z-index: 12; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="sum-title" style="width: 100%; max-width: 560px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<h2 id="sum-title" style="margin: 0; font-size: 18px; font-weight: 600">Owner summary — preview</h2>
+<button onClick="{{closeSummary}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 20px; display: flex; flex-direction: column; gap: 12px; line-height: 1.55; font-size: 14px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #55615E"><span>[PRACTICE NAME]</span><span>Friday 9 October 2026</span></div>
+<p style="margin: 0"><strong>Biscuit</strong> (Labrador retriever) — post-dental check with Dr Patel.</p>
+<p style="margin: 0"><strong>How Biscuit is doing:</strong> the gums are healing well after his dental on 7 October. No swelling or infection.</p>
+<p style="margin: 0"><strong>What to do at home:</strong> keep using the oral gel twice a day until 14 October, then start brushing his teeth daily with the finger brush.</p>
+<p style="margin: 0"><strong>Given today:</strong> kennel cough vaccine (nose drops).</p>
+<p style="margin: 0"><strong>Next visit:</strong> recheck and annual booster in about 6 months. Call us on [PRACTICE PHONE] if you have any concerns.</p>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeSummary}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; cursor: pointer">Close</button>
+<button onClick="{{emailSummary}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; cursor: pointer">Email to owner</button>
+<button onClick="{{printSummary}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Print</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{dialogOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10">
+<div role="dialog" aria-modal="true" aria-labelledby="inv-title" style="width: 100%; max-width: 560px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+
+<sc-if value="{{isConfirm}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h2 id="inv-title" style="margin: 0; font-size: 18px; font-weight: 600">Complete consultation and invoice</h2>
+<span style="font-size: 12.5px; color: #55615E">Biscuit · Hannah Clarke · Dr Patel</span>
+</div>
+<button onClick="{{closeDialog}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<div style="padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #EEF1F0">
+<span style="font-size: 12.5px; color: #55615E">Checks</span>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6E63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Clinical note has all four sections filled in</div>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6E63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>No charged products conflict with the amoxicillin allergy</div>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6E63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Vaccine will be added to the vaccination record</div>
+</div>
+
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{charges}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; align-items: baseline; gap: 12px; padding: 10px 20px; border-bottom: 1px solid #EEF1F0">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span>{{c.name}}</span><span style="font-size: 12px; color: #55615E; font-family: 'IBM Plex Mono', monospace">{{c.code}} · qty {{c.qty}}</span></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{c.amount}}</span>
+</div>
+</sc-for>
+</div>
+<dl style="margin: 0; padding: 12px 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 13.5px; border-bottom: 1px solid #EEF1F0">
+<dt style="color: #55615E">Subtotal</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right">{{net}}</dd>
+<dt style="color: #55615E">VAT 20%</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right">{{vat}}</dd>
+<dt style="font-weight: 600">Total</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; text-align: right">{{total}}</dd>
+</dl>
+
+<div style="padding: 12px 20px; display: flex; flex-direction: column; gap: 4px">
+<label style="display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 13.5px"><input type="checkbox" checked="{{emailOn}}" onChange="{{toggleEmail}}" style="width: 18px; height: 18px; accent-color: #0B6E63">Email invoice to owner</label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 13.5px"><input type="checkbox" checked="{{recheckOn}}" onChange="{{toggleRecheck}}" style="width: 18px; height: 18px; accent-color: #0B6E63">Set 6-month recheck and booster reminder</label>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeDialog}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Back to note</button>
+<button onClick="{{createInvoice}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600">Complete and create invoice</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+<div style="padding: 28px 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<span style="width: 52px; height: 52px; border-radius: 50%; background: #E3F3EF; color: #0B6E63; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<h2 id="inv-title" style="margin: 0; font-size: 20px; font-weight: 600">Invoice <span style="font-family: 'IBM Plex Mono', monospace">INV-20418</span> created</h2>
+<span style="color: #3F4A47">Consultation completed and locked. {{doneDetail}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; margin-top: 6px">{{total}}</span>
+<span style="font-size: 12.5px; color: #55615E">due from Hannah Clarke</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 14px 20px 20px">
+<button onClick="{{closeDialog}}" style="height: 44px; padding: 0 18px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Pay later</button>
+<a href="Billing.dc.html" style="height: 44px; padding: 0 20px; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box">Take payment now</a>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B6E63","options":["#0B6E63","#1F4FA8","#7A3E9D","#9A4A06"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { stage: 'open', dialog: false, email: true, recheck: true, toast: null, recheckBooked: false, reminderSet: false, summaryOpen: false, addItemOpen: false, newItem: '0', newQty: 1, rows: [['Post-operative check','CON-PO',1,0],['Kennel cough vaccine (intranasal)','VAC-KC',1,38.5],['Finger toothbrush and paste','RET-DNT',1,9.25]] }; }
+  renderVals() {
+    const accent = this.props.accent ?? '#0B6E63';
+    const vitals = [
+      ['Temperature','38.6','°C'],
+      ['Heart rate','92','bpm'],
+      ['Resp. rate','20','/min'],
+      ['Weight','31.4','kg'],
+      ['Mucous membr.','Pink',''],
+      ['CRT','< 2','sec']
+    ].map((v) => ({ label: v[0], value: v[1], unit: v[2] }));
+    const gbp = (n) => '£' + n.toFixed(2);
+    const rows = this.state.rows;
+    const charges = rows.map((c, i) => ({ name: c[0], code: c[1], qty: c[2], amount: c[3] === 0 ? 'Included' : gbp(c[2] * c[3]),
+      removeAria: 'Remove ' + c[0],
+      remove: () => this.setState((st) => ({ rows: st.rows.filter((_, j) => j !== i), toast: c[0] + ' removed from charges.' })) }));
+    const CATALOGUE = [['Consultation','CON-STD',52],['Nail clip','NUR-NC',14],['Microchip implant','PRC-MC',22],['Flea and worm spot-on','RET-FW',16.4],['Dental chews','RET-DC',9.8]];
+    const pressedStyle = 'border:1px solid ' + accent + ';background:#E3F3EF;color:#0A3F39';
+    const plainStyle = 'border:1px solid #C9D2CF;background:#FFFFFF;color:#17201E';
+    const netN = rows.reduce((s, c) => s + c[2] * c[3], 0);
+    const totalN = Math.round(netN * 120) / 100;
+    const s = this.state;
+    const extras = [];
+    if (s.email) extras.push('Invoice emailed to owner.');
+    if (s.recheck) extras.push('Recheck reminder set for April 2027.');
+    return {
+      accent, vitals, charges,
+      net: gbp(netN), vat: gbp(totalN - netN), total: gbp(totalN),
+      isOpen: s.stage === 'open', isInvoiced: s.stage === 'done',
+      dialogOpen: s.dialog, isConfirm: s.stage === 'open', isDone: s.stage === 'done',
+      emailOn: s.email, recheckOn: s.recheck,
+      toggleEmail: () => this.setState({ email: !s.email }),
+      toggleRecheck: () => this.setState({ recheck: !s.recheck }),
+      doneDetail: extras.join(' '),
+      openConfirm: () => this.setState({ dialog: true }),
+      closeDialog: () => this.setState({ dialog: false }),
+      createInvoice: () => this.setState({ stage: 'done' }),
+      toast: !!s.toast, toastText: s.toast || '', dismissToast: () => this.setState({ toast: null }),
+      saveDraft: () => this.setState({ toast: 'Draft saved at 09:20. Everything you typed is kept if you leave this page.' }),
+      recheckBooked: s.recheckBooked, recheckPressed: s.recheckBooked ? 'true' : 'false',
+      recheckLabel: s.recheckBooked ? 'Recheck booked · Fri 9 Apr 2027' : 'Book recheck',
+      recheckStyle: s.recheckBooked ? pressedStyle : plainStyle,
+      toggleRecheckBooked: () => this.setState({ recheckBooked: !s.recheckBooked, toast: s.recheckBooked ? 'Recheck appointment cancelled.' : 'Recheck booked for Friday 9 April 2027 at 09:00.' }),
+      reminderSet: s.reminderSet, reminderPressed: s.reminderSet ? 'true' : 'false',
+      reminderLabel: s.reminderSet ? 'Reminder set · booster, Mar 2027' : 'Set reminder',
+      reminderStyle: s.reminderSet ? pressedStyle : plainStyle,
+      toggleReminder: () => this.setState({ reminderSet: !s.reminderSet, toast: s.reminderSet ? 'Reminder removed.' : 'Booster reminder will be texted to Hannah Clarke in March 2027.' }),
+      summaryOpen: s.summaryOpen,
+      openSummary: () => this.setState({ summaryOpen: true }),
+      closeSummary: () => this.setState({ summaryOpen: false }),
+      emailSummary: () => this.setState({ summaryOpen: false, toast: 'Owner summary emailed to Hannah Clarke.' }),
+      printSummary: () => { try { window.print(); } catch (e) {} this.setState({ summaryOpen: false, toast: 'Owner summary sent to print.' }); },
+      addItemOpen: s.addItemOpen, addItemExpanded: s.addItemOpen ? 'true' : 'false',
+      toggleAddItem: () => this.setState({ addItemOpen: !s.addItemOpen }),
+      newItem: s.newItem, newQty: String(s.newQty),
+      pickItem: (e) => this.setState({ newItem: e.target.value }),
+      pickQty: (e) => this.setState({ newQty: Math.max(1, Number(e.target.value) || 1) }),
+      addItem: () => { const it = CATALOGUE[Number(s.newItem)]; this.setState((st) => ({ rows: st.rows.concat([[it[0], it[1], st.newQty, it[2]]]), addItemOpen: false, newQty: 1, toast: it[0] + ' added to charges.' })); }
+    };
+  }
+}
+</script>
+</body>
+</html>

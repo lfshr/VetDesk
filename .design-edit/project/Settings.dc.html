@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VetDesk — Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EDEB}
+a{color:#0B6E63}a:hover{color:#08524A}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F3F5F4; color: #17201E; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<div style="height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0E2A2A; color: #CFE0DC; padding-left: 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD1C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+<span style="font-weight: 600; color: #FFFFFF">VetDesk</span>
+<span>Settings › {{section}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding-right: 10px; font-size: 13px">
+<a href="SignIn.dc.html" style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; color: #CFE0DC; text-decoration: none">Sign out</a>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Main" style="flex: 1 1 224px; background: #0E2A2A; color: #CFE0DC; padding: 12px 10px 20px; display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Schedule.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Schedule</a>
+<a href="Patients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>Patients</a>
+<a href="Clients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.6 3.1 2.4 3.5 5.2"></path></svg>Clients</a>
+<a href="Pharmacy.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"></path><path d="M7 7l7 7"></path></svg>Pharmacy</a>
+<a href="Billing.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Billing</a>
+<a href="Reports.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Reports</a>
+<div style="flex: 1; min-height: 16px"></div>
+<a href="Settings.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; background: #1C4442; color: #FFFFFF; text-decoration: none; font-weight: 500; box-shadow: inset 3px 0 0 #7FD1C3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border-top: 1px solid #1F4644">
+<div style="width: 32px; height: 32px; border-radius: 50%; background: #7FD1C3; color: #0E2A2A; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</div>
+<div style="display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 500">Dr Asha Patel</span><span>Veterinary surgeon</span></div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #9FD3C7; border-radius: 8px; background: #E3F3EF; color: #0A3F39">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span style="flex: 1 1 280px; font-weight: 500">{{toastText}}</span>
+<button onClick="{{dismissToast}}" aria-label="Dismiss" style="width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #0A3F39; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Settings</h1>
+<p style="margin: 0; color: #55615E">Practice configuration</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<nav aria-label="Settings sections" style="flex: 1 1 220px; max-width: 280px; background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{sections}}" as="s" hint-placeholder-count="6">
+<button onClick="{{s.pick}}" aria-current="{{s.current}}" style="height: 44px; padding: 0 12px; border: 0; border-radius: 6px; text-align: left; font: inherit; display: flex; flex-direction: column; justify-content: center; {{s.style}}">{{s.label}}</button>
+</sc-for>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<sc-if value="{{show.users}}" hint-placeholder-val="{{true}}">
+<section aria-labelledby="users" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #DDE3E1">
+<h2 id="users" style="margin: 0; font-size: 15px; font-weight: 600">Users</h2>
+<button onClick="{{openInvite}}" aria-haspopup="dialog" style="height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">Add user</button>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px">
+<thead><tr style="text-align: left; color: #55615E; font-size: 12px; background: #F8FAF9"><th style="padding: 10px 16px; font-weight: 500">Name</th><th style="padding: 10px 12px; font-weight: 500">Role</th><th style="padding: 10px 12px; font-weight: 500">Registration</th><th style="padding: 10px 12px; font-weight: 500">Last sign-in</th><th style="padding: 10px 16px; font-weight: 500">Status</th></tr></thead>
+<tbody>
+<sc-for list="{{users}}" as="u" hint-placeholder-count="6">
+<tr style="border-top: 1px solid #EEF1F0; vertical-align: middle">
+<td style="padding: 10px 16px"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 30px; height: 30px; border-radius: 50%; background: #E3EFEC; color: #0B5E55; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex: none">{{u.initials}}</span><div style="display: flex; flex-direction: column"><span style="font-weight: 600">{{u.name}}</span></div></div></td>
+<td style="padding: 10px 12px">{{u.role}}</td>
+<td style="padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px">{{u.reg}}</td>
+<td style="padding: 10px 12px; color: #3F4A47">{{u.last}}</td>
+<td style="padding: 10px 16px"><span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; {{u.chip}}">{{u.status}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section aria-labelledby="perms" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1; display: flex; flex-direction: column; gap: 2px"><h2 id="perms" style="margin: 0; font-size: 15px; font-weight: 600">Role permissions</h2><span style="font-size: 12.5px; color: #55615E">What each role can do across the app</span></div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px">
+<thead><tr style="color: #55615E; font-size: 12px; background: #F8FAF9"><th style="padding: 10px 16px; font-weight: 500; text-align: left">Permission</th><sc-for list="{{roles}}" as="r" hint-placeholder-count="4"><th style="padding: 10px 12px; font-weight: 500; text-align: center">{{r}}</th></sc-for></tr></thead>
+<tbody>
+<sc-for list="{{perms}}" as="p" hint-placeholder-count="7">
+<tr style="border-top: 1px solid #EEF1F0">
+<td style="padding: 10px 16px">{{p.label}}</td>
+<sc-for list="{{p.cells}}" as="c" hint-placeholder-count="4">
+<td style="padding: 10px 12px; text-align: center"><input type="checkbox" checked="{{c.on}}" onChange="{{c.toggle}}" aria-label="{{c.aria}}" style="width: 18px; height: 18px; accent-color: #0B6E63"></td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{show.clinic}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="clinic" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="clinic" style="margin: 0; font-size: 15px; font-weight: 600">Clinic details</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 14px 20px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Practice name<input value="[PRACTICE NAME]" style="height: 40px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Address<input value="[ADDRESS]" style="height: 40px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Phone<input value="[PHONE]" style="height: 40px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">VAT number<input value="[VAT NUMBER]" style="height: 40px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #17201E"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Default VAT rate<select style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font: inherit; font-size: 14px; color: #17201E; background: #FFFFFF"><option>Standard 20%</option><option>Zero</option><option>Exempt</option></select></label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12.5px; color: #55615E">Opening hours</span>
+<div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; align-items: center; max-width: 480px; font-size: 13.5px">
+<span>Mon – Fri</span><input aria-label="Weekday opening" value="08:00" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><input aria-label="Weekday closing" value="19:00" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+<span>Saturday</span><input aria-label="Saturday opening" value="09:00" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><input aria-label="Saturday closing" value="13:00" style="height: 36px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+<span>Sunday</span><span style="grid-column: span 2; color: #55615E">Closed · out-of-hours provider</span>
+</div>
+</div>
+<div style="display: flex; gap: 8px"><button onClick="{{saveClinic}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600">Save changes</button><button onClick="{{discardClinic}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Discard</button></div>
+</section>
+</sc-if>
+
+<sc-if value="{{show.types}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="types" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="types" style="margin: 0; font-size: 15px; font-weight: 600">Appointment types</h2><button onClick="{{addType}}" aria-haspopup="dialog" style="height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">Add type</button></div>
+<sc-for list="{{types}}" as="t" hint-placeholder-count="6">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 16px; border-bottom: 1px solid #EEF1F0">
+<span style="width: 14px; height: 14px; border-radius: 4px; flex: none; {{t.swatch}}"></span>
+<div style="flex: 1 1 200px; display: flex; flex-direction: column"><span style="font-weight: 600">{{t.name}}</span><span style="font-size: 12.5px; color: #55615E">{{t.who}}</span></div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; width: 64px">{{t.mins}} min</span>
+<span style="font-size: 12.5px; color: #55615E; width: 140px">{{t.online}}</span>
+<button onClick="{{t.edit}}" aria-haspopup="dialog" style="height: 36px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px">Edit</button>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<sc-if value="{{show.reminders}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="rems" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="padding: 14px 16px; border-bottom: 1px solid #DDE3E1"><h2 id="rems" style="margin: 0; font-size: 15px; font-weight: 600">Reminders</h2></div>
+<sc-for list="{{reminders}}" as="r" hint-placeholder-count="4">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 16px; border-bottom: 1px solid #EEF1F0">
+<div style="flex: 1 1 220px; display: flex; flex-direction: column"><span style="font-weight: 600">{{r.name}}</span><span style="font-size: 12.5px; color: #55615E">{{r.when}}</span></div>
+<span style="font-size: 12.5px; color: #3F4A47; width: 120px">{{r.channel}}</span>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; min-height: 44px"><input type="checkbox" checked="{{r.on}}" onChange="{{r.toggle}}" style="width: 18px; height: 18px; accent-color: #0B6E63">Active</label>
+</div>
+</sc-for>
+</section>
+</sc-if>
+
+<sc-if value="{{show.integrations}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="ints" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="ints" style="margin: 0; font-size: 15px; font-weight: 600">Integrations</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{integrations}}" as="g" hint-placeholder-count="5">
+<div style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><span style="font-weight: 600">{{g.name}}</span><span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; {{g.chip}}">{{g.status}}</span></div>
+<span style="font-size: 12.5px; color: #3F4A47; line-height: 1.5">{{g.desc}}</span>
+<button onClick="{{g.run}}" aria-haspopup="dialog" style="align-self: flex-start; height: 36px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-size: 13px">{{g.action}}</button>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{show.backup}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="bk" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="bk" style="margin: 0; font-size: 15px; font-weight: 600">Backup and data</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 10px 16px; font-size: 13.5px">
+<dt style="color: #55615E">Last backup</dt><dd style="margin: 0">{{lastBackup}}</dd>
+<dt style="color: #55615E">Schedule</dt><dd style="margin: 0">Nightly at 02:00, kept for [RETENTION PERIOD]</dd>
+<dt style="color: #55615E">Location</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px">[BACKUP LOCATION]</dd>
+</dl>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><button onClick="{{backupNow}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600">Back up now</button><button onClick="{{openRestore}}" aria-haspopup="dialog" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Restore…</button><button onClick="{{exportData}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Export client data</button></div>
+</section>
+</sc-if>
+
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<sc-if value="{{inviteOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="inv-title" style="width: 100%; max-width: 600px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="inv-title" style="margin: 0; font-size: 18px; font-weight: 600">Add user</h2><span style="font-size: 12.5px; color: #55615E">They sign in by tapping their name and entering this PIN. They can change it under My PIN and password.</span></div>
+<button onClick="{{closeDlg}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">First name<input value="{{inv.name}}" onChange="{{setInvName}}" placeholder="e.g. Sam" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">PIN (4 digits)<input inputmode="numeric" maxlength="4" autocomplete="off" value="{{inv.pin}}" onChange="{{setInvPin}}" placeholder="e.g. 4821" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Role<select onChange="{{setInvRole}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><option>Vet</option><option>Nurse</option><option>Reception</option><option>Admin</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Registration number<input placeholder="Vets and nurses only" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+<sc-if value="{{invAdmin}}" hint-placeholder-val="{{false}}">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Administrator password<input type="password" autocomplete="new-password" value="{{inv.password}}" onChange="{{setInvPassword}}" placeholder="At least 10 characters" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><span style="font-size: 12px; color: #55615E">Asked for before users and settings open.</span></label>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 12px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeDlg}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{sendInvite}}" disabled="{{invBad}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-weight: 600; {{invStyle}}">Add user</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{typeOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="type-title" style="width: 100%; max-width: 600px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="type-title" style="margin: 0; font-size: 18px; font-weight: 600">{{typeTitle}}</h2><span style="font-size: 12.5px; color: #55615E">Shown in the new appointment dialog and on the schedule.</span></div>
+<button onClick="{{closeDlg}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Name<input value="{{tp.name}}" onChange="{{setTpName}}" placeholder="e.g. Nail clip" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Length (minutes)<input type="number" min="5" step="5" value="{{tp.mins}}" onChange="{{setTpMins}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Seen by<select onChange="{{setTpWho}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><sc-for list="{{whoOpts}}" as="o" hint-placeholder-count="4"><option selected="{{o.selected}}">{{o.label}}</option></sc-for></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Online booking<select onChange="{{setTpOnline}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><sc-for list="{{onlineOpts}}" as="o" hint-placeholder-count="3"><option selected="{{o.selected}}">{{o.label}}</option></sc-for></select></label>
+</div>
+<div style="padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 12.5px; color: #55615E">Colour on the schedule</span>
+<div role="radiogroup" aria-label="Colour" style="display: flex; gap: 8px"><sc-for list="{{swatches}}" as="w" hint-placeholder-count="4"><button role="radio" aria-checked="{{w.checked}}" aria-label="{{w.label}}" onClick="{{w.pick}}" style="width: 36px; height: 36px; border-radius: 8px; cursor: pointer; {{w.style}}"></button></sc-for></div></div>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 12px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeDlg}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{saveType}}" disabled="{{tpBad}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-weight: 600; {{tpStyle}}">Save type</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{intOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="int-title" style="width: 100%; max-width: 600px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="int-title" style="margin: 0; font-size: 18px; font-weight: 600">{{ig.name}}</h2><span style="font-size: 12.5px; color: #55615E">{{ig.desc}}</span></div>
+<button onClick="{{closeDlg}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Provider<select style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><option>[PROVIDER 1]</option><option>[PROVIDER 2]</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Account ID<input value="{{ig.account}}" onChange="{{setIgAccount}}" placeholder="From your provider" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">API key<input type="password" value="{{ig.key}}" onChange="{{setIgKey}}" placeholder="Paste key" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+</div>
+<sc-if value="{{ig.warn}}" hint-placeholder-val="{{false}}"><div style="margin: 0 20px 16px; padding: 10px 12px; border-radius: 6px; background: #FDF1E3; color: #6B3303; font-size: 13px; line-height: 1.5">The SMS gateway rejected the last 12 messages because the API key has expired. Paste a new key to resume sending.</div></sc-if>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 12px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<sc-if value="{{ig.connected}}" hint-placeholder-val="{{false}}"><button onClick="{{disconnectIg}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; color: #A3200F; margin-right: auto">Disconnect</button></sc-if>
+<button onClick="{{closeDlg}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{saveIg}}" disabled="{{igBad}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-weight: 600; {{igStyle}}">Save and test</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{restoreOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="rst-title" style="width: 100%; max-width: 520px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="rst-title" style="margin: 0; font-size: 18px; font-weight: 600">Restore from backup?</h2><span style="font-size: 12.5px; color: #55615E">Everything entered since the backup is lost. Everyone is signed out while it runs.</span></div>
+<button onClick="{{closeDlg}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Backup<select onChange="{{setRestorePoint}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><sc-for list="{{points}}" as="o" hint-placeholder-count="3"><option>{{o}}</option></sc-for></select></label>
+</div>
+<label style="margin: 0 20px 16px; display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 44px"><input type="checkbox" checked="{{restoreAck}}" onChange="{{toggleAck}}" style="width: 18px; height: 18px; accent-color: #A3200F">I understand that newer data will be lost</label>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 12px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeDlg}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{confirmRestore}}" disabled="{{restoreBad}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-weight: 600; {{restoreStyle}}">Restore</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B6E63","options":["#0B6E63","#1F4FA8","#7A3E9D","#9A4A06"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { section: 'users', dlg: null, toast: null, invited: [], inv: { name: '', pin: '', role: 'Vet', password: '' },
+      perm: null, remOff: {}, types: null, tp: null, ints: {}, ig: null, lastBackup: 'Today 02:00 · completed',
+      restorePoint: 'Today 02:00', restoreAck: false };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#0B6E63';
+    const list = [['clinic','Clinic details'],['users','Users and roles'],['types','Appointment types'],['reminders','Reminders'],['integrations','Integrations'],['backup','Backup and data']];
+    const sections = list.map((s) => {
+      const on = this.state.section === s[0];
+      return { label: s[1], current: on ? 'page' : 'false', pick: () => this.setState({ section: s[0] }),
+        style: on ? 'background:#E3F3EF;color:#0A3F39;font-weight:600;box-shadow:inset 3px 0 0 ' + accent : 'background:transparent;color:#17201E' };
+    });
+    const show = {}; list.forEach((s) => { show[s[0]] = this.state.section === s[0]; });
+    const section = list.find((s) => s[0] === this.state.section)[1];
+    const toast = (t) => this.setState({ toast: t });
+    const dlg = this.state.dlg;
+    const closeDlg = () => this.setState({ dlg: null });
+    const ok = (bad) => bad ? 'background:#9AA5A2;cursor:not-allowed' : 'background:' + accent + ';cursor:pointer';
+
+    // Users
+    const chips = { Active: 'background:#E3F3EF;color:#0B5E55', 'No PIN': 'background:#FDF1E3;color:#8A4204', Disabled: 'background:#EEF1F0;color:#3F4A47' };
+    const users = [
+      ['D','Douglas','','Vet (admin)','[RCVS NO.]','Today 07:52','Active'],
+      ['H','Heather','','Vet (admin)','[RCVS NO.]','Today 08:10','Active'],
+      ['J','Janet','','Nurse','[RCVS NO.]','Today 08:02','Active'],
+      ['J','Jen','','Vet (admin)','[RCVS NO.]','Today 07:58','Active'],
+      ['L','Lesley','','Nurse','[RCVS NO.]','Yesterday','Active'],
+      ['L','Liam','','Admin','—','Today 07:40','Active'],
+      ['L','Lorna','','Nurse','[RCVS NO.]','—','No PIN']
+    ].concat(this.state.invited).map((u) => ({ initials: u[0], name: u[1], email: u[2], role: u[3], reg: u[4], last: u[5], status: u[6], chip: chips[u[6]] }));
+    const inv = this.state.inv;
+    const invAdmin = inv.role === 'Admin';
+    const invBad = !inv.name.trim() || !/^\d{4}$/.test(inv.pin) || (invAdmin && inv.password.length < 10);
+    const setInv = (k) => (e) => this.setState({ inv: Object.assign({}, inv, { [k]: e.target.value }) });
+    const inviteVals = { inviteOpen: dlg === 'invite', inv, invBad, invAdmin, invStyle: ok(invBad),
+      openInvite: () => this.setState({ dlg: 'invite', inv: { name: '', pin: '', role: 'Vet', password: '' } }),
+      setInvName: setInv('name'), setInvRole: setInv('role'), setInvPassword: setInv('password'),
+      setInvPin: (e) => this.setState({ inv: Object.assign({}, inv, { pin: e.target.value.replace(/\D/g, '').slice(0, 4) }) }),
+      sendInvite: () => { if (invBad) return;
+        const name = inv.name.trim();
+        this.setState((s) => ({ dlg: null, invited: s.invited.concat([[name[0].toUpperCase(), name, '', inv.role, '—', 'Never', 'Active']]),
+          toast: name + ' added · give them their PIN. They can sign in straight away.' })); } };
+
+    const roles = ['Vet','Nurse','Reception','Admin'];
+    const permBase = [
+      ['View clinical records',[1,1,1,1]],
+      ['Write clinical notes',[1,1,0,0]],
+      ['Prescribe medicines',[1,0,0,0]],
+      ['Witness controlled drugs',[1,1,0,0]],
+      ['Take payments and refunds',[1,1,1,1]],
+      ['Edit price list',[0,0,0,1]],
+      ['Manage users and settings',[0,0,0,1]]
+    ];
+    const pm = this.state.perm || permBase.map((p) => p[1].slice());
+    const perms = permBase.map((p, i) => ({ label: p[0], cells: pm[i].map((v, j) => ({ on: !!v, aria: p[0] + ' — ' + roles[j],
+      toggle: () => { const next = pm.map((r) => r.slice()); next[i][j] = next[i][j] ? 0 : 1;
+        this.setState({ perm: next, toast: p[0] + ' ' + (next[i][j] ? 'allowed for ' : 'removed from ') + roles[j] + ' · saved.' }); } })) }));
+
+    // Clinic
+    const clinicVals = { saveClinic: () => toast('Clinic details saved · opening hours update the schedule from tomorrow.'),
+      discardClinic: () => toast('Unsaved changes discarded.') };
+
+    // Appointment types
+    const SW = [['Teal','#9FD3C7'],['Blue','#B9CCF5'],['Purple','#D5B5E6'],['Amber','#F6D3A8']];
+    const typesRaw = this.state.types || [
+      ['Consultation','Vets',15,'Bookable online','#9FD3C7'],
+      ['Second opinion','Vets',30,'Phone only','#9FD3C7'],
+      ['Vaccination','Vets or nurses',15,'Bookable online','#B9CCF5'],
+      ['Surgery admission','Theatre',120,'Staff only','#D5B5E6'],
+      ['Dental','Theatre',90,'Staff only','#D5B5E6']
+    ];
+    const types = typesRaw.map((t, i) => ({ name: t[0], who: t[1], mins: t[2], online: t[3], swatch: 'background:' + t[4],
+      edit: () => this.setState({ dlg: 'type', tp: { index: i, name: t[0], who: t[1], mins: t[2], online: t[3], color: t[4] } }) }));
+    const tp = this.state.tp || { index: -1, name: '', who: 'Vets', mins: 15, online: 'Bookable online', color: '#9FD3C7' };
+    const setTp = (patch) => this.setState({ tp: Object.assign({}, tp, patch) });
+    const tpBad = !tp.name.trim() || !(tp.mins > 0);
+    const typeVals = { typeOpen: dlg === 'type', tp, typeTitle: tp.index >= 0 ? 'Edit appointment type' : 'New appointment type',
+      addType: () => this.setState({ dlg: 'type', tp: { index: -1, name: '', who: 'Vets', mins: 15, online: 'Bookable online', color: '#9FD3C7' } }),
+      setTpName: (e) => setTp({ name: e.target.value }), setTpMins: (e) => setTp({ mins: parseInt(e.target.value, 10) || 0 }),
+      setTpWho: (e) => setTp({ who: e.target.value }), setTpOnline: (e) => setTp({ online: e.target.value }),
+      whoOpts: ['Vets', 'Nurses', 'Vets or nurses', 'Theatre'].map((l) => ({ label: l, selected: tp.who === l })),
+      onlineOpts: ['Bookable online', 'Phone only', 'Staff only'].map((l) => ({ label: l, selected: tp.online === l })),
+      swatches: SW.map((w) => ({ label: w[0], checked: tp.color === w[1] ? 'true' : 'false', pick: () => setTp({ color: w[1] }),
+        style: 'background:' + w[1] + ';' + (tp.color === w[1] ? 'border:2px solid #17201E;box-shadow:inset 0 0 0 2px #FFFFFF' : 'border:1px solid #C9D2CF') })),
+      tpBad, tpStyle: ok(tpBad),
+      saveType: () => { if (tpBad) return;
+        const row = [tp.name.trim(), tp.who, tp.mins, tp.online, tp.color];
+        const next = tp.index >= 0 ? typesRaw.map((t, i) => i === tp.index ? row : t) : typesRaw.concat([row]);
+        this.setState({ dlg: null, types: next, toast: (tp.index >= 0 ? 'Updated ' : 'Added ') + row[0] + ' · ' + row[2] + ' min. It shows in New appointment straight away.' }); } };
+
+    // Reminders
+    const reminders = [
+      ['Annual booster','4 weeks before due, then 1 week after if not booked','SMS + email',true],
+      ['Kennel cough','3 weeks before due','SMS',true],
+      ['Appointment confirmation','24 hours before','SMS',true],
+      ['Post-operative check-in','2 days after surgery','Phone task for nurse',false]
+    ].map((r) => {
+      const on = r[0] in this.state.remOff ? this.state.remOff[r[0]] : r[3];
+      return { name: r[0], when: r[1], channel: r[2], on,
+        toggle: () => this.setState((s) => ({ remOff: Object.assign({}, s.remOff, { [r[0]]: !on }), toast: r[0] + ' reminders ' + (on ? 'paused.' : 'switched on.') })) };
+    });
+
+    // Integrations
+    const istat = { Connected: 'background:#E3F3EF;color:#0B5E55', 'Not connected': 'background:#EEF1F0;color:#3F4A47', 'Needs attention': 'background:#FDF1E3;color:#8A4204' };
+    const actionFor = { Connected: 'Configure', 'Needs attention': 'Fix', 'Not connected': 'Connect' };
+    const intRaw = [
+      ['External laboratory','Send requests and import results into the patient record.','Connected'],
+      ['Card terminal','Push invoice totals to the terminal at the desk.','Connected'],
+      ['SMS gateway','Reminders and confirmations by text message.','Needs attention'],
+      ['Accounting','Export daily takings and VAT to your accounts package.','Not connected'],
+      ['Microchip database','Look up and update keeper details from a chip number.','Not connected']
+    ].map((g) => [g[0], g[1], this.state.ints[g[0]] || g[2]]);
+    const integrations = intRaw.map((g) => ({ name: g[0], desc: g[1], status: g[2], action: actionFor[g[2]], chip: istat[g[2]],
+      run: () => this.setState({ dlg: 'int', ig: { name: g[0], desc: g[1], status: g[2], account: g[2] === 'Connected' ? '[ACCOUNT ID]' : '', key: g[2] === 'Connected' ? '••••••••••••' : '' } }) }));
+    const ig = this.state.ig || { name: '', desc: '', status: '', account: '', key: '' };
+    const igBad = !ig.account.trim() || !ig.key.trim();
+    const setIg = (k) => (e) => this.setState({ ig: Object.assign({}, ig, { [k]: e.target.value }) });
+    const intVals = { intOpen: dlg === 'int', ig: Object.assign({ warn: ig.status === 'Needs attention', connected: ig.status === 'Connected' }, ig),
+      setIgAccount: setIg('account'), setIgKey: setIg('key'), igBad, igStyle: ok(igBad),
+      saveIg: () => { if (igBad) return; this.setState((s) => ({ dlg: null, ints: Object.assign({}, s.ints, { [ig.name]: 'Connected' }), toast: ig.name + ' connected · test message succeeded.' })); },
+      disconnectIg: () => this.setState((s) => ({ dlg: null, ints: Object.assign({}, s.ints, { [ig.name]: 'Not connected' }), toast: ig.name + ' disconnected.' })) };
+
+    // Backup
+    const restoreBad = !this.state.restoreAck;
+    const backupVals = { lastBackup: this.state.lastBackup,
+      backupNow: () => this.setState({ lastBackup: 'Today 10:14 · completed (manual)', toast: 'Backup completed · 1.8 GB written to [BACKUP LOCATION].' }),
+      exportData: () => toast('Client data export started · you will get an email with a download link (CSV, encrypted zip) when it is ready.'),
+      restoreOpen: dlg === 'restore', openRestore: () => this.setState({ dlg: 'restore', restoreAck: false }),
+      points: ['Today 02:00', 'Yesterday 02:00', 'Thu 8 Oct 02:00', 'Wed 7 Oct 02:00'],
+      setRestorePoint: (e) => this.setState({ restorePoint: e.target.value }),
+      restoreAck: this.state.restoreAck, toggleAck: () => this.setState({ restoreAck: !this.state.restoreAck }),
+      restoreBad, restoreStyle: restoreBad ? 'background:#9AA5A2;cursor:not-allowed' : 'background:#A3200F;cursor:pointer',
+      confirmRestore: () => { if (restoreBad) return; this.setState({ dlg: null, toast: 'Restore from ' + this.state.restorePoint + ' scheduled for 22:00 tonight, after closing. Everyone is warned 15 minutes before.' }); } };
+
+    return Object.assign({ accent, sections, show, section, users, roles, perms, types, reminders, integrations, closeDlg,
+      toast: !!this.state.toast, toastText: this.state.toast || '', dismissToast: () => this.setState({ toast: null }) },
+      inviteVals, clinicVals, typeVals, intVals, backupVals);
+  }
+}
+</script>
+</body>
+</html>

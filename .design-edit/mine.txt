@@ -1,0 +1,12 @@
+src/VetDesk.Application/Patients/PatientDtos.cs
+src/VetDesk.Application/Patients/Queries/GetPatientQuery.cs
+src/VetDesk.UI/Dialogs/ClientDialog.razor
+src/VetDesk.UI/Dialogs/NewClientPatientDialog.razor
+src/VetDesk.UI/Dialogs/OwnerDialog.razor
+src/VetDesk.UI/Dialogs/PatientDialog.razor
+src/VetDesk.UI/Pages/Clients.razor
+src/VetDesk.UI/Pages/PatientRecord.razor
+src/VetDesk.UI/Shared/AlertChip.razor
+src/VetDesk.UI/Shared/AlertEditor.razor
+src/VetDesk.UI/Shared/Modal.razor
+src/VetDesk.UI/wwwroot/vetdesk.css

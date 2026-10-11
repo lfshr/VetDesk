@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VetDesk — Patients</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EDEB}
+a{color:#0B6E63}a:hover{color:#08524A}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F3F5F4; color: #17201E; font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+<div style="height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0E2A2A; color: #CFE0DC; padding-left: 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7FD1C3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>
+<span style="font-weight: 600; color: #FFFFFF">VetDesk</span>
+<span>Patients</span>
+</div>
+<div style="display: flex; align-items: center; gap: 4px; padding-right: 10px; font-size: 13px">
+<a href="SignIn.dc.html" style="height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; color: #CFE0DC; text-decoration: none">Sign out</a>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<nav aria-label="Main" style="flex: 1 1 224px; background: #0E2A2A; color: #CFE0DC; padding: 12px 10px 20px; display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Schedule.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Schedule</a>
+<a href="Patients.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; background: #1C4442; color: #FFFFFF; text-decoration: none; font-weight: 500; box-shadow: inset 3px 0 0 #7FD1C3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="10" r="2"></circle><circle cx="9" cy="5.5" r="2"></circle><circle cx="15" cy="5.5" r="2"></circle><circle cx="18.5" cy="10" r="2"></circle><path d="M12 12c-3 0-6 4-6 6.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 2.1-.7 3.3-.7s2.1.7 3.3.7c1.5 0 2.7-1 2.7-2.5C18 16 15 12 12 12z"></path></svg>Patients</a>
+<a href="Clients.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.6 3.1 2.4 3.5 5.2"></path></svg>Clients</a>
+<a href="Pharmacy.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"></path><path d="M7 7l7 7"></path></svg>Pharmacy</a>
+<a href="Billing.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Billing</a>
+<a href="Reports.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Reports</a>
+<div style="flex: 1; min-height: 16px"></div>
+<a href="Settings.dc.html" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 6px; color: #CFE0DC; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border-top: 1px solid #1F4644">
+<div style="width: 32px; height: 32px; border-radius: 50%; background: #7FD1C3; color: #0E2A2A; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px">AP</div>
+<div style="display: flex; flex-direction: column; font-size: 12.5px; line-height: 1.3"><span style="color: #FFFFFF; font-weight: 500">Dr Asha Patel</span><span>Veterinary surgeon</span></div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<div style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #9FD3C7; border-radius: 8px; background: #E3F3EF; color: #0A3F39">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span style="flex: 1 1 280px; font-weight: 500">{{toastText}}</span>
+<button onClick="{{dismissToast}}" aria-label="Dismiss" style="width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #0A3F39; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em">Patients</h1>
+<p style="margin: 0; color: #55615E">{{countLabel}}</p>
+</div>
+<button onClick="{{openNew}}" aria-haspopup="dialog" style="height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New client and patient</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<label style="flex: 1 1 360px; max-width: 640px; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border: 1px solid #C9D2CF; border-radius: 8px; background: #FFFFFF; color: #55615E; box-shadow: 0 1px 2px rgba(14, 42, 42, 0.06)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search patients</span>
+<input type="search" autofocus value="{{query}}" onInput="{{setQuery}}" onChange="{{setQuery}}" placeholder="Pet or owner name, phone, postcode, microchip or PT number" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 15px; color: #17201E; outline: none">
+<sc-if value="{{hasQuery}}" hint-placeholder-val="{{false}}"><button onClick="{{clearQuery}}" aria-label="Clear search" style="width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: #55615E; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></sc-if>
+</label>
+<div role="group" aria-label="Species" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="height: 36px; padding: 0 14px; border-radius: 18px; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; {{f.style}}">{{f.label}}<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; opacity: 0.8">{{f.count}}</span></button></sc-for>
+</div>
+<div style="flex: 1"></div>
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #55615E">Sort<select onChange="{{setSort}}" style="height: 36px; padding: 0 8px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; color: #17201E"><option value="recent">Last visit</option><option value="name">Pet name A–Z</option><option value="owner">Owner surname A–Z</option></select></label>
+</div>
+
+<section aria-label="Results" style="background: #FFFFFF; border: 1px solid #DDE3E1; border-radius: 8px">
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 860px; border-collapse: collapse; font-size: 13.5px">
+<thead>
+<tr style="text-align: left; color: #55615E; font-size: 12px; background: #F8FAF9">
+<th style="padding: 10px 16px; font-weight: 500">Patient</th>
+<th style="padding: 10px 12px; font-weight: 500">Species · breed</th>
+<th style="padding: 10px 12px; font-weight: 500">Owner</th>
+<th style="padding: 10px 12px; font-weight: 500">Microchip</th>
+<th style="padding: 10px 12px; font-weight: 500">Last visit</th>
+<th style="padding: 10px 12px; font-weight: 500; text-align: right">Balance</th>
+<th style="padding: 10px 16px; font-weight: 500"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{rows}}" as="p" hint-placeholder-count="8">
+<tr style="border-top: 1px solid #EEF1F0; vertical-align: middle">
+<td style="padding: 10px 16px"><div style="display: flex; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 50%; background: #E3EFEC; color: #0B5E55; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex: none">{{p.initial}}</span><div style="display: flex; flex-direction: column; min-width: 0"><a href="Patient.dc.html" style="font-weight: 600; color: #17201E">{{p.name}}</a><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #55615E">{{p.pt}}</span></div></div></td>
+<td style="padding: 10px 12px"><div style="display: flex; flex-direction: column"><span>{{p.species}}</span><span style="color: #55615E; font-size: 12.5px">{{p.breed}} · {{p.age}}</span></div></td>
+<td style="padding: 10px 12px"><div style="display: flex; flex-direction: column"><span>{{p.owner}}</span><span style="color: #55615E; font-size: 12.5px; font-family: 'IBM Plex Mono', monospace">{{p.phone}}</span></div></td>
+<td style="padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #3F4A47">{{p.chip}}</td>
+<td style="padding: 10px 12px; color: #3F4A47">{{p.last}}</td>
+<td style="padding: 10px 12px; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 13px; {{p.balStyle}}">{{p.balance}}</td>
+<td style="padding: 10px 16px"><div style="display: flex; gap: 8px; justify-content: flex-end"><a href="Schedule.dc.html" style="height: 32px; padding: 0 12px; border: 1px solid #C9D2CF; border-radius: 6px; color: #17201E; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center">Book</a><a href="Patient.dc.html" style="height: 32px; padding: 0 12px; border-radius: 6px; background: #E3F3EF; color: #0A3F39; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center">Open</a></div></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<sc-if value="{{noRows}}" hint-placeholder-val="{{false}}">
+<div style="padding: 32px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<span style="font-weight: 600">No patients match “{{query}}”</span>
+<span style="color: #55615E; font-size: 13.5px">Check the spelling, try the owner’s phone number or microchip, or add them as a new client.</span>
+<button onClick="{{openNew}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500; cursor: pointer">New client and patient</button>
+</div>
+</sc-if>
+</section>
+</div>
+</main>
+</div>
+
+<sc-if value="{{newOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; background: rgba(14, 42, 42, 0.45); display: flex; justify-content: center; align-items: flex-start; padding: 72px 16px 24px; box-sizing: border-box; z-index: 10; overflow-y: auto">
+<div role="dialog" aria-modal="true" aria-labelledby="np-title" style="width: 100%; max-width: 680px; background: #FFFFFF; border: 1px solid #C9D2CF; border-radius: 8px; box-shadow: 0 24px 64px rgba(14, 42, 42, 0.28); display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #DDE3E1">
+<div style="display: flex; flex-direction: column; gap: 2px"><h2 id="np-title" style="margin: 0; font-size: 18px; font-weight: 600">New client and patient</h2><span style="font-size: 12.5px; color: #55615E">Add the owner and their pet. You can add more pets from the owner card.</span></div>
+<button onClick="{{closeNew}}" aria-label="Close" style="width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #17201E; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 16px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Owner full name<input value="{{nf.owner}}" onChange="{{setOwner}}" placeholder="e.g. Sam Taylor" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Mobile<input type="tel" value="{{nf.phone}}" onChange="{{setPhone}}" placeholder="07…" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Email<input type="email" placeholder="Optional" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Pet name<input value="{{nf.pet}}" onChange="{{setPet}}" placeholder="e.g. Pip" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Species<select onChange="{{setSpecies}}" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"><option>Dog</option><option>Cat</option><option>Rabbit</option><option>Guinea pig</option><option>Other</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Breed<input value="{{nf.breed}}" onChange="{{setBreed}}" placeholder="Optional" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #55615E">Microchip<input value="{{nf.chip}}" onChange="{{setChip}}" placeholder="15 digits, optional" style="height: 40px; padding: 0 10px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17201E; box-sizing: border-box; font-family: 'IBM Plex Mono', monospace"></label>
+</div>
+<sc-if value="{{dupe}}" hint-placeholder-val="{{false}}"><div style="margin: 0 20px 16px; padding: 10px 12px; border-radius: 6px; background: #FDF1E3; color: #6B3303; font-size: 13px; line-height: 1.5">{{dupeText}}</div></sc-if>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 12px; padding: 14px 20px; background: #F8FAF9; border-top: 1px solid #DDE3E1">
+<button onClick="{{closeNew}}" style="height: 40px; padding: 0 16px; border: 1px solid #C9D2CF; border-radius: 6px; background: #FFFFFF; color: #17201E; font: inherit; font-weight: 500">Cancel</button>
+<button onClick="{{saveNew}}" disabled="{{newBad}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 6px; color: #FFFFFF; font: inherit; font-weight: 600; {{newStyle}}">Add patient</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B6E63","options":["#0B6E63","#1F4FA8","#7A3E9D","#9A4A06"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { query: '', species: 'All', sort: 'recent', added: [], newOpen: false, toast: null,
+      nf: { owner: '', phone: '', pet: '', species: 'Dog', breed: '', chip: '' } };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#0B6E63';
+    // [name, pt, species, breed, age, owner, phone, chip, lastIso, lastLabel, balance, alerts]
+    const base = [
+      ['Biscuit','PT-004182','Dog','Labrador retriever','6 yrs','Hannah Clarke','07700 900 412','985 112 004 381 220','2026-10-09','Today',57.3,[['Allergy: amoxicillin','high']]],
+      ['Mabel','PT-004183','Cat','Domestic shorthair','11 yrs','Hannah Clarke','07700 900 412','985 112 004 117 806','2026-06-14','14 Jun 26',0,[]],
+      ['Juniper','PT-003377','Cat','Domestic shorthair','14 yrs','Rachel Osei','07700 900 218','985 112 003 552 914','2026-10-09','Today',0,[]],
+      ['Miso','PT-005021','Rabbit','Netherland dwarf','3 yrs','Leo Tanaka','07700 900 733','—','2026-10-09','Today',0,[]],
+      ['Pepper','PT-004490','Cat','Bengal','9 yrs','Sam Novak','07700 900 145','985 112 004 602 377','2026-10-09','Today',104,[['Nervous — muzzle for nail clips','medium']]],
+      ['Rufus','PT-002968','Dog','Border terrier','8 yrs','Mark Hughes','07700 900 584','985 112 002 980 113','2026-10-09','Today',88.56,[]],
+      ['Clover','PT-005310','Guinea pig','—','2 yrs','Aoife Byrne','07700 900 361','—','2026-10-09','Today',0,[]],
+      ['Atlas','PT-004751','Dog','German shepherd','5 yrs','Jorge Ferreira','07700 900 927','985 112 004 751 640','2026-10-09','Today',0,[['Bites when restrained','high']]],
+      ['Luna','PT-005144','Cat','British shorthair','4 yrs','Kemi Adeyemi','07700 900 052','985 112 005 144 208','2026-10-09','Today',0,[]],
+      ['Bramble','PT-004877','Dog','Cockapoo','3 yrs','Dan Moore','07700 900 690','985 112 004 877 331','2026-08-21','21 Aug 26',0,[]],
+      ['Ziggy','PT-005402','Dog','Whippet','10 wks','Tom Evans','07700 900 813','985 112 005 402 559','2026-10-09','Today',0,[]],
+      ['Nala','PT-003850','Cat','Ragdoll','7 yrs','Priya Singh','07700 900 276','985 112 003 850 477','2026-09-22','22 Sep 26',0,[]],
+      ['Max','PT-002411','Dog','Springer spaniel','12 yrs','Grace Wright','07700 900 449','985 112 002 411 095','2026-10-09','Today',0,[['Diabetic — on insulin','high']]]
+    ];
+    const all = this.state.added.concat(base);
+    const q = this.state.query.trim().toLowerCase();
+    const digits = q.replace(/[\s-]/g, '');
+    const PC = { 'Hannah Clarke': 'BS6 5QT', 'Rachel Osei': 'BS7 8LP', 'Leo Tanaka': 'BS3 1RE', 'Sam Novak': 'BS6 7HN', 'Mark Hughes': 'BS5 9AX', 'Aoife Byrne': 'BS8 4DW', 'Jorge Ferreira': 'BS16 2JF', 'Kemi Adeyemi': 'BS7 9NB', 'Dan Moore': 'BS3 4TU', 'Tom Evans': 'BS6 6BG', 'Priya Singh': 'BS9 3QR', 'Grace Wright': 'BS4 2PL' };
+    const qpc = q.replace(/\s/g, '');
+    const isPc = /^[a-z]{1,2}\d[a-z\d]*$/.test(qpc);
+    const pcMatch = (owner) => isPc && (PC[owner] || '').replace(/\s/g, '').toLowerCase().startsWith(qpc);
+    const matches = (p) => !q || (p[0] + ' ' + p[1] + ' ' + p[5]).toLowerCase().includes(q) || pcMatch(p[5])
+      || (digits.length >= 3 && /^\+?\d+$/.test(digits) && (p[6] + ' ' + p[7]).replace(/\s/g, '').includes(digits.replace(/^\+?44/, '0')));
+    const groups = { 'All': () => true, 'Dogs': (p) => p[2] === 'Dog', 'Cats': (p) => p[2] === 'Cat', 'Other': (p) => p[2] !== 'Dog' && p[2] !== 'Cat' };
+    const filters = Object.keys(groups).map((label) => {
+      const on = this.state.species === label;
+      return { label, count: all.filter((p) => groups[label](p) && matches(p)).length, pressed: on ? 'true' : 'false',
+        pick: () => this.setState({ species: label }),
+        style: on ? 'border:1px solid #17201E;background:#17201E;color:#FFFFFF' : 'border:1px solid #C9D2CF;background:#FFFFFF;color:#17201E' };
+    });
+    const surname = (n) => n.split(' ').slice(-1)[0];
+    const sorters = { recent: (a, b) => b[8].localeCompare(a[8]) || a[0].localeCompare(b[0]), name: (a, b) => a[0].localeCompare(b[0]), owner: (a, b) => surname(a[5]).localeCompare(surname(b[5])) || a[0].localeCompare(b[0]) };
+    const list = all.filter((p) => groups[this.state.species](p) && matches(p)).sort(sorters[this.state.sort]);
+    const gbp = (n) => '£' + n.toFixed(2);
+    const rows = list.map((p) => ({ name: p[0], pt: p[1], species: p[2], breed: p[3], age: p[4], owner: p[5], phone: p[6] + (PC[p[5]] ? ' · ' + PC[p[5]] : ''), chip: p[7], last: p[9],
+      initial: p[0][0], balance: p[10] ? gbp(p[10]) + ' due' : '—', balStyle: p[10] ? 'color:#8A4204;font-weight:500' : 'color:#55615E' }));
+
+    const nf = this.state.nf;
+    const setNf = (k) => (e) => this.setState({ nf: Object.assign({}, nf, { [k]: e.target.value }) });
+    const newBad = !nf.owner.trim() || !nf.pet.trim() || !nf.phone.trim();
+    const phoneDigits = nf.phone.replace(/\D/g, '');
+    const dupeOwner = phoneDigits.length >= 6 ? all.find((p) => p[6].replace(/\D/g, '') === phoneDigits) : null;
+    const nextPt = 'PT-' + String(5403 + this.state.added.length).padStart(6, '0');
+    return {
+      accent, filters, rows, noRows: rows.length === 0,
+      countLabel: q ? rows.length + ' of ' + all.length + ' patients match' : all.length + ' patients · search by pet, owner, phone, postcode, microchip or PT number',
+      query: this.state.query, hasQuery: !!q,
+      setQuery: (e) => this.setState({ query: e.target.value }), clearQuery: () => this.setState({ query: '' }),
+      setSort: (e) => this.setState({ sort: e.target.value }),
+      newOpen: this.state.newOpen, nf,
+      openNew: () => this.setState({ newOpen: true, nf: { owner: '', phone: '', pet: q && !/\d/.test(q) ? this.state.query.trim().replace(/^./, (c) => c.toUpperCase()) : '', species: 'Dog', breed: '', chip: '' } }),
+      closeNew: () => this.setState({ newOpen: false }),
+      setOwner: setNf('owner'), setPhone: setNf('phone'), setPet: setNf('pet'), setSpecies: setNf('species'), setBreed: setNf('breed'), setChip: setNf('chip'),
+      dupe: !!dupeOwner, dupeText: dupeOwner ? 'This number belongs to ' + dupeOwner[5] + ' (owner of ' + dupeOwner[0] + '). If it is the same person, the pet is added to their existing account.' : '',
+      newBad, newStyle: newBad ? 'background:#9AA5A2;cursor:not-allowed' : 'background:' + accent + ';cursor:pointer',
+      saveNew: () => { if (newBad) return;
+        const owner = dupeOwner ? dupeOwner[5] : nf.owner.trim();
+        const row = [nf.pet.trim(), nextPt, nf.species, nf.breed.trim() || '—', 'Age not set', owner, nf.phone.trim(), nf.chip.trim() || '—', '2026-10-10', 'New', 0, []];
+        this.setState((s) => ({ newOpen: false, added: [row].concat(s.added), query: '', species: 'All', sort: 'recent',
+          toast: row[0] + ' (' + row[1] + ') added' + (dupeOwner ? ' to ' + owner + '’s account.' : ' with new client ' + owner + '.') })); },
+      toast: !!this.state.toast, toastText: this.state.toast || '', dismissToast: () => this.setState({ toast: null })
+    };
+  }
+}
+</script>
+</body>
+</html>
