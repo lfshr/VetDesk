@@ -70,3 +70,16 @@ public enum AppointmentStatus
     Cancelled,
     NoShow
 }
+
+public static class AppointmentStatusLabels
+{
+    /// <summary>How the screens and reports name a status; surgery has its own words for the same steps.</summary>
+    public static string Label(this AppointmentStatus status, AppointmentKind kind) => status switch
+    {
+        AppointmentStatus.InConsult => kind == AppointmentKind.Surgery ? "In theatre" : "In consult",
+        AppointmentStatus.CheckedIn => kind == AppointmentKind.Surgery ? "Admitted" : "Waiting",
+        AppointmentStatus.NoShow => "No-show",
+        AppointmentStatus.Booked when kind == AppointmentKind.Surgery => "Surgery",
+        _ => status.ToString()
+    };
+}

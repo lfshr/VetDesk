@@ -1,19 +1,30 @@
-@* Edits one patient alert: pick a preset or write your own, then choose how serious it is. *@
+@* Edits one patient alert inline under the chips: pick a preset or write your own, then choose how serious it is. *@
 @inject DialogService Dialogs
 
-<div class="vd-card vd-card-body" style="margin-top:12px;max-width:520px">
-    <div class="vd-row-between"><h3 class="vd-section-title" style="margin:0">@(Alert.Id is null ? "New alert" : "Edit alert")</h3></div>
+<div class="vd-alert-editor" role="group" aria-label="@Title">
+    <div class="vd-alert-editor-head">
+        <span>@Title</span>
+        @if (Alert.Id is { } id)
+        {
+            <button type="button" class="vd-icon-btn-danger" aria-label="Delete alert" title="Delete alert" @onclick="() => Delete(id)"><Icon Name="trash" Size="16" /></button>
+        }
+    </div>
     @if (_preset is null)
     {
         <div class="vd-field">
             <label for="alert-preset">Alert</label>
             <select id="alert-preset" @onchange="PickPreset">
-                <option value="">Choose an alert…</option>
-                @foreach (var p in PatientAlert.Presets)
+                <option value="" selected disabled>Select an alert…</option>
+                @foreach (var group in PatientAlert.Presets.GroupBy(p => p.Severity))
                 {
-                    <option value="@p.Key">@p.Text</option>
+                    <optgroup label="@GroupLabel(group.Key)">
+                        @foreach (var p in group)
+                        {
+                            <option value="@p.Key">@p.Text</option>
+                        }
+                    </optgroup>
                 }
-                <option value="custom">Something else (write your own)</option>
+                <option value="custom">Other (type your own)…</option>
             </select>
         </div>
     }
@@ -24,29 +35,24 @@
                 <label for="alert-text">Alert</label>
                 @if (Alert.Id is null)
                 {
-                    <button type="button" class="vd-btn-link vd-small" @onclick="() => _preset = null">Choose another</button>
+                    <button type="button" class="vd-btn-link vd-small" @onclick="Repick">Choose from list instead</button>
                 }
             </div>
-            <input id="alert-text" @bind="_text" @bind:event="oninput" maxlength="200" />
+            <input id="alert-text" @bind="_text" @bind:event="oninput" maxlength="200" placeholder="e.g. Bites when restrained" />
         </div>
-        <div class="vd-field">
+        <div class="vd-field" style="flex:0 0 auto">
             <span class="vd-label">Severity</span>
             <div class="vd-segmented" role="group" aria-label="Severity">
                 @foreach (var s in Enum.GetValues<AlertSeverity>())
                 {
-                    <button type="button" aria-pressed="@Aria.Bool(_severity == s)" @onclick="() => _severity = s">@s</button>
+                    <button type="button" aria-pressed="@Aria.Bool(_severity == s)" @onclick="() => _severity = s"><span class="vd-sev-dot vd-sev-dot-@s.ToString().ToLowerInvariant()"></span>@s</button>
                 }
             </div>
         </div>
     }
-    <div class="vd-row" style="margin-top:14px">
-        @if (Alert.Id is { } id)
-        {
-            <button type="button" class="vd-btn vd-btn-danger-outline vd-btn-sm" @onclick="() => Delete(id)"><Icon Name="trash" Size="14" /> Delete</button>
-        }
-        <span class="vd-spacer"></span>
-        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="OnClose">Cancel</button>
-        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(_preset is null || string.IsNullOrWhiteSpace(_text))" @onclick="Save">@(Alert.Id is null ? "Add alert" : "Save")</button>
+    <div class="vd-alert-editor-foot">
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(_preset is null || string.IsNullOrWhiteSpace(_text))" @onclick="Save">@(Alert.Id is null ? "Add alert" : "Save")</button>
     </div>
 </div>
 
@@ -62,6 +68,15 @@
     private string _text = "";
     private AlertSeverity _severity;
     private Draft? _loaded;
+
+    private string Title => Alert.Id is null ? "New alert" : "Edit alert";
+
+    private static string GroupLabel(AlertSeverity severity) => severity switch
+    {
+        AlertSeverity.Alert => "Alerts",
+        AlertSeverity.Warning => "Warnings",
+        _ => "Notes"
+    };
 
     protected override void OnParametersSet()
     {
@@ -88,6 +103,13 @@
         {
             _text = "";
         }
+    }
+
+    private void Repick()
+    {
+        _preset = null;
+        _text = "";
+        _severity = AlertSeverity.Warning;
     }
 
     private Task Save() => OnSave.InvokeAsync(new Draft(Alert.Id, _preset, _text, _severity));

@@ -4,7 +4,7 @@
 @inject DialogService Dialogs
 @inject NavigationManager Nav
 
-<Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="wide">
+<Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="640">
     <ChildContent>
         @if (_loading)
         {
@@ -118,7 +118,7 @@
         {
             <span class="vd-small vd-muted" style="margin-right:auto">@Summary</span>
         }
-        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
         <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanBook || _saving)" @onclick="Save">@(IsEdit ? "Save changes" : "Book appointment")</button>
     </Footer>
 </Modal>
