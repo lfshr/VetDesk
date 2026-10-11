@@ -2,12 +2,21 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="@(Staff is null ? "Add user" : $"Edit {Staff.FullName}")" Subtitle="@(Staff is null ? "Give them their PIN; they can change it under My PIN and password." : null)" OnClose="OnClose">
+<Modal Title="@(Staff is null ? "Add user" : $"Edit {Staff.FullName}")" Subtitle="@(Staff is null ? "They sign in by tapping their name and entering this PIN. They can change it under My PIN and password." : null)" OnClose="OnClose" Size="600">
     <ChildContent>
         <div class="vd-form-grid">
-            <div class="vd-field" style="margin-top:0"><label for="sd-first">First name</label><input id="sd-first" @bind="_first" @bind:event="oninput" maxlength="100" /></div>
-            <div class="vd-field" style="margin-top:0"><label for="sd-last">Surname (optional)</label><input id="sd-last" @bind="_last" @bind:event="oninput" maxlength="100" /></div>
-            <div class="vd-field vd-field-wide"><label for="sd-email">Work email (optional)</label><input id="sd-email" type="email" @bind="_email" @bind:event="oninput" maxlength="200" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="sd-first">First name</label><input id="sd-first" @bind="_first" @bind:event="oninput" maxlength="100" placeholder="e.g. Sam" /></div>
+            @* Next to the name, as in the design: it's the other thing a new person needs to sign in. *@
+            <div class="vd-field" style="margin-top:0">
+                <label for="sd-pin">@(Staff is null ? "PIN (4 digits)" : "Reset PIN (leave blank to keep)")</label>
+                <input id="sd-pin" type="text" inputmode="numeric" autocomplete="off" class="vd-mono" @bind="_pin" @bind:event="oninput" maxlength="4" placeholder="@(Staff is null ? "e.g. 4821" : null)" />
+                @if (Staff is not null)
+                {
+                    <div class="vd-hint">Also clears a lock-out after wrong PINs</div>
+                }
+            </div>
+            <div class="vd-field"><label for="sd-last">Surname (optional)</label><input id="sd-last" @bind="_last" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field"><label for="sd-email">Work email (optional)</label><input id="sd-email" type="email" @bind="_email" @bind:event="oninput" maxlength="200" /></div>
             <div class="vd-field">
                 <label for="sd-role">Role</label>
                 <select id="sd-role" @bind="_role" @bind:after="StateHasChanged">
@@ -18,17 +27,12 @@
                 </select>
             </div>
             <div class="vd-field"><label for="sd-reg">Registration number</label><input id="sd-reg" class="vd-mono" @bind="_reg" placeholder="Vets and nurses only" maxlength="40" /></div>
-            <div class="vd-field">
-                <label for="sd-pin">@(Staff is null ? "PIN" : "Reset PIN (leave blank to keep)")</label>
-                <input id="sd-pin" type="text" inputmode="numeric" autocomplete="off" class="vd-mono" @bind="_pin" @bind:event="oninput" maxlength="4" />
-                <div class="vd-hint">4 digits@(Staff is null ? "" : ". Also clears a lock-out after wrong PINs")</div>
-            </div>
             @if (IsAdmin)
             {
                 <div class="vd-field">
                     <label for="sd-pw">@(NeedsPassword ? "Administrator password" : "Reset password (leave blank to keep)")</label>
-                    <input id="sd-pw" type="text" autocomplete="off" class="vd-mono" @bind="_password" @bind:event="oninput" maxlength="200" />
-                    <div class="vd-hint">At least 10 characters. Opens users and settings.</div>
+                    <input id="sd-pw" type="password" autocomplete="new-password" @bind="_password" @bind:event="oninput" maxlength="200" placeholder="At least 10 characters" />
+                    <div class="vd-hint">Asked for before users and settings open.</div>
                 </div>
             }
         </div>

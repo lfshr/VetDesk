@@ -1,7 +1,7 @@
 @using VetDesk.Domain.Entities.Patients
 
 <span class="vd-chip @Css @(Large ? "vd-chip-lg" : "")" title="@Title">
-    <Icon Name="@(Severity == AlertSeverity.Note ? "info" : "alert")" Size="13" /> @Text
+    <Icon Name="@IconName" Size="14" /> @Text
 </span>
 
 @code {
@@ -13,6 +13,10 @@
 
     private string Css => IsAllergy || Severity == AlertSeverity.Alert ? "vd-chip-danger"
         : Severity == AlertSeverity.Warning ? "vd-chip-warning" : "vd-chip-success";
+
+    // As in the design: a triangle for alerts, a circled "!" for warnings, a circled "i" for notes.
+    private string IconName => IsAllergy || Severity == AlertSeverity.Alert ? "alert"
+        : Severity == AlertSeverity.Warning ? "warning" : "info";
 
     private string Title => IsAllergy ? "Drug allergy" : Severity.ToString();
 }

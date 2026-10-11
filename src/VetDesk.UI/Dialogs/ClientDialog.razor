@@ -2,17 +2,17 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : null)" OnClose="OnClose">
+<Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : "Changes are saved to the client record and audit log.")" Size="@(Client is null ? "620" : "560")" OnClose="OnClose">
     <ChildContent>
         <div class="vd-form-grid">
-            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" @bind="_first" @bind:event="oninput" maxlength="100" /></div>
-            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" @bind="_last" @bind:event="oninput" maxlength="100" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" @bind="_first" @bind:event="oninput" maxlength="100" placeholder="e.g. Sam" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" @bind="_last" @bind:event="oninput" maxlength="100" placeholder="e.g. Taylor" /></div>
             <div class="vd-field"><label for="cd-phone">Mobile</label><input id="cd-phone" type="tel" value="@_phone" @onchange="OnPhone" placeholder="07…" maxlength="40" /></div>
             <div class="vd-field"><label for="cd-email">Email</label><input id="cd-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
-            <div class="vd-field vd-field-wide"><label for="cd-address">Address</label><input id="cd-address" @bind="_address" placeholder="Optional" maxlength="400" /></div>
             <div class="vd-field"><label for="cd-postcode">Postcode</label><input id="cd-postcode" @bind="_postcode" placeholder="e.g. BS6 5QT" maxlength="12" /></div>
+            <div class="vd-field"><label for="cd-address">Address</label><input id="cd-address" @bind="_address" placeholder="Optional" maxlength="400" /></div>
         </div>
-        <label class="vd-check"><input type="checkbox" @bind="_reminders" /> Owner is happy to get reminders</label>
+        <label class="vd-check"><input type="checkbox" @bind="_reminders" /> Send reminders by text and email</label>
         @if (_match is not null)
         {
             <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> That number belongs to @_match.FullName (@_match.ClientNumber). Each client needs their own number.</div>

@@ -5,7 +5,7 @@
 @inject NavigationManager Nav
 @inject UserSession Session
 
-<Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="wide">
+<Modal Title="@(IsEdit ? "Edit appointment" : "New appointment")" Subtitle="@Fmt.LongDate(_date)" OnClose="OnClose" Size="640">
     <ChildContent>
         @if (_loading)
         {
@@ -149,7 +149,7 @@
         {
             <span class="vd-small vd-muted" style="margin-right:auto">@Summary</span>
         }
-        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
+        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
         <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanBook || _saving || (_approval is not null && (_approverId is null || string.IsNullOrEmpty(_approverPin))))" @onclick="Save">@SaveLabel</button>
     </Footer>
 </Modal>

@@ -82,7 +82,7 @@
                         <button type="button" class="vd-appt-more" style="top:@Px(group.Key);right:4px" aria-haspopup="menu" @onclick="() => _moreAt = _moreAt == group.Key ? null : group.Key">+@group.Count() more</button>
                         @if (_moreAt == group.Key)
                         {
-                            <div class="vd-dropdown" style="top:calc(@Px(group.Key) + 26px);left:auto;right:4px;width:280px" role="menu">
+                            <div class="vd-dropdown vd-menu" style="top:calc(@Px(group.Key) + 26px);left:auto;right:4px;width:270px" role="menu">
                                 <div class="vd-dropdown-item vd-small vd-muted">Also at @group.Key.ToString("HH:mm")</div>
                                 @foreach (var a in group)
                                 {

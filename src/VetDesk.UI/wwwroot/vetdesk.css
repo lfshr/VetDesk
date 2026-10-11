@@ -234,6 +234,8 @@ h1:focus { outline: none; }
 }
 
 .vd-btn:disabled, .vd-btn[aria-disabled=true] { opacity: .45; cursor: default; }
+/* The design greys a disabled main action out fully rather than fading the teal. */
+.vd-btn-primary:disabled, .vd-btn-primary[aria-disabled=true] { opacity: 1; background: #9AA5A2; border-color: #9AA5A2; color: #fff; cursor: not-allowed; }
 .vd-btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
 .vd-btn-primary { background: var(--vd-accent); border-color: var(--vd-accent); color: #fff; font-weight: 600; }
 .vd-btn-primary:hover:not(:disabled) { background: var(--vd-accent-hover); border-color: var(--vd-accent-hover); color: #fff; }
@@ -327,7 +329,30 @@ h1:focus { outline: none; }
 .vd-chip-outline { background: var(--vd-surface); box-shadow: inset 0 0 0 1px var(--vd-border-strong); color: var(--vd-text); }
 .vd-chip-button { border: none; background: none; padding: 0; cursor: pointer; }
 /* Patient record header: alerts are the first thing staff should see. The border takes the chip's own text colour. */
-.vd-chip-lg { height: 30px; padding: 0 12px; border-radius: 15px; font-size: 13px; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+.vd-chip-lg { height: 28px; padding: 0 12px 0 10px; gap: 6px; border-radius: 14px; font-size: 12.5px; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+.vd-chip-lg.vd-chip-danger { box-shadow: inset 0 0 0 1px var(--vd-danger-border); font-weight: 600; }
+.vd-chip-lg.vd-chip-warning { box-shadow: inset 0 0 0 1px var(--vd-warning-border); }
+.vd-chip-lg.vd-chip-success { box-shadow: inset 0 0 0 1px var(--vd-success-border); }
+/* A pet in a list of an owner's pets; the one being viewed is tinted. */
+.vd-pet-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--vd-border); border-radius: var(--vd-radius-sm); color: inherit; text-decoration: none; }
+.vd-pet-row:hover { border-color: var(--vd-border-strong); background: var(--vd-surface-muted); }
+.vd-pet-row-current, .vd-pet-row-current:hover { border-color: var(--vd-success-border); background: #F3FAF8; }
+/* The dashed round "+" after a patient's alert chips. */
+.vd-chip-add { width: 28px; height: 28px; padding: 0; border: 1px dashed #A9B5B1; border-radius: 14px; background: var(--vd-surface); color: var(--vd-neutral-text); display: inline-grid; place-items: center; cursor: pointer; }
+.vd-chip-add:hover { border-color: var(--vd-accent); color: var(--vd-accent); }
+
+/* Adding or editing a patient alert, inline under the chips. */
+.vd-alert-editor { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 12px; margin-top: 8px; padding: 12px; max-width: 680px; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius); background: var(--vd-surface-muted); }
+.vd-alert-editor-head { flex: 1 1 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 36px; font-size: 13.5px; font-weight: 600; }
+.vd-alert-editor .vd-field { margin-top: 0; flex: 1 1 240px; }
+.vd-alert-editor .vd-field input, .vd-alert-editor .vd-field select { height: 36px; }
+.vd-alert-editor .vd-btn { height: 36px; }
+.vd-alert-editor-foot { flex: 1 1 100%; display: flex; justify-content: flex-end; gap: 8px; }
+.vd-icon-btn-danger { width: 36px; height: 36px; padding: 0; border: 1px solid var(--vd-danger-border); border-radius: var(--vd-radius-sm); background: var(--vd-surface); color: var(--vd-danger-text); display: inline-grid; place-items: center; cursor: pointer; }
+.vd-sev-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.vd-sev-dot-alert { background: var(--vd-danger-text); }
+.vd-sev-dot-warning { background: #B45309; }
+.vd-sev-dot-note { background: var(--vd-accent); }
 .vd-facts { display: flex; flex-wrap: wrap; column-gap: 18px; color: var(--vd-text-secondary); }
 .vd-facts > span { white-space: nowrap; }
 .vd-cd { display: inline-block; padding: 0 5px; border-radius: 4px; background: #17201E; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px; letter-spacing: .02em; vertical-align: 1px; }
@@ -395,10 +420,11 @@ h1:focus { outline: none; }
 .vd-search-box input, .vd-field .vd-search-box input[type=search] { width: 100%; height: 40px; padding: 0 64px 0 38px; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius-sm); background: var(--vd-surface); font: inherit; color: var(--vd-text); }
 .vd-search-box kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-family: var(--vd-font-mono); font-size: 11.5px; color: var(--vd-text-secondary); border: 1px solid var(--vd-border-strong); border-radius: 4px; padding: 1px 6px; background: var(--vd-surface-muted); }
 
-.vd-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--vd-surface); border: 1px solid var(--vd-border); border-radius: var(--vd-radius); box-shadow: var(--vd-shadow); z-index: 60; overflow: hidden; }
+.vd-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--vd-surface); border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius); box-shadow: 0 12px 32px rgba(14, 42, 42, .18); z-index: 60; overflow: hidden; }
+.vd-dropdown > .vd-dropdown-item + .vd-dropdown-item { border-top: 1px solid var(--vd-neutral-bg); }
 .vd-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; border: none; background: none; width: 100%; text-align: left; color: var(--vd-text); }
 .vd-dropdown-item:hover, .vd-dropdown-item.active { background: var(--vd-surface-muted); }
-.vd-dropdown-foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--vd-surface-muted); color: var(--vd-accent); font-weight: 500; border: none; width: 100%; cursor: pointer; border-top: 1px solid var(--vd-border); }
+.vd-dropdown-foot { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 14px; font-size: 13px; background: var(--vd-surface-muted); color: var(--vd-accent); font-weight: 500; border: none; width: 100%; cursor: pointer; border-top: 1px solid var(--vd-border); }
 
 .vd-stepper { display: inline-flex; align-items: center; border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius-sm); overflow: hidden; }
 .vd-stepper button { width: 34px; height: 34px; border: none; background: var(--vd-surface-muted); cursor: pointer; display: grid; place-items: center; }
@@ -408,16 +434,21 @@ h1:focus { outline: none; }
 
 .vd-overlay { position: fixed; inset: 0; background: var(--vd-overlay); display: flex; align-items: flex-start; justify-content: center; padding: 56px 16px 24px; overflow-y: auto; z-index: 100; }
 .vd-overlay-top { z-index: 120; align-items: center; }
-.vd-modal { width: min(560px, 100%); background: var(--vd-surface); border-radius: var(--vd-radius); box-shadow: var(--vd-shadow); display: flex; flex-direction: column; }
+.vd-modal { width: min(560px, 100%); background: var(--vd-surface); border: 1px solid var(--vd-border-strong); border-radius: var(--vd-radius); box-shadow: 0 24px 64px rgba(14, 42, 42, .28); display: flex; flex-direction: column; }
 .vd-modal-wide { width: min(760px, 100%); }
 .vd-modal-xwide { width: min(980px, 100%); }
 .vd-modal-narrow { width: min(440px, 100%); }
-.vd-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--vd-border); }
+.vd-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--vd-border); }
 .vd-modal-head h2 { font-size: 18px; }
 .vd-modal-sub { font-size: 12.5px; color: var(--vd-text-secondary); margin-top: 2px; }
-.vd-modal-body { padding: 4px 20px 18px; }
+.vd-modal-close { width: 40px; height: 40px; color: var(--vd-text); }
+/* 16px from the header to the first field, as in the design; fields keep their own 12px spacing below that. */
+.vd-modal-body { padding: 16px 20px 18px; }
+.vd-modal-body > :first-child { margin-top: 0; }
+.vd-modal-body > :is(.vd-form-grid, .vd-form-grid-3, .vd-form-grid-4):first-child { row-gap: 12px; }
+.vd-modal-body > :is(.vd-form-grid, .vd-form-grid-3, .vd-form-grid-4):first-child > .vd-field { margin-top: 0 !important; }
 .vd-modal-body-flush { padding: 0; }
-.vd-modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--vd-border); flex-wrap: wrap; }
+.vd-modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--vd-border); background: var(--vd-surface-muted); border-radius: 0 0 var(--vd-radius) var(--vd-radius); flex-wrap: wrap; }
 .vd-modal-foot-note { margin-right: auto; font-size: 12.5px; color: var(--vd-text-secondary); }
 .vd-confirm { padding: 20px; display: flex; gap: 14px; align-items: flex-start; }
 .vd-confirm-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--vd-danger-bg); color: var(--vd-danger-text); display: grid; place-items: center; flex: none; }
@@ -542,3 +573,11 @@ h1:focus { outline: none; }
     .vd-grid-main, .vd-grid-main-wide { grid-template-columns: 1fr; }
     .vd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* A small menu of choices (the schedule's "+2 more"): padded, rounded items, no dividers. */
+.vd-menu { padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.vd-menu > .vd-dropdown-item { border-radius: var(--vd-radius-sm); }
+.vd-dropdown.vd-menu > .vd-dropdown-item + .vd-dropdown-item { border-top: 0; }
+
+/* Sits under an open popover so a click anywhere else closes it. */
+.vd-click-away { position: fixed; inset: 0; z-index: 59; }

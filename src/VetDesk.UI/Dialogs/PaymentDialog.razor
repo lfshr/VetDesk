@@ -2,12 +2,12 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="@($"Take payment · {Method.ToString().ToLowerInvariant()}")" Subtitle="@($"{Invoice.Number} · {Invoice.ClientName} · due {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose" Size="narrow">
+<Modal Title="@($"Take payment · {Method.ToString().ToLowerInvariant()}")" Subtitle="@($"{Invoice.Number} · {Invoice.ClientName} · due {Fmt.Money(Invoice.AmountDue)}")" OnClose="OnClose" Size="520">
     <ChildContent>
         <div class="vd-field" style="margin-top:0"><label for="pay-amount">Amount (£)</label><input id="pay-amount" class="vd-mono" type="number" step="0.01" min="0.01" @bind="_amount" @bind:event="oninput" /></div>
         @if (Method == PaymentMethod.Cash)
         {
-            <div class="vd-field"><label for="pay-tendered">Cash handed over (£)</label><input id="pay-tendered" class="vd-mono" type="number" step="0.01" min="0" @bind="_tendered" @bind:event="oninput" /></div>
+            <div class="vd-field"><label for="pay-tendered">Cash tendered (£)</label><input id="pay-tendered" class="vd-mono" type="number" step="0.01" min="0" @bind="_tendered" @bind:event="oninput" /></div>
         }
         @if (Method != PaymentMethod.Cash)
         {

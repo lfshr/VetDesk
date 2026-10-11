@@ -21,7 +21,7 @@
 
 @if (_dialog)
 {
-    <Modal Title="@(_id is null ? "Add appointment type" : "Edit appointment type")" Subtitle="Shown in the new appointment dialog and on the schedule." OnClose="() => _dialog = false" Size="narrow">
+    <Modal Title="@(_id is null ? "Add appointment type" : "Edit appointment type")" Subtitle="Shown in the new appointment dialog and on the schedule." OnClose="() => _dialog = false" Size="600">
         <ChildContent>
             <div class="vd-field" style="margin-top:0"><label for="at-name">Name</label><input id="at-name" @bind="_name" @bind:event="oninput" placeholder="e.g. Nail clip" maxlength="100" /></div>
             <div class="vd-form-grid">

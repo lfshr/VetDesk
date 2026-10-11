@@ -1,7 +1,7 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="@($"Refund {Invoice.Number}?")" Subtitle="Give the money back the same way it was paid, then record it here." OnClose="OnClose" Size="narrow">
+<Modal Title="@($"Refund {Invoice.Number}?")" Subtitle="Give the money back the same way it was paid, then record it here." OnClose="OnClose" Size="520">
     <ChildContent>
         <div class="vd-field" style="margin-top:0"><label for="rf-amount">Amount (£)</label><input id="rf-amount" class="vd-mono" type="number" step="0.01" min="0.01" @bind="_amount" @bind:event="oninput" /></div>
         <div class="vd-field">

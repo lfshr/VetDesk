@@ -3,7 +3,7 @@
 @inject ToastService Toasts
 @inject IJSRuntime JS
 
-<Modal Title="@Report.Title()" Subtitle="@(_table?.Subtitle ?? Report.Description())" OnClose="OnClose" Size="xwide">
+<Modal Title="@Report.Title()" Subtitle="@(_table?.Subtitle ?? Report.Description())" OnClose="OnClose" Size="820">
     <ChildContent>
         <div class="vd-row vd-no-print" style="flex-wrap:wrap;margin-bottom:12px">
             <label class="vd-small vd-muted" for="rp-from">@(SingleDay ? "Day" : "From")</label>

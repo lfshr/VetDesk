@@ -2,13 +2,13 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="New client and patient" Subtitle="Add the owner and their pet. You can add more pets from the owner card." OnClose="OnClose" Size="wide">
+<Modal Title="New client and patient" Subtitle="Add the owner and their pet. You can add more pets from the owner card." OnClose="OnClose" Size="680">
     <ChildContent>
         <div class="vd-form-grid-3">
-            <div class="vd-field"><label for="nc-owner">Owner full name</label><input id="nc-owner" @bind="_owner" maxlength="200" /></div>
-            <div class="vd-field"><label for="nc-phone">Mobile</label><input id="nc-phone" type="tel" value="@_phone" @onchange="OnPhone" maxlength="40" /></div>
+            <div class="vd-field"><label for="nc-owner">Owner full name</label><input id="nc-owner" @bind="_owner" maxlength="200" placeholder="e.g. Sam Taylor" /></div>
+            <div class="vd-field"><label for="nc-phone">Mobile</label><input id="nc-phone" type="tel" value="@_phone" @onchange="OnPhone" maxlength="40" placeholder="07…" /></div>
             <div class="vd-field"><label for="nc-email">Email</label><input id="nc-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
-            <div class="vd-field"><label for="nc-pet">Pet name</label><input id="nc-pet" @bind="_pet" maxlength="100" /></div>
+            <div class="vd-field"><label for="nc-pet">Pet name</label><input id="nc-pet" @bind="_pet" maxlength="100" placeholder="e.g. Pip" /></div>
             <div class="vd-field">
                 <label for="nc-species">Species</label>
                 <select id="nc-species" @bind="_species">
@@ -18,7 +18,7 @@
                     }
                 </select>
             </div>
-            <div class="vd-field"><label for="nc-breed">Breed</label><input id="nc-breed" @bind="_breed" maxlength="100" /></div>
+            <div class="vd-field"><label for="nc-breed">Breed</label><input id="nc-breed" @bind="_breed" maxlength="100" placeholder="Optional" /></div>
             <div class="vd-field">
                 <label for="nc-sex">Sex</label>
                 <select id="nc-sex" @bind="_sex">
@@ -29,7 +29,7 @@
                 </select>
             </div>
             <div class="vd-field"><label for="nc-dob">Date of birth</label><input id="nc-dob" type="date" @bind="_dob" /></div>
-            <div class="vd-field"><label for="nc-chip">Microchip</label><input id="nc-chip" class="vd-mono" @bind="_chip" maxlength="40" /></div>
+            <div class="vd-field"><label for="nc-chip">Microchip</label><input id="nc-chip" class="vd-mono" @bind="_chip" maxlength="40" placeholder="15 digits, optional" /></div>
         </div>
         @if (_match is not null)
         {

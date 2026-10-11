@@ -17,12 +17,5 @@
         _ => "vd-chip-outline"
     };
 
-    private string Label => Status switch
-    {
-        AppointmentStatus.InConsult => Kind == AppointmentKind.Surgery ? "In theatre" : "In consult",
-        AppointmentStatus.CheckedIn => Kind == AppointmentKind.Surgery ? "Admitted" : "Waiting",
-        AppointmentStatus.NoShow => "No-show",
-        AppointmentStatus.Booked when Kind == AppointmentKind.Surgery => "Surgery",
-        _ => Status.ToString()
-    };
+    private string Label => Status.Label(Kind);
 }

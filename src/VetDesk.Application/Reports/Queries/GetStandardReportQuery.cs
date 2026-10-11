@@ -80,7 +80,7 @@ public class GetStandardReportQueryHandler : IRequestHandler<GetStandardReportQu
         var rows = appointments.Select(a => (IReadOnlyList<string>)new[]
         {
             ClinicTime.ToLocal(Utc.Mark(a.StartUtc)).ToString("HH:mm", Uk), a.Patient.Name, a.Patient.Client.FullName, a.Type.Name,
-            a.Clinician?.ShortName ?? "", a.Status.ToString(), invoicedByPatient.TryGetValue(a.Patient.Id, out var t) ? Gbp(t) : ""
+            a.Clinician?.ShortName ?? "", a.Status.Label(a.Type.Kind), invoicedByPatient.TryGetValue(a.Patient.Id, out var t) ? Gbp(t) : ""
         }).ToList();
 
         return new ReportTable(StandardReport.DaySheet.Title(), date.ToString("dddd d MMMM yyyy", Uk),

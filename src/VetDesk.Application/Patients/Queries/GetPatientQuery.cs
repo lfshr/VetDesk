@@ -69,6 +69,10 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
         var invoices = await _dbContext.Invoices.AsNoTracking().Include(i => i.Payments).Include(i => i.Claim)
             .Where(i => i.Patient != null && i.Patient.Id == id).ToListAsync(cancellationToken);
         var balance = await Balances.ForClientAsync(_dbContext, patient.Client.Id, cancellationToken);
+        // The owner card offers to take payment against the oldest unpaid invoice, for any of their pets.
+        var owed = (await _dbContext.Invoices.AsNoTracking().Include(i => i.Payments)
+                .Where(i => i.Client.Id == patient.Client.Id).ToListAsync(cancellationToken))
+            .Where(i => i.AmountDue > 0).OrderBy(i => i.IssuedUtc).FirstOrDefault();
 
         var history = consultations.Select(c => new HistoryEntry(
                 c.Appointment?.Type.Kind == AppointmentKind.Surgery ? HistoryKind.Surgery : HistoryKind.Consultation,
@@ -120,7 +124,8 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
 
         var owner = new PatientOwner(patient.Client.Id, patient.Client.ClientNumber, patient.Client.FullName, patient.Client.Phone,
             patient.Client.Email, patient.Client.Address, patient.Client.Postcode, patient.Client.RemindersOptIn, balance,
-            patient.Client.Patients.OrderBy(p => p.Name).Select(p => (p.Id, p.Name, p.SpeciesAndBreed)).ToList());
+            patient.Client.Patients.OrderBy(p => p.Name).Select(p => (p.Id, p.Name, p.SpeciesAndBreed)).ToList(),
+            owed?.Id, owed?.Number);
 
         return Result.Success(new PatientDetail(
             patient.Id, patient.Name, patient.PatientNumber, patient.Species, patient.Breed, patient.SpeciesAndBreed,

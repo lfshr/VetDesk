@@ -1,29 +1,33 @@
 @* The owner card from the patient record: contact details, balance and their other pets. *@
 @inject NavigationManager Nav
 
-<Modal Title="@Owner.FullName" Subtitle="@($"Client {Owner.ClientNumber}")" OnClose="OnClose">
+<Modal Title="@Owner.FullName" Subtitle="@($"Client {Owner.ClientNumber}")" Size="480" OnClose="OnClose">
     <ChildContent>
-        <dl class="vd-form-grid" style="grid-template-columns:110px 1fr;gap:8px 12px;margin:0">
-            <dt class="vd-muted">Phone</dt><dd style="margin:0">@Owner.Phone</dd>
+        <dl style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px 12px;margin:0;font-size:13.5px">
+            <dt class="vd-muted">Phone</dt><dd style="margin:0"><a href="@($"tel:{Owner.Phone.Replace(" ", "")}")">@Owner.Phone</a></dd>
             <dt class="vd-muted">Email</dt><dd style="margin:0">@(Owner.Email ?? "—")</dd>
             <dt class="vd-muted">Address</dt><dd style="margin:0">@(Owner.Address ?? "—")@(Owner.Postcode is null ? "" : $", {Owner.Postcode}")</dd>
             <dt class="vd-muted">Reminders</dt><dd style="margin:0">@(Owner.RemindersOptIn ? "Yes" : "Opted out")</dd>
-            <dt class="vd-muted">Balance</dt><dd style="margin:0" class="vd-mono">@(Owner.Balance > 0 ? $"{Fmt.Money(Owner.Balance)} due" : "Nothing due")</dd>
+            <dt class="vd-muted">Balance</dt><dd style="margin:0" class="vd-mono">@BalanceText</dd>
         </dl>
-        <div class="vd-label" style="margin-top:16px">Pets</div>
+        <div class="vd-label" style="margin-top:14px">Pets</div>
         <div class="vd-stack-sm">
             @foreach (var pet in Owner.Pets)
             {
-                <a class="vd-card" style="padding:10px 12px;display:block;color:inherit;text-decoration:none;@(pet.Id == CurrentPatientId ? "border-color:var(--vd-accent)" : "")"
-                   href="patients/@pet.Id" @onclick="OnClose">
-                    <span class="vd-strong">@pet.Name</span> <span class="vd-small vd-muted">@pet.SpeciesAndBreed@(pet.Id == CurrentPatientId ? " · this record" : "")</span>
+                var current = pet.Id == CurrentPatientId;
+                <a class="vd-pet-row @(current ? "vd-pet-row-current" : "")" href="patients/@pet.Id" @onclick="OnClose">
+                    <span class="vd-strong">@pet.Name</span> <span class="vd-small vd-muted">@pet.SpeciesAndBreed@(current ? " · this record" : "")</span>
                 </a>
             }
         </div>
     </ChildContent>
     <Footer>
         <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>
-        <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenClient">Open client</button>
+        <button type="button" class="vd-btn @(Owner.OwedInvoiceId is null ? "vd-btn-primary" : "vd-btn-secondary")" @onclick="OpenClient">Open client</button>
+        @if (Owner.OwedInvoiceId is not null)
+        {
+            <button type="button" class="vd-btn vd-btn-primary" @onclick="TakePayment">Take payment</button>
+        }
     </Footer>
 </Modal>
 
@@ -32,5 +36,10 @@
     [Parameter] public int CurrentPatientId { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
+    private string BalanceText => Owner.Balance <= 0 ? "Nothing due"
+        : Owner.OwedInvoiceNumber is { } number ? $"{Fmt.Money(Owner.Balance)} due · {number}" : $"{Fmt.Money(Owner.Balance)} due";
+
     private void OpenClient() => Nav.NavigateTo($"clients/{Owner.Id}");
+
+    private void TakePayment() => Nav.NavigateTo($"billing?invoice={Owner.OwedInvoiceId}");
 }

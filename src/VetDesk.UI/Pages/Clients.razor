@@ -127,7 +127,7 @@
         <ClientDialog Client="_selected" OnClose="Close" OnSaved="Saved" />
         break;
     case Dialog.AddPet when _selected is not null:
-        <PatientDialog ClientId="_selected.Id" OnClose="Close" OnSaved="() => Saved(_selected.Id)" />
+        <PatientDialog ClientId="_selected.Id" OwnerName="@_selected.FullName" OnClose="Close" OnSaved="() => Saved(_selected.Id)" />
         break;
 }
 

@@ -1,0 +1,10 @@
+{
+  "projectId": "f42689d2-7c4d-44aa-b4bf-0394aaef7a72",
+  "pkg": "VetDesk.UI",
+  "shape": "package",
+  "tokensOnly": true,
+  "globalName": "VetDesk",
+  "stylesheet": "src/VetDesk.UI/wwwroot/vetdesk.css",
+  "buildScript": ".design-sync/build.mjs",
+  "readmeHeader": ".design-sync/conventions.md"
+}
