@@ -20,6 +20,8 @@ public record StaffDto(
     bool HasPassword,
     DateTime? LastSignInUtc)
 {
+    public bool CanApproveBookings => StaffMember.ApprovesBookings(Role, IsAdministrator);
+
     public static StaffDto From(StaffMember s) => new(
         s.Id, s.FirstName, s.LastName, s.FullName, s.ShortName, s.Initials, s.Email, s.Role, s.IsAdministrator,
         s.RoleLabel, s.JobTitle, s.RegistrationNumber, s.IsActive, s.HasPin, s.HasPassword,

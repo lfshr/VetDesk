@@ -44,6 +44,14 @@ public class StaffMember : BaseAuditableEntity
     public bool HasPassword => PasswordHash.Length > 0;
     public bool IsAnyAdministrator => IsAdministrator || Role == StaffRole.Admin;
 
+    /// <summary>
+    /// Vets and administrators book closed days and busy times themselves; anyone else needs one of them to approve.
+    /// </summary>
+    public static bool ApprovesBookings(StaffRole role, bool isAdministrator) =>
+        role is StaffRole.Vet or StaffRole.Admin || isAdministrator;
+
+    public bool CanApproveBookings => ApprovesBookings(Role, IsAdministrator);
+
     public bool IsPinLocked(DateTime nowUtc) => PinLockedUntilUtc > nowUtc;
 
     /// <summary>Counts a wrong PIN; the last allowed attempt locks PIN sign-in for a few minutes.</summary>
