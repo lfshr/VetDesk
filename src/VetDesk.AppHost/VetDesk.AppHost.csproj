@@ -1,7 +1,8 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.6.1">
 
   <!-- Local development: running this project starts SQL Server in a container (Docker or Podman) and runs
-       VetDesk.Web and VetDesk.Desktop against it, with the Aspire dashboard for logs and traces. -->
+       VetDesk.Web against it, plus (on Windows) the VetDesk.Desktop window onto Web, with the Aspire dashboard for
+       logs and traces. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>

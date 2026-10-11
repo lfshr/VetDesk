@@ -3,7 +3,7 @@
 
 :root {
     /* IBM Plex is used when installed on the machine; otherwise the system UI font. Nothing is downloaded,
-       so the desktop app works offline. */
+       so VetDesk works on a practice network without internet access. */
     --vd-font-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
     --vd-font-mono: "IBM Plex Mono", Consolas, ui-monospace, monospace;
 

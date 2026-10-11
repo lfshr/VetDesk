@@ -1,35 +1,30 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The practice's desktop app: a WPF window hosting the VetDesk Blazor screens (VetDesk.UI) in a BlazorWebView.
-       All screens live in the UI project; this project is the window plus the start-up wiring. -->
+  <!-- The practice's desktop app: a window onto the VetDesk server. It shows VetDesk.Web's pages in WebView2 and
+       holds no database connection, data or secrets; the only setting is the server's address. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- The Windows version pulls in the Windows SDK projection that BlazorWebView's WebView2 control loads at runtime. -->
-    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>VetDesk.Desktop</RootNamespace>
+    <ApplicationIcon>Assets\vetdesk.ico</ApplicationIcon>
     <!-- Lets the solution build (not run) on Linux and macOS too, e.g. for a quick check outside Windows. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Wpf" Version="10.0.20" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3179.45" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VetDesk.UI\VetDesk.UI.csproj" />
-    <ProjectReference Include="..\VetDesk.Infrastructure\VetDesk.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-    <!-- Only Debug builds read this (SQLite with demo data), so Release output doesn't carry it. -->
-    <Content Update="appsettings.Debug.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' == 'Debug'" />
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Only Debug builds read this (VetDesk.Web on its development port), so Release output doesn't carry it. -->
+    <Content Include="appsettings.Debug.json" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' == 'Debug'" />
+    <Resource Include="Assets\vetdesk.ico" />
   </ItemGroup>
 
 </Project>

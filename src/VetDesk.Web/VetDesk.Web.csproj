@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <!-- Runs the VetDesk screens (VetDesk.UI) in a browser. Used for development and for screenshots on machines that
-       can't run the Windows desktop app. The practice uses VetDesk.Desktop. -->
+  <!-- Runs the VetDesk screens (VetDesk.UI) as Blazor Server: the app the practice server runs, and the only part of
+       VetDesk that connects to the database. Desks open it in the VetDesk.Desktop window or a browser. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
