@@ -121,7 +121,7 @@ public class StaffAndClientHandlerTests
     }
 
     [Test]
-    public async Task SignIn_InTheDesktopApp_HasNoDeviceBlock_OnlyEachPersonsLockout()
+    public async Task SignIn_WithNoDeviceAddress_HasNoDeviceBlock_OnlyEachPersonsLockout()
     {
         var nurse = await _database.AddStaffAsync("Janet", "", StaffRole.Nurse);
         _database.Device.Address = null;

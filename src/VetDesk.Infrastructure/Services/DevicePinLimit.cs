@@ -2,7 +2,7 @@ using VetDesk.Application.Common.Interfaces;
 
 namespace VetDesk.Infrastructure.Services;
 
-/// <summary>The <see cref="IDevicePinLimit"/> for the device this request came from. No limit without an address (desktop app).</summary>
+/// <summary>The <see cref="IDevicePinLimit"/> for the device this request came from. No limit without an address.</summary>
 public class DevicePinLimit : IDevicePinLimit
 {
     private readonly IDeviceAddress _device;
