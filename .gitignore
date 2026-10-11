@@ -362,3 +362,6 @@ aspire-output/
 
 # Design sync output (rebuilt by .design-sync/build.mjs)
 ds-bundle/
+
+# Local design-editing scratch: a published web build and working lists (rebuilt by its tools/run-web.sh)
+.design-edit/
