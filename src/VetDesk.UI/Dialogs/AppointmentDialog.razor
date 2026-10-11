@@ -80,11 +80,12 @@
                             </button>
                         }
                     </div>
-                    @if (_day.IsClosed)
+                    @* Once saving has asked for approval, the approval banner below says why; don't repeat it here. *@
+                    @if (_day.IsClosed && _approval is null)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> The practice is closed on this day. @CanStillBook</div>
                     }
-                    @if (PickedSlotWarning is { } warning)
+                    @if (_approval is null && PickedSlotWarning is { } warning)
                     {
                         <div class="vd-banner vd-banner-warning vd-banner-compact"><Icon Name="info" Size="14" /> @warning</div>
                     }
