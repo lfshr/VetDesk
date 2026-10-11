@@ -4,9 +4,9 @@ using VetDesk.Domain.Entities.Staff;
 namespace VetDesk.UI.Services;
 
 /// <summary>
-/// Who is signed in at this desk. One per window (desktop) or browser tab (web host). Locked means the screen is
-/// covered after inactivity and the same person must re-enter their PIN; signing out clears it. Users and settings
-/// open only after an administrator confirms their password, and close again when the desk locks.
+/// Who is signed in at this desk. One per desktop window or browser tab (each is its own circuit). Locked means the
+/// screen is covered after inactivity and the same person must re-enter their PIN; signing out clears it. Users and
+/// settings open only after an administrator confirms their password, and close again when the desk locks.
 /// </summary>
 public class UserSession
 {

@@ -1,4 +1,4 @@
-// Browser helpers for the VetDesk screens. Loaded by both hosts.
+// Browser helpers for the VetDesk screens, loaded by VetDesk.Web.
 window.vetdesk = (() => {
     let hotkeys = null;
     let lastActivity = Date.now();

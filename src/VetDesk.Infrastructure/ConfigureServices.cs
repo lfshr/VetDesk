@@ -11,8 +11,8 @@ namespace VetDesk.Infrastructure;
 public static class ConfigureServices
 {
     /// <summary>
-    /// Registers the database and services. "VetDesk:DatabaseProvider" picks SqlServer (the practice setup, one
-    /// SQL Server shared by every desk) or Sqlite (a single PC, development and demos).
+    /// Registers the database and services. "VetDesk:DatabaseProvider" picks SqlServer (the practice setup, SQL Server
+    /// on the practice server) or Sqlite (a single PC, development and demos).
     /// </summary>
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {

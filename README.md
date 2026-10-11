@@ -3,8 +3,9 @@
 Practice management for a single-site veterinary clinic: booking and check-in, clinical records, consultations,
 dispensing and stock, controlled-drug witnessing, invoicing with VAT, cash-up, user roles and nightly backups.
 
-The screens are Blazor components. At the practice they run inside a Windows desktop app (WPF hosting a
-BlazorWebView), so there's no web server to install or keep running.
+The screens are Blazor Server components. At the practice, one server runs them (VetDesk.Web, SQL Server Express and
+Caddy for HTTPS, in Docker). Each desk opens them in the VetDesk desktop app, a window onto that server that holds no
+data, database login or secrets. A browser works too.
 
 ## Projects
 
@@ -15,14 +16,14 @@ BlazorWebView), so there's no web server to install or keep running.
 | `src/VetDesk.Infrastructure` | EF Core (`VetDeskDbContext`, SQL Server migrations), password hashing, backups, demo data. |
 | `src/SimpleResult` | The `Result` / `Result<T>` type used by every handler. |
 | `src/VetDesk.UI` | All the screens, dialogs and the stylesheet (a Razor class library). |
-| `src/VetDesk.Desktop` | **The app the practice runs**: a WPF window hosting `VetDesk.UI`. |
-| `src/VetDesk.Web` | The same screens in a browser, for development on machines without Windows. |
-| `src/VetDesk.AppHost` | Aspire host for development: SQL Server in a container, plus Web and Desktop wired to it. |
+| `src/VetDesk.Web` | **The app the practice server runs**: the screens as Blazor Server. The only part of VetDesk that connects to the database. |
+| `src/VetDesk.Desktop` | The desktop app at each desk: a WPF window showing VetDesk.Web in WebView2. Its only setting is the server's address. |
+| `src/VetDesk.AppHost` | Aspire host: SQL Server in a container plus Web (and Desktop on Windows) for development; `aspire publish` writes the server's Docker Compose files. |
 | `src/VetDesk.ServiceDefaults` | Aspire's telemetry and health-check defaults, used by `VetDesk.Web`. |
-| `tests/*` | NUnit + Shouldly tests for the domain rules and the handlers (handlers run against in-memory SQLite). |
+| `tests/*` | NUnit + Shouldly tests for the domain rules, the handlers (run against in-memory SQLite) and the desktop app's address rules. |
 
-The screens call the Application layer in-process (`Backend.Send(...)`), with a fresh DI scope per request, so
-every screen goes through the same commands, queries and permission checks.
+The screens call the Application layer in-process on the server (`Backend.Send(...)`), with a fresh DI scope per
+request, so every screen goes through the same commands, queries and permission checks. There is no separate API.
 
 ## Running it
 
@@ -36,18 +37,19 @@ dotnet run --project src/VetDesk.AppHost
 ```
 
 This starts SQL Server in a container (`vetdesk-sql`, data kept in the `vetdesk-sql-data` volume), runs the
-migrations, adds the demo practice, then starts the browser host and, on Windows, the desktop app against it. The
+migrations, adds the demo practice, then starts the browser host and, on Windows, the desktop app pointed at it. The
 Aspire dashboard opens with every app's logs and traces. The container keeps running after you stop the AppHost so
 the next start is quick; remove the container and volume to start again from an empty database.
 
-**Desktop (Windows), with demo data:**
+**Desktop (Windows), against a running Web:** start Web first (below, or with the AppHost), then
 
 ```
 dotnet run --project src/VetDesk.Desktop
 ```
 
-A Debug build reads `appsettings.Debug.json`: a `VetDeskDev` database on `localhost\SQLEXPRESS` (install SQL Server
-Express first), created by migrations and filled with a demo practice on first start. F12 opens the developer tools.
+A Debug build reads `appsettings.Debug.json`, which points the window at `http://localhost:5180`, Web's development
+address. F12 opens the developer tools. If Web isn't running, the window says it can't reach the server and offers
+Retry.
 
 **Signing in.** Tap your name and enter your 4-digit PIN; the same PIN unlocks the desk and witnesses controlled
 drugs. Five wrong PINs in a row block that person for five minutes. Administrators also have a password, asked for
@@ -77,30 +79,30 @@ dotnet test VetDesk.sln
 
 ## Installing at the practice
 
-1. Install SQL Server Express (or use an existing SQL Server) on the machine that will hold the data.
-2. Publish the desktop app: `dotnet publish src/VetDesk.Desktop -c Release -r win-x64 --self-contained`.
-3. Copy the publish folder to each desk PC and edit `appsettings.json` next to `VetDesk.Desktop.exe`:
+**The server.** `aspire publish` (from `src/VetDesk.AppHost`) writes `docker-compose.yaml` and `.env` for the
+practice server: SQL Server Express, VetDesk.Web and Caddy for HTTPS, with only port 443 open. Fill in `.env`
+(server name, allowed networks, the two SQL passwords, the backup folder) and run `docker compose up -d`. On an empty
+database, the first desk to open VetDesk is asked for the first administrator (name, PIN and password). That person
+then adds the other staff, each with a PIN to hand over, under Settings › Users and roles. Surnames and emails are
+optional.
 
-   ```json
-   {
-     "VetDesk": { "DatabaseProvider": "SqlServer", "SeedDemoData": false },
-     "ConnectionStrings": { "VetDesk": "Server=CLINIC-PC\\SQLEXPRESS;Database=VetDesk;Trusted_Connection=True;TrustServerCertificate=True" }
-   }
-   ```
+**Each desk.** Trust Caddy's root certificate once (the desktop app uses the Windows certificate store, as Edge
+does), then run the desktop app with `VetDesk:ServerUrl` in its `appsettings.json` set to the server's address:
 
-4. Start VetDesk on one PC. It creates or upgrades the database (EF Core migrations) and, on an empty database,
-   asks for the first administrator (name, PIN and password). That person then adds the other staff, each with a
-   PIN to hand over, under Settings › Users and roles. Surnames and emails are optional.
+```json
+{ "VetDesk": { "ServerUrl": "https://vetdesk.local" } }
+```
 
-`DatabaseProvider` can also be `Sqlite` for a practice with a single PC; the database is then a file
-(`Data Source=%LOCALAPPDATA%\VetDesk\vetdesk.db`) and is created from the model rather than by migrations.
+That is the app's only setting. It holds no connection string, so nothing on a desk PC or laptop gives access to the
+database. Password and form autofill are off in the window, so PINs are never offered for saving. Opening
+`https://vetdesk.local` in a browser works too.
 
 ## Backups and restore
 
-Set the folder and time under Settings › Backup. While any desk has VetDesk open, it checks every few minutes and
-takes the day's backup once the time has passed; the first desk to notice does it and the others skip. "Back up now"
-takes one immediately. The history on that page shows every run and any failure. If no folder is set, each night's
-run is recorded as a failure and raises a notice, so a practice can't go without backups unnoticed.
+Set the folder and time under Settings › Backup. The server checks every few minutes and takes the day's backup once
+the time has passed, whether or not any desk has VetDesk open. "Back up now" takes one immediately. The history on
+that page shows every run and any failure. If no folder is set, each night's run is recorded as a failure and raises
+a notice, so a practice can't go without backups unnoticed.
 
 On the Docker Compose server install the folder starts as the backup volume (`/var/opt/mssql/backup`, set by
 `VetDesk__DefaultBackupFolder`), so backups run from the first night. In `.env`, point `SQL_BINDMOUNT_0` and
@@ -108,11 +110,11 @@ On the Docker Compose server install the folder starts as the backup volume (`/v
 on every start, because Docker creates a missing folder owned by root and SQL Server can't write to it.
 
 - **SQL Server:** a native `BACKUP DATABASE ... WITH CHECKSUM` to a `.bak` file. The folder is on the **database
-  server's** disk (or a share its service account can write to), not the desk PC's. Restore with SQL Server
-  Management Studio (Databases › Restore Database) or `RESTORE DATABASE VetDesk FROM DISK = N'...\VetDesk-....bak'
-  WITH REPLACE`, with VetDesk closed on every desk.
-- **SQLite:** `VACUUM INTO` a `.db` file, a consistent copy taken while the app keeps running. Restore by closing
-  VetDesk and copying the backup over the database file.
+  server's** disk (or a share its service account can write to). Restore with SQL Server Management Studio
+  (Databases › Restore Database) or `RESTORE DATABASE VetDesk FROM DISK = N'...\VetDesk-....bak'
+  WITH REPLACE`, with VetDesk.Web stopped (`docker compose stop web`).
+- **SQLite** (development and demos only): `VACUUM INTO` a `.db` file, a consistent copy taken while the app keeps
+  running. Restore by stopping VetDesk.Web and copying the backup over the database file.
 
 Copy the backup folder off-site; a backup on the same disk as the database doesn't survive that disk failing.
 

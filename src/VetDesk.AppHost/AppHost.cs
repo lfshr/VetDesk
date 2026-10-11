@@ -47,13 +47,11 @@ if (!isPublishing)
         .WithHttpHealthCheck("/health")
         .WithExternalHttpEndpoints();
 
-    // Desktop (WPF, Windows only) shares the database, as every desk at the practice does. It waits for Web so the
-    // two don't both migrate and seed an empty database at the same time.
+    // Desktop (WPF, Windows only) is a window onto Web, as at the practice: it gets Web's address, not the database.
     if (OperatingSystem.IsWindows())
     {
         builder.AddProject<Projects.VetDesk_Desktop>("desktop")
-            .WithReference(database)
-            .WithEnvironment("VetDesk__DatabaseProvider", "SqlServer")
+            .WithEnvironment("VetDesk__ServerUrl", web.GetEndpoint("http"))
             .WaitFor(web);
     }
 }

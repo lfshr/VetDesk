@@ -7,8 +7,8 @@ namespace VetDesk.UI.Services;
 
 /// <summary>
 /// How screens talk to the Application layer. Every request gets a fresh DI scope, so each command has its own
-/// short-lived DbContext: in the desktop app the UI scope lasts as long as the window, and one long-lived
-/// DbContext would serve stale data to the whole session. Unexpected exceptions (database down, a bug) are logged
+/// short-lived DbContext: the UI scope lasts as long as the browser tab's connection (its circuit), and one
+/// long-lived DbContext would serve stale data to the whole session. Unexpected exceptions (database down, a bug) are logged
 /// and come back as a failed result so the screen can say so instead of crashing.
 /// </summary>
 public class Backend
