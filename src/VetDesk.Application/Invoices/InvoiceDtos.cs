@@ -1,4 +1,5 @@
 using VetDesk.Domain.Entities.Invoices;
+using VetDesk.Domain.Entities.Practice;
 using VetDesk.Domain.Entities.Products;
 
 namespace VetDesk.Application.Invoices;
@@ -51,5 +52,49 @@ public static class InvoiceStatusLabels
         InvoiceStatus.PartPaid => "Part paid",
         InvoiceStatus.ClaimSent => "Claim sent",
         _ => status.ToString()
+    };
+}
+
+/// <summary>Everything the A4 invoice printout shows: the invoice itself, the practice's details and the VAT by rate.</summary>
+public record InvoicePrintout(
+    InvoiceDetail Invoice,
+    PracticeDetails Practice,
+    PrintoutPatient? Patient,
+    IReadOnlyList<VatRateTotal> VatByRate);
+
+public record PrintoutPatient(string Name, string PatientNumber, string SpeciesAndBreed, string? SeenBy, DateTime? SeenUtc);
+
+public record PracticeDetails(
+    string Name,
+    string? Address,
+    string? Phone,
+    string? Email,
+    string? VatNumber,
+    string? CompanyName,
+    string? CompanyNumber,
+    CompanyRegistration? CompanyRegisteredIn,
+    string? RegisteredOffice,
+    string? BankAccountName,
+    string? BankSortCode,
+    string? BankAccountNumber,
+    int PaymentTermsDays)
+{
+    public bool IsVatRegistered => !string.IsNullOrWhiteSpace(VatNumber);
+    public bool HasCompanyDetails => !string.IsNullOrWhiteSpace(CompanyNumber);
+    public bool HasBankDetails => !string.IsNullOrWhiteSpace(BankSortCode) && !string.IsNullOrWhiteSpace(BankAccountNumber);
+
+    /// <summary>The company's registered details, printed at the foot of every invoice page. Null when not a company.</summary>
+    public string? CompanyFooter => HasCompanyDetails
+        ? $"{CompanyName} · Registered in {CompanyRegisteredIn?.Label()} no. {CompanyNumber} · Registered office: {RegisteredOffice}"
+        : null;
+}
+
+public static class CompanyRegistrationLabels
+{
+    public static string Label(this CompanyRegistration place) => place switch
+    {
+        CompanyRegistration.Scotland => "Scotland",
+        CompanyRegistration.NorthernIreland => "Northern Ireland",
+        _ => "England and Wales"
     };
 }

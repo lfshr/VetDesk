@@ -63,4 +63,20 @@ public class VatCalculatorTests
         VatCalculator.Gross(52m, VatRate.Standard).ShouldBe(62.40m);
         VatCalculator.Gross(24m, VatRate.Zero).ShouldBe(24m);
     }
+
+    [Test]
+    public void ByRate_MixedRates_GivesOneRowPerRate_ThatAddUpToTheTotals()
+    {
+        (decimal, VatRate)[] lines = [(52m, VatRate.Standard), (7.50m, VatRate.Standard), (24m, VatRate.Zero), (10m, VatRate.Exempt)];
+
+        var rows = VatCalculator.ByRate(lines);
+        var totals = VatCalculator.Calculate(lines);
+
+        rows.Select(r => r.Rate).ShouldBe([VatRate.Standard, VatRate.Zero, VatRate.Exempt]);
+        rows[0].Net.ShouldBe(59.50m);
+        rows[0].Vat.ShouldBe(11.90m);
+        rows[1].Vat.ShouldBe(0m);
+        rows.Sum(r => r.Net).ShouldBe(totals.Net);
+        rows.Sum(r => r.Vat).ShouldBe(totals.Vat);
+    }
 }

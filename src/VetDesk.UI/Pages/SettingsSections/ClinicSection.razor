@@ -1,3 +1,4 @@
+@using VetDesk.Domain.Entities.Practice
 @inject Backend Backend
 @inject ToastService Toasts
 
@@ -17,6 +18,28 @@
                 <div class="vd-field"><label for="cs-phone">Phone</label><input id="cs-phone" @bind="_phone" maxlength="40" /></div>
                 <div class="vd-field"><label for="cs-email">Email</label><input id="cs-email" type="email" @bind="_email" maxlength="200" /></div>
             </div>
+            <h3 class="vd-section-title" style="margin:20px 0 0">Company details</h3>
+            <div class="vd-form-grid">
+                <div class="vd-field"><label for="cs-company">Registered company name</label><input id="cs-company" @bind="_companyName" maxlength="200" placeholder="Northfield Veterinary Clinic Ltd" /></div>
+                <div class="vd-field"><label for="cs-company-no">Company number</label><input id="cs-company-no" @bind="_companyNumber" maxlength="12" /></div>
+                <div class="vd-field"><label for="cs-company-in">Registered in</label>
+                    <select id="cs-company-in" @bind="_registeredIn">
+                        <option value=""></option>
+                        <option value="@nameof(CompanyRegistration.EnglandAndWales)">England and Wales</option>
+                        <option value="@nameof(CompanyRegistration.Scotland)">Scotland</option>
+                        <option value="@nameof(CompanyRegistration.NorthernIreland)">Northern Ireland</option>
+                    </select>
+                </div>
+                <div class="vd-field"><label for="cs-office">Registered office</label><input id="cs-office" @bind="_registeredOffice" maxlength="400" /></div>
+            </div>
+            <div class="vd-hint">Printed at the foot of every invoice, as the law asks of a limited company. Leave blank if the practice isn't a company.</div>
+            <h3 class="vd-section-title" style="margin:20px 0 0">Bank details for transfers</h3>
+            <div class="vd-form-grid-3">
+                <div class="vd-field"><label for="cs-bank-name">Account name</label><input id="cs-bank-name" @bind="_bankName" maxlength="200" /></div>
+                <div class="vd-field"><label for="cs-bank-sort">Sort code</label><input id="cs-bank-sort" @bind="_bankSortCode" maxlength="8" inputmode="numeric" placeholder="12-34-56" /></div>
+                <div class="vd-field"><label for="cs-bank-acct">Account number</label><input id="cs-bank-acct" @bind="_bankAccount" maxlength="8" inputmode="numeric" /></div>
+            </div>
+            <div class="vd-hint">Printed on invoices so clients can pay by bank transfer. Leave blank to leave them off.</div>
             <h3 class="vd-section-title" style="margin:20px 0 0">Opening hours</h3>
             <div class="vd-form-grid-4">
                 <div class="vd-field"><label for="cs-wo">Mon – Fri opens</label><input id="cs-wo" type="time" @bind="_weekdayOpen" /></div>
@@ -45,6 +68,8 @@
     private ClinicSettingsDto? _s;
     private string _name = "";
     private string? _address, _phone, _email, _vat;
+    private string? _companyName, _companyNumber, _registeredOffice, _bankName, _bankSortCode, _bankAccount;
+    private string _registeredIn = "";
     private TimeOnly _weekdayOpen, _weekdayClose;
     private TimeOnly? _satOpen, _satClose, _lunchStart, _lunchEnd;
     private int _terms, _lock;
@@ -66,6 +91,8 @@
     {
         var s = _s!;
         (_name, _address, _phone, _email, _vat) = (s.Name, s.Address, s.Phone, s.Email, s.VatNumber);
+        (_companyName, _companyNumber, _registeredIn, _registeredOffice) = (s.CompanyName, s.CompanyNumber, s.CompanyRegisteredIn?.ToString() ?? "", s.RegisteredOffice);
+        (_bankName, _bankSortCode, _bankAccount) = (s.BankAccountName, s.BankSortCode, s.BankAccountNumber);
         (_weekdayOpen, _weekdayClose, _satOpen, _satClose, _lunchStart, _lunchEnd) = (s.WeekdayOpen, s.WeekdayClose, s.SaturdayOpen, s.SaturdayClose, s.LunchStart, s.LunchEnd);
         (_terms, _float, _lock) = (s.PaymentTermsDays, s.OpeningFloat, s.AutoLockMinutes);
     }
@@ -76,6 +103,9 @@
         var result = await Backend.Send(new UpdateClinicSettingsCommand
         {
             Name = _name, Address = _address, Phone = _phone, Email = _email, VatNumber = _vat,
+            CompanyName = _companyName, CompanyNumber = _companyNumber, RegisteredOffice = _registeredOffice,
+            CompanyRegisteredIn = Enum.TryParse<CompanyRegistration>(_registeredIn, out var registeredIn) ? registeredIn : null,
+            BankAccountName = _bankName, BankSortCode = _bankSortCode, BankAccountNumber = _bankAccount,
             WeekdayOpen = _weekdayOpen, WeekdayClose = _weekdayClose, SaturdayOpen = _satOpen, SaturdayClose = _satClose,
             LunchStart = _lunchStart, LunchEnd = _lunchEnd, PaymentTermsDays = _terms, OpeningFloat = _float, AutoLockMinutes = _lock,
             BackupFolder = _s!.BackupFolder, BackupTime = _s.BackupTime, Version = _s.Version

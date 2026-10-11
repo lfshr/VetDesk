@@ -1002,6 +1002,30 @@ namespace VetDesk.Infrastructure.Migrations
                     b.Property<TimeOnly>("BackupTime")
                         .HasColumnType("time");
 
+                    b.Property<string>("BankAccountName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("BankAccountNumber")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("BankSortCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyNumber")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("CompanyRegisteredIn")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
@@ -1046,6 +1070,10 @@ namespace VetDesk.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Phone")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("RegisteredOffice")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 

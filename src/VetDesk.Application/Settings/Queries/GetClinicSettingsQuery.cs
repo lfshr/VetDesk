@@ -29,7 +29,9 @@ public class GetClinicSettingsQueryHandler : IRequestHandler<GetClinicSettingsQu
             return Result.Failure(GetClinicSettingsError.NotSignedIn, Access.NotSignedIn);
 
         var s = await _dbContext.ClinicSettings.AsNoTracking().FirstAsync(cancellationToken);
-        return Result.Success(new ClinicSettingsDto(s.Name, s.Address, s.Phone, s.Email, s.VatNumber, s.WeekdayOpen, s.WeekdayClose,
+        return Result.Success(new ClinicSettingsDto(s.Name, s.Address, s.Phone, s.Email, s.VatNumber,
+            s.CompanyName, s.CompanyNumber, s.CompanyRegisteredIn, s.RegisteredOffice, s.BankAccountName, s.BankSortCode, s.BankAccountNumber,
+            s.WeekdayOpen, s.WeekdayClose,
             s.SaturdayOpen, s.SaturdayClose, s.LunchStart, s.LunchEnd, s.PaymentTermsDays, s.OpeningFloat, s.AutoLockMinutes,
             s.BackupFolder, s.BackupTime, Utc.Mark(s.LastBackupUtc), s.LastBackupResult, s.Version));
     }

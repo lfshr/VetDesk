@@ -69,13 +69,12 @@
             }
             else
             {
-                <div class="vd-printable">
+                <div>
                     <div class="vd-card-head">
                         <h2 id="detail-title" class="vd-section-title vd-mono">@s.Number</h2>
                         <InvoiceStatusChip Status="s.Status" />
                     </div>
                     <div class="vd-card-body" style="padding-bottom:8px">
-                        <div class="vd-print-only" style="display:none;margin-bottom:12px"><strong>@_clinic?.Name</strong><br />@_clinic?.Address<br />@(_clinic?.VatNumber is { } vat ? $"VAT no. {vat}" : "")</div>
                         <div class="vd-strong"><a href="clients/@s.ClientId">@s.ClientName</a>@(s.PatientName is null ? "" : $" · {s.PatientName}")</div>
                         <div class="vd-small vd-muted">Issued @Fmt.Date(s.IssuedUtc) · due @Fmt.Date(s.DueDate)</div>
                     </div>
@@ -144,6 +143,10 @@
         </aside>
     </div>
 </div>
+@if (_printout is { } printout)
+{
+    <div class="vd-printable"><InvoicePrintSheet Model="printout" /></div>
+}
 
 @if (_selected is { } sel)
 {
@@ -178,7 +181,8 @@
     private InvoiceFilter _filter;
     private List<InvoiceRow>? _rows;
     private InvoiceDetail? _selected;
-    private ClinicSettingsDto? _clinic;
+    private InvoicePrintout? _printout;
+    private bool _printPending;
     private Dialog _dialog;
     private PaymentMethod _method;
     private CancellationTokenSource? _debounce;
@@ -194,8 +198,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var clinic = await Backend.Send(new GetClinicSettingsQuery());
-        _clinic = clinic.IsSuccess ? clinic.Value : null;
         await LoadAsync();
         if (InvoiceId is { } id)
             await Select(id);
@@ -263,5 +265,22 @@
         await Select(id);
     }
 
-    private async Task Print() => await JS.InvokeVoidAsync("vetdesk.print");
+    // The printout is loaded fresh on each print, so it carries the latest payments and practice details, then printed
+    // once it has rendered.
+    private async Task Print()
+    {
+        var result = await Backend.Send(new GetInvoicePrintoutQuery { Id = _selected!.Id });
+        if (!Toasts.Check(result))
+            return;
+        _printout = result.Value;
+        _printPending = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_printPending)
+            return;
+        _printPending = false;
+        await JS.InvokeVoidAsync("vetdesk.printA4", _printout!.Practice.CompanyFooter);
+    }
 }

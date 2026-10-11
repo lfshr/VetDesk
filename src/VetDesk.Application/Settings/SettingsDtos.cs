@@ -1,3 +1,5 @@
+using VetDesk.Domain.Entities.Practice;
+
 namespace VetDesk.Application.Settings;
 
 public record ClinicSettingsDto(
@@ -6,6 +8,13 @@ public record ClinicSettingsDto(
     string? Phone,
     string? Email,
     string? VatNumber,
+    string? CompanyName,
+    string? CompanyNumber,
+    CompanyRegistration? CompanyRegisteredIn,
+    string? RegisteredOffice,
+    string? BankAccountName,
+    string? BankSortCode,
+    string? BankAccountNumber,
     TimeOnly WeekdayOpen,
     TimeOnly WeekdayClose,
     TimeOnly? SaturdayOpen,

@@ -75,7 +75,9 @@
         var s = _s!;
         var result = await Backend.Send(new UpdateClinicSettingsCommand
         {
-            Name = s.Name, Address = s.Address, Phone = s.Phone, Email = s.Email, VatNumber = s.VatNumber, WeekdayOpen = s.WeekdayOpen,
+            Name = s.Name, Address = s.Address, Phone = s.Phone, Email = s.Email, VatNumber = s.VatNumber,
+            CompanyName = s.CompanyName, CompanyNumber = s.CompanyNumber, CompanyRegisteredIn = s.CompanyRegisteredIn, RegisteredOffice = s.RegisteredOffice,
+            BankAccountName = s.BankAccountName, BankSortCode = s.BankSortCode, BankAccountNumber = s.BankAccountNumber, WeekdayOpen = s.WeekdayOpen,
             WeekdayClose = s.WeekdayClose, SaturdayOpen = s.SaturdayOpen, SaturdayClose = s.SaturdayClose, LunchStart = s.LunchStart,
             LunchEnd = s.LunchEnd, PaymentTermsDays = s.PaymentTermsDays, OpeningFloat = s.OpeningFloat, AutoLockMinutes = s.AutoLockMinutes,
             BackupFolder = _folder, BackupTime = _time, Version = s.Version
