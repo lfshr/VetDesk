@@ -1,9 +1,11 @@
 @page "/patients/{Id:int}"
+@implements IDisposable
 @inject Backend Backend
 @inject ToastService Toasts
 @inject UserSession Session
 @inject DialogService Dialogs
 @inject NavigationManager Nav
+@inject OpenPatients OpenPatients
 
 <ScreenTitle Text="@($"Patients › {_p?.Name}")" />
 
@@ -310,6 +312,7 @@
     private static readonly string[] Tabs = ["Overview", "History", "Vaccinations", "Prescriptions", "Billing"];
 
     private PatientDetail? _p;
+    private int? _shownId;
     private bool _missing;
     private string _tab = "Overview";
     private bool _ownerOpen, _booking, _editing, _noteOpen;
@@ -323,16 +326,39 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        _tab = "Overview";
+        if (Id == _shownId)
+            return;
+        _shownId = Id;
+        // Switching straight from one open patient to another reuses this screen: put the last patient's section and
+        // unsaved note in its tab, and start this one from what its tab remembers, so nothing typed moves across.
+        RememberView();
+        var view = OpenPatients.Find(Id)?.RecordView ?? new OpenPatient.RecordViewState("Overview", false, "", "");
+        (_tab, _noteOpen, _noteTitle, _noteBody) = (view.Section, view.NoteOpen, view.NoteTitle, view.NoteBody);
+        _p = null;
+        _missing = false;
         _alert = null;
+        _ownerOpen = _booking = _editing = false;
+        _allergy = _allergyClass = "";
         await LoadAsync();
+    }
+
+    private void RememberView()
+    {
+        if (_p is not null && OpenPatients.Find(_p.Id) is { } tab)
+            tab.RecordView = new OpenPatient.RecordViewState(_tab, _noteOpen, _noteTitle, _noteBody);
     }
 
     private async Task LoadAsync()
     {
-        var result = await Backend.Send(new GetPatientQuery { Id = Id });
+        var id = Id;
+        var result = await Backend.Send(new GetPatientQuery { Id = id });
+        if (id != Id)
+            return; // switched to another patient while this one loaded
         if (result.IsSuccess)
+        {
             _p = result.Value;
+            OpenPatients.Show(_p.Id, _p.Name, _p.Owner.FullName, $"patients/{_p.Id}");
+        }
         else if (Equals(result.ErrorCode, GetPatientError.NotFound))
             _missing = true;
         else
@@ -422,4 +448,6 @@
         _editing = false;
         await LoadAsync();
     }
+
+    public void Dispose() => RememberView();
 }

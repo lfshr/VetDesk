@@ -1,0 +1,66 @@
+@* The patients open at this desk, as tabs above the screen. Alt+1 to Alt+9 switch to a tab; Alt+W closes the one on view. *@
+@implements IDisposable
+@inject OpenPatients Open
+@inject Hotkeys Hotkeys
+@inject NavigationManager Nav
+
+@if (Open.Tabs.Count > 0)
+{
+    var active = Open.ActiveFor(Nav.ToBaseRelativePath(Nav.Uri));
+    <nav class="vd-patient-tabs" aria-label="Open patients">
+        @foreach (var (tab, i) in Open.Tabs.Select((t, i) => (t, i)))
+        {
+            var isActive = tab == active;
+            <div class="vd-patient-tab @(isActive ? "vd-patient-tab-active" : "")" @key="tab.PatientId">
+                <a href="@tab.Path" class="vd-patient-tab-link" aria-current="@(isActive ? "page" : null)"
+                   title="@($"{tab.Name} · {tab.OwnerName}{(i < 9 ? $" (Alt+{i + 1})" : "")}")">
+                    <Icon Name="paw" Size="14" /><span class="vd-patient-tab-name">@tab.Name</span>
+                </a>
+                <button type="button" class="vd-patient-tab-close" aria-label="@($"Close {tab.Name}")" title="@(isActive ? "Close (Alt+W)" : "Close")"
+                        @onclick="() => Close(tab)"><Icon Name="close" Size="14" /></button>
+            </div>
+        }
+    </nav>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        Open.Changed += OnChanged;
+        Nav.LocationChanged += OnLocationChanged;
+        Hotkeys.Pressed += OnHotkey;
+    }
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => OnChanged();
+
+    private void Close(OpenPatient tab)
+    {
+        var wasActive = Open.ActiveFor(Nav.ToBaseRelativePath(Nav.Uri)) == tab;
+        var next = Open.Close(tab.PatientId);
+        if (wasActive)
+            Nav.NavigateTo(next?.Path ?? "patients");
+    }
+
+    private async Task OnHotkey(string combo)
+    {
+        if (combo.Length == 5 && combo.StartsWith("Alt+") && combo[4] is >= '1' and <= '9')
+        {
+            var index = combo[4] - '1';
+            if (index < Open.Tabs.Count)
+                Nav.NavigateTo(Open.Tabs[index].Path);
+        }
+        else if (combo == "Alt+w" && Open.ActiveFor(Nav.ToBaseRelativePath(Nav.Uri)) is { } active)
+        {
+            await InvokeAsync(() => Close(active));
+        }
+    }
+
+    public void Dispose()
+    {
+        Open.Changed -= OnChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+        Hotkeys.Pressed -= OnHotkey;
+    }
+}
