@@ -1,17 +1,9 @@
-@* The practice's details, hours and money settings. Editing is live: administrators with this page open at the same
-   time type into the same form and see each other's typing as it happens. *@
-@implements IDisposable
 @inject Backend Backend
 @inject ToastService Toasts
-@inject LiveDrafts Drafts
-@inject Desk Desk
-@inject UserSession Session
-
-<LiveWatch Topics="[nameof(ClinicSettings)]" OnChange="LoadAsync" />
 
 <section class="vd-card" aria-labelledby="clinic-title">
-    <div class="vd-card-head"><h2 id="clinic-title" class="vd-section-title">Clinic details</h2><PresenceBar Topic="@Topic" Editing="_form?.IsDirty == true" /></div>
-    @if (_s is null || _form is null)
+    <div class="vd-card-head"><h2 id="clinic-title" class="vd-section-title">Clinic details</h2></div>
+    @if (_s is null)
     {
         <div class="vd-loading">Loading…</div>
     }
@@ -19,51 +11,45 @@
     {
         <div class="vd-card-body">
             <div class="vd-form-grid">
-                <div class="vd-field" style="margin-top:0"><label for="cs-name">Practice name</label>@Box("cs-name", PracticeName, "text", "200")</div>
-                <div class="vd-field" style="margin-top:0"><label for="cs-vat">VAT number</label>@Box("cs-vat", Vat, "text", "40")</div>
-                <div class="vd-field vd-field-wide"><label for="cs-address">Address</label>@Box("cs-address", Address, "text", "400")</div>
-                <div class="vd-field"><label for="cs-phone">Phone</label>@Box("cs-phone", Phone, "text", "40")</div>
-                <div class="vd-field"><label for="cs-email">Email</label>@Box("cs-email", Email, "email", "200")</div>
+                <div class="vd-field" style="margin-top:0"><label for="cs-name">Practice name</label><input id="cs-name" @bind="_name" maxlength="200" /></div>
+                <div class="vd-field" style="margin-top:0"><label for="cs-vat">VAT number</label><input id="cs-vat" @bind="_vat" maxlength="40" /></div>
+                <div class="vd-field vd-field-wide"><label for="cs-address">Address</label><input id="cs-address" @bind="_address" maxlength="400" /></div>
+                <div class="vd-field"><label for="cs-phone">Phone</label><input id="cs-phone" @bind="_phone" maxlength="40" /></div>
+                <div class="vd-field"><label for="cs-email">Email</label><input id="cs-email" type="email" @bind="_email" maxlength="200" /></div>
             </div>
             <h3 class="vd-section-title" style="margin:20px 0 0">Opening hours</h3>
             <div class="vd-form-grid-4">
-                <div class="vd-field"><label for="cs-wo">Mon – Fri opens</label>@Box("cs-wo", WeekdayOpen, "time")</div>
-                <div class="vd-field"><label for="cs-wc">Mon – Fri closes</label>@Box("cs-wc", WeekdayClose, "time")</div>
-                <div class="vd-field"><label for="cs-so">Saturday opens</label>@Box("cs-so", SatOpen, "time")</div>
-                <div class="vd-field"><label for="cs-sc">Saturday closes</label>@Box("cs-sc", SatClose, "time")</div>
-                <div class="vd-field"><label for="cs-ls">Lunch from (weekdays)</label>@Box("cs-ls", LunchStart, "time")</div>
-                <div class="vd-field"><label for="cs-le">Lunch until</label>@Box("cs-le", LunchEnd, "time")</div>
+                <div class="vd-field"><label for="cs-wo">Mon – Fri opens</label><input id="cs-wo" type="time" @bind="_weekdayOpen" /></div>
+                <div class="vd-field"><label for="cs-wc">Mon – Fri closes</label><input id="cs-wc" type="time" @bind="_weekdayClose" /></div>
+                <div class="vd-field"><label for="cs-so">Saturday opens</label><input id="cs-so" type="time" @bind="_satOpen" /></div>
+                <div class="vd-field"><label for="cs-sc">Saturday closes</label><input id="cs-sc" type="time" @bind="_satClose" /></div>
+                <div class="vd-field"><label for="cs-ls">Lunch from (weekdays)</label><input id="cs-ls" type="time" @bind="_lunchStart" /></div>
+                <div class="vd-field"><label for="cs-le">Lunch until</label><input id="cs-le" type="time" @bind="_lunchEnd" /></div>
             </div>
             <div class="vd-hint">Leave Saturday blank if you're closed. Sunday is always closed. Clear the lunch times if you don't close for lunch.</div>
             <h3 class="vd-section-title" style="margin:20px 0 0">Money and security</h3>
             <div class="vd-form-grid-3">
-                <div class="vd-field"><label for="cs-terms">Payment terms (days)</label>@Box("cs-terms", Terms, "number", min: "0", max: "120")</div>
-                <div class="vd-field"><label for="cs-float">Cash drawer float (£)</label>@Box("cs-float", Float, "number", min: "0", step: "0.01")</div>
-                <div class="vd-field"><label for="cs-lock">Lock screen after (minutes idle)</label>@Box("cs-lock", Lock, "number", min: "1", max: "120")</div>
+                <div class="vd-field"><label for="cs-terms">Payment terms (days)</label><input id="cs-terms" type="number" min="0" max="120" @bind="_terms" /></div>
+                <div class="vd-field"><label for="cs-float">Cash drawer float (£)</label><input id="cs-float" type="number" min="0" step="0.01" @bind="_float" /></div>
+                <div class="vd-field"><label for="cs-lock">Lock screen after (minutes idle)</label><input id="cs-lock" type="number" min="1" max="120" @bind="_lock" /></div>
             </div>
-            @if (_problem is not null)
-            {
-                <div class="vd-error-text">@_problem</div>
-            }
             <div class="vd-actions" style="margin-top:20px">
                 <button type="button" class="vd-btn vd-btn-primary" disabled="@_saving" @onclick="Save">Save changes</button>
-                <button type="button" class="vd-btn vd-btn-secondary" @onclick="() => _form.Revert()">Discard</button>
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="Fill">Discard</button>
             </div>
         </div>
     }
 </section>
 
 @code {
-    private const string PracticeName = "Name", Address = "Address", Phone = "Phone", Email = "Email", Vat = "VatNumber",
-        WeekdayOpen = "WeekdayOpen", WeekdayClose = "WeekdayClose", SatOpen = "SaturdayOpen", SatClose = "SaturdayClose",
-        LunchStart = "LunchStart", LunchEnd = "LunchEnd", Terms = "PaymentTermsDays", Float = "OpeningFloat", Lock = "AutoLockMinutes";
-
-    private const string Topic = "ClinicSettings/details";
-
     private ClinicSettingsDto? _s;
-    private LiveForm? _form;
+    private string _name = "";
+    private string? _address, _phone, _email, _vat;
+    private TimeOnly _weekdayOpen, _weekdayClose;
+    private TimeOnly? _satOpen, _satClose, _lunchStart, _lunchEnd;
+    private int _terms, _lock;
+    private decimal _float;
     private bool _saving;
-    private string? _problem;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -73,71 +59,29 @@
         if (!Toasts.Check(result))
             return;
         _s = result.Value;
-        if (_form is null)
-            _form = new LiveForm(Drafts, Desk, Session, Topic, Saved(_s), _s.Version, e => InvokeAsync(StateHasChanged));
-        else
-            _form.Draft.Reset(Saved(_s), _s.Version);
+        Fill();
     }
 
-    private static string? Time(TimeOnly? t) => t?.ToString("HH:mm", CultureInfo.InvariantCulture);
-
-    private static Dictionary<string, string?> Saved(ClinicSettingsDto s) => new()
+    private void Fill()
     {
-        [PracticeName] = s.Name, [Address] = s.Address, [Phone] = s.Phone, [Email] = s.Email, [Vat] = s.VatNumber,
-        [WeekdayOpen] = Time(s.WeekdayOpen), [WeekdayClose] = Time(s.WeekdayClose), [SatOpen] = Time(s.SaturdayOpen),
-        [SatClose] = Time(s.SaturdayClose), [LunchStart] = Time(s.LunchStart), [LunchEnd] = Time(s.LunchEnd),
-        [Terms] = s.PaymentTermsDays.ToString(CultureInfo.InvariantCulture), [Float] = s.OpeningFloat.ToString("0.00", CultureInfo.InvariantCulture),
-        [Lock] = s.AutoLockMinutes.ToString(CultureInfo.InvariantCulture),
-    };
-
-    // One box bound to the shared draft: each keystroke goes to the other desks, and a box someone else is typing in is
-    // read-only here with their name under it. Time pickers report a whole time, so they send on change.
-    private RenderFragment Box(string id, string field, string type, string? maxlength = null, string? min = null, string? max = null, string? step = null) =>
-        @<text>
-            <input id="@id" type="@type" value="@_form![field]" maxlength="@maxlength" min="@min" max="@max" step="@step"
-                   @oninput="e => Typed(field, type, e, input: true)" @onchange="e => Typed(field, type, e, input: false)"
-                   @onblur="() => _form.Release(field)" disabled="@(_form.TypingBy(field) is not null)" />
-            <TypingNote By="@_form.TypingBy(field)" />
-        </text>;
-
-    private void Typed(string field, string type, ChangeEventArgs e, bool input)
-    {
-        if (input != (type == "time"))
-            _form!.Type(field, e.Value?.ToString());
+        var s = _s!;
+        (_name, _address, _phone, _email, _vat) = (s.Name, s.Address, s.Phone, s.Email, s.VatNumber);
+        (_weekdayOpen, _weekdayClose, _satOpen, _satClose, _lunchStart, _lunchEnd) = (s.WeekdayOpen, s.WeekdayClose, s.SaturdayOpen, s.SaturdayClose, s.LunchStart, s.LunchEnd);
+        (_terms, _float, _lock) = (s.PaymentTermsDays, s.OpeningFloat, s.AutoLockMinutes);
     }
 
     private async Task Save()
     {
-        var v = _form!.Draft.Values;
-        string? Text(string f) => v.GetValueOrDefault(f);
-        TimeOnly? T(string f) => TimeOnly.TryParse(Text(f), CultureInfo.InvariantCulture, out var t) ? t : null;
-        if (T(WeekdayOpen) is not { } open || T(WeekdayClose) is not { } close)
-        {
-            _problem = "Enter the weekday opening and closing times.";
-            return;
-        }
-        if (!int.TryParse(Text(Terms), CultureInfo.InvariantCulture, out var terms) || !int.TryParse(Text(Lock), CultureInfo.InvariantCulture, out var autoLock)
-            || !decimal.TryParse(Text(Float), NumberStyles.Number, CultureInfo.InvariantCulture, out var openingFloat))
-        {
-            _problem = "Payment terms, the float and the lock time must be numbers.";
-            return;
-        }
-
-        _problem = null;
         _saving = true;
         var result = await Backend.Send(new UpdateClinicSettingsCommand
         {
-            Name = Text(PracticeName) ?? "", Address = Text(Address), Phone = Text(Phone), Email = Text(Email), VatNumber = Text(Vat),
-            WeekdayOpen = open, WeekdayClose = close, SaturdayOpen = T(SatOpen), SaturdayClose = T(SatClose),
-            LunchStart = T(LunchStart), LunchEnd = T(LunchEnd), PaymentTermsDays = terms, OpeningFloat = openingFloat, AutoLockMinutes = autoLock,
-            BackupFolder = _s!.BackupFolder, BackupTime = _s.BackupTime, Version = _form.Draft.Version
+            Name = _name, Address = _address, Phone = _phone, Email = _email, VatNumber = _vat,
+            WeekdayOpen = _weekdayOpen, WeekdayClose = _weekdayClose, SaturdayOpen = _satOpen, SaturdayClose = _satClose,
+            LunchStart = _lunchStart, LunchEnd = _lunchEnd, PaymentTermsDays = _terms, OpeningFloat = _float, AutoLockMinutes = _lock,
+            BackupFolder = _s!.BackupFolder, BackupTime = _s.BackupTime, Version = _s.Version
         });
         _saving = false;
-        if (!Toasts.Check(result, "Clinic details saved"))
-            return;
-        _form.MarkSaved(v, _form.Draft.Version);
-        await LoadAsync();
+        if (Toasts.Check(result, "Clinic details saved"))
+            await LoadAsync();
     }
-
-    public void Dispose() => _form?.Dispose();
 }

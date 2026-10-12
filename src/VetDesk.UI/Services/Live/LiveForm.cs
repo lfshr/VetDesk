@@ -46,8 +46,6 @@ public sealed class LiveForm : IDisposable
 
     public string? FrozenBy => Draft.FrozenBy(_desk.Id);
 
-    public void Revert() => Draft.Revert(_desk.Id, Me);
-
     public bool Freeze() => Draft.Freeze(_desk.Id, Me);
 
     public void Unfreeze() => Draft.Unfreeze(_desk.Id);

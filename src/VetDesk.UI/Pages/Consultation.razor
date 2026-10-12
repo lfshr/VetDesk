@@ -429,50 +429,26 @@ else
         await draft.SaveGate.WaitAsync();
         try
         {
-            for (var attempt = 0; ; attempt++)
+            if (!draft.IsDirty)
+                return true; // another desk saved it while this one waited its turn
+            var values = draft.Values;
+            var n = Notes(out var error);
+            if (error is not null)
             {
-                if (!draft.IsDirty)
-                    return true; // another desk saved it while this one waited its turn
-                var values = draft.Values;
-                var n = Notes(out var error);
-                if (error is not null)
-                {
-                    _saveError = error;
-                    if (!quiet)
-                        Toasts.Error(error);
-                    return false;
-                }
+                _saveError = error;
+                if (!quiet)
+                    Toasts.Error(error);
+                return false;
+            }
 
-                var result = await Backend.Send(new SaveConsultationNotesCommand
-                {
-                    Id = _c.Id, Reason = n.Reason, Subjective = n.Subjective, Objective = n.Objective, Assessment = n.Assessment, Plan = n.Plan,
-                    TemperatureC = n.TemperatureC, HeartRate = n.HeartRate, RespiratoryRate = n.RespiratoryRate, WeightKg = n.WeightKg,
-                    MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = draft.Version
-                });
-                if (result.IsSuccess)
-                {
-                    form.MarkSaved(values, result.Value);
-                    _editing = draft.IsDirty;
-                    _saveError = null;
-                    if (!quiet)
-                        Toasts.Success("Draft saved");
-                    return true;
-                }
-
-                // Saved since the draft's version without going through it (a desk that opened an older copy): take the
-                // new version and save again. Fields nobody here has typed in take the saved values first, so only what
-                // is on everyone's screen is written. A completed consultation is refused as locked, never retried.
-                if (attempt == 0 && Equals(result.ErrorCode, SaveConsultationNotesError.ChangedElsewhere))
-                {
-                    var latest = await Backend.Send(new GetConsultationQuery { Id = _c.Id });
-                    if (latest.IsSuccess && !latest.Value.IsLocked)
-                    {
-                        _c = latest.Value;
-                        draft.Reset(Saved(latest.Value), latest.Value.Version);
-                        continue;
-                    }
-                }
-
+            var result = await Backend.Send(new SaveConsultationNotesCommand
+            {
+                Id = _c.Id, Reason = n.Reason, Subjective = n.Subjective, Objective = n.Objective, Assessment = n.Assessment, Plan = n.Plan,
+                TemperatureC = n.TemperatureC, HeartRate = n.HeartRate, RespiratoryRate = n.RespiratoryRate, WeightKg = n.WeightKg,
+                MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = draft.Version
+            });
+            if (!result.IsSuccess)
+            {
                 _saveError = result.ToString();
                 if (!quiet)
                     Toasts.Check(result);
@@ -480,6 +456,13 @@ else
                     await LoadAsync();
                 return false;
             }
+
+            form.MarkSaved(values, result.Value);
+            _editing = draft.IsDirty;
+            _saveError = null;
+            if (!quiet)
+                Toasts.Success("Draft saved");
+            return true;
         }
         finally
         {

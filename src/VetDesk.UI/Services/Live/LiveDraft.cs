@@ -209,22 +209,6 @@ public sealed class LiveDraft
         Raise(new LiveDraftEvent(LiveDraftEventKind.Reset, Guid.Empty, "System"));
     }
 
-    /// <summary>"Discard": puts the saved values back, except in fields another desk is typing in right now.</summary>
-    public void Revert(Guid desk, string name)
-    {
-        lock (_gate)
-        {
-            var now = _owner.UtcNow();
-            foreach (var field in _values.Keys.ToList())
-            {
-                if (!(_holds.TryGetValue(field, out var h) && h.Desk != desk && h.UntilUtc > now))
-                    _values[field] = _saved.GetValueOrDefault(field);
-            }
-        }
-
-        Raise(new LiveDraftEvent(LiveDraftEventKind.Reset, desk, name));
-    }
-
     /// <summary>Stops everyone else typing while <paramref name="desk"/> finishes the record. False if someone else is.</summary>
     public bool Freeze(Guid desk, string name)
     {

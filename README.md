@@ -101,7 +101,7 @@ database. Password and form autofill are off in the window, so PINs are never of
 
 Everyone at the practice can work on the same records at once, and sees the others' work as it happens:
 
-- **Live typing.** On a consultation, and in the patient, client and clinic details forms, what one person types shows
+- **Live typing.** On a consultation, and in the patient and client details forms, what one person types shows
   on everyone else's screen as they type it. A box someone is typing in shows "Heather is typing…" and is read-only
   for the others until she moves on or pauses for a few seconds; the other boxes stay free. Consultation notes save
   themselves two seconds after the last keystroke.

@@ -124,19 +124,6 @@ public class LiveDraftTests
     }
 
     [Test]
-    public void Discard_PutsBackTheSavedValues_ExceptWhereSomeoneElseIsTyping()
-    {
-        var draft = Open();
-        draft.Type("Plan", "Heather's plan", Heather, "Heather");
-        draft.Type("Assessment", "Douglas's typo", Douglas, "Douglas");
-
-        draft.Revert(Douglas, "Douglas");
-
-        draft["Assessment"].ShouldBeNull();
-        draft["Plan"].ShouldBe("Heather's plan");
-    }
-
-    [Test]
     public void TheDraftGoes_WhenTheLastDeskLeaves()
     {
         var first = Open();
