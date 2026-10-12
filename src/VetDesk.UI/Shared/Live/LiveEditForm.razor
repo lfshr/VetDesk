@@ -1,6 +1,6 @@
 @* A form shared live by every desk that has the same record's form open: what anyone types into the live boxes inside
    it (LiveInput, LiveTextArea, LiveSelect, LiveCheckbox, Vital) shows on the others' screens as it's typed, and a box
-   someone is typing in is read-only for the others meanwhile (see LiveDraft). Without a Topic (a new record, or a locked
+   someone is in is read-only for the others meanwhile (see LiveDraft). Without a Topic (a new record, or a locked
    one) the form is this desk's alone. Values are the text in the boxes; the page converts them when it saves. *@
 @implements IDisposable
 @inject LiveDrafts Drafts
@@ -67,7 +67,7 @@
 
     public bool IsDirty => Unsaved.Count > 0;
 
-    /// <summary>Who else is typing in the field (it is read-only here meanwhile), or null.</summary>
+    /// <summary>Who else is in the field (it is read-only here meanwhile), or null.</summary>
     public string? TypingBy(string field) => _draft?.TypingBy(field, Desk.Id);
 
     /// <summary>Who else is finishing the record (nobody else may type meanwhile), or null.</summary>
@@ -89,6 +89,9 @@
         StateHasChanged();
         await OnTyped.InvokeAsync();
     }
+
+    /// <summary>The person went into the box: it is read-only for the others until they leave it.</summary>
+    public void Enter(string field) => _draft?.Enter(field, Desk.Id, Me);
 
     /// <summary>The person left the box, so others can type in it at once.</summary>
     public void Leave(string field) => _draft?.Release(field, Desk.Id);

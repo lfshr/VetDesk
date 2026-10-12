@@ -2,7 +2,7 @@ namespace VetDesk.UI.Services.Live;
 
 public enum LiveDraftEventKind
 {
-    /// <summary>Someone typed into a field; <see cref="LiveDraftEvent.Field"/> says which.</summary>
+    /// <summary>Someone went into or typed in a field; <see cref="LiveDraftEvent.Field"/> says which.</summary>
     Typed,
 
     /// <summary>A field was let go of (the person moved on, or stopped typing for a while).</summary>
@@ -23,8 +23,9 @@ public sealed record LiveDraftEvent(LiveDraftEventKind Kind, Guid Desk, string N
 /// <summary>
 /// The shared, unsaved state of one record's form, which every desk with that form open types into. Each keystroke
 /// updates the draft and goes to the other desks straight away, so they see it as it is typed rather than when it is
-/// saved. A field someone is typing in is theirs until they move on or pause for <see cref="LiveDrafts.HoldFor"/>:
-/// meanwhile it is read-only elsewhere, showing who is typing, so two people never type over each other in one box.
+/// saved. A field someone is in (they clicked into it or are typing) is theirs until they move on, or leave it untouched for
+/// <see cref="LiveDrafts.HoldFor"/>: meanwhile it is read-only elsewhere, showing who is editing, so two people never type
+/// over each other in one box.
 /// Fields are kept as the text in the box ("38.", "true", "2024-05-01"), so half-typed numbers travel too; each form
 /// converts them when it saves.
 /// </summary>
@@ -94,7 +95,7 @@ public sealed class LiveDraft
 
     public bool IsDirty => Unsaved.Count > 0;
 
-    /// <summary>Who else is typing in this field right now, or null if it is free for <paramref name="desk"/>.</summary>
+    /// <summary>Who else is in this field right now, or null if it is free for <paramref name="desk"/>.</summary>
     public string? TypingBy(string field, Guid desk)
     {
         lock (_gate)
@@ -113,8 +114,17 @@ public sealed class LiveDraft
     }
 
     /// <summary>Puts what <paramref name="desk"/> typed into the draft, unless someone else holds the field.</summary>
-    /// <returns>False, changing nothing, when another desk is typing in the field or finishing the record.</returns>
-    public bool Type(string field, string? value, Guid desk, string name)
+    /// <returns>False, changing nothing, when another desk is in the field or finishing the record.</returns>
+    public bool Type(string field, string? value, Guid desk, string name) => TakeHold(field, desk, name, () => _values[field] = value);
+
+    /// <summary>
+    /// <paramref name="desk"/> went into the field: it is theirs, read-only elsewhere, before they type a letter, so
+    /// nobody else starts typing in a box someone is in the middle of.
+    /// </summary>
+    /// <returns>False when another desk is in the field or finishing the record.</returns>
+    public bool Enter(string field, Guid desk, string name) => TakeHold(field, desk, name, () => { });
+
+    private bool TakeHold(string field, Guid desk, string name, Action change)
     {
         lock (_gate)
         {
@@ -124,7 +134,7 @@ public sealed class LiveDraft
             if (_holds.TryGetValue(field, out var h) && h.Desk != desk && h.UntilUtc > now)
                 return false;
             _holds[field] = new Hold(desk, name, now + LiveDrafts.HoldFor);
-            _values[field] = value;
+            change();
         }
 
         Raise(new LiveDraftEvent(LiveDraftEventKind.Typed, desk, name, field));
@@ -157,7 +167,7 @@ public sealed class LiveDraft
         Unfreeze(desk);
     }
 
-    /// <summary>A hold ran out without the person leaving the field: tell the others it is free.</summary>
+    /// <summary>A hold ran out without the person leaving the field (or touching it again): tell the others it is free.</summary>
     internal void Expire(string field)
     {
         Hold? hold;

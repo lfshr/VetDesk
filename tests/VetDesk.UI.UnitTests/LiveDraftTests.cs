@@ -29,6 +29,20 @@ public class LiveDraftTests
     }
 
     [Test]
+    public void ABoxSomeoneClickedInto_IsReadOnlyElsewhere_BeforeTheyType()
+    {
+        var draft = Open();
+
+        draft.Enter("Plan", Heather, "Heather").ShouldBeTrue();
+
+        draft.TypingBy("Plan", Douglas).ShouldBe("Heather");
+        draft.Type("Plan", "Douglas's plan", Douglas, "Douglas").ShouldBeFalse();
+        draft.Enter("Plan", Douglas, "Douglas").ShouldBeFalse();
+        draft["Plan"].ShouldBe("Recheck");
+        draft.IsDirty.ShouldBeFalse();
+    }
+
+    [Test]
     public void Typing_IsSentToTheOtherDesks_AsItHappens()
     {
         var draft = Open();
