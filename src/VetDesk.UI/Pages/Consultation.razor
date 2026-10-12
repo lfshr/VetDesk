@@ -6,8 +6,6 @@
 @inject Hotkeys Hotkeys
 @inject NavigationManager Nav
 @inject OpenPatients OpenPatients
-@inject LiveDrafts Drafts
-@inject Desk Desk
 
 <ScreenTitle Text="@($"Patients › {_c?.PatientName} › Consultation")" />
 
@@ -17,6 +15,10 @@
 }
 else
 {
+    @* The note is shared live with every desk that has this consultation open (locked ones aren't): what anyone types
+       shows on the others' screens as it's typed, and saves itself after a pause. *@
+    <LiveEditForm @ref="_note" Topic="@(_c.IsLocked ? null : Topic)" Saved="Saved(_c)" Version="_c.Version" Disabled="_c.IsLocked"
+                  OnTyped="Typed" OnOtherDesk="OnOtherDesk" Context="note">
     <NavigationLock OnBeforeInternalNavigation="SaveBeforeLeaving" ConfirmExternalNavigation="Dirty" />
     <LiveWatch Topics="WatchTopics" OnChange="OtherDeskSaved" />
 
@@ -51,7 +53,7 @@ else
             <div class="vd-row" style="gap:12px;flex:none;margin-left:auto">
                 <PresenceBar Topic="@Topic" Editing="_editing" />
                 <span class="vd-small vd-muted vd-mono" style="white-space:nowrap">Started @Fmt.Time(_c.StartedUtc) · @((int)(DateTime.UtcNow - _c.StartedUtc).TotalMinutes) min · @_c.ClinicianName</span>
-                <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_saving ? "Saving…" : Dirty ? "Save draft" : "Saved")</button>
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_saving ? "Saving…" : note.IsDirty ? "Save draft" : "Saved")</button>
                 <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenComplete" aria-haspopup="dialog" title="Ctrl+Enter">Complete and invoice</button>
             </div>
         }
@@ -62,7 +64,7 @@ else
         {
             <div class="vd-banner vd-banner-info" style="margin-bottom:16px"><Icon Name="lock" Size="18" /> This consultation is completed and locked. Add anything new as a clinical note on the patient record.</div>
         }
-        else if (_form?.FrozenBy is { } completing)
+        else if (note.FrozenBy is { } completing)
         {
             <div class="vd-banner vd-banner-info" style="margin-bottom:16px" role="status"><Icon Name="lock" Size="18" /> @completing is completing this consultation, so the note can't be changed meanwhile.</div>
         }
@@ -91,40 +93,36 @@ else
         <div class="vd-grid-main">
             <form aria-label="Consultation note" class="vd-stack" @onsubmit:preventDefault>
                 <section class="vd-card vd-card-body">
-                    <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><input id="c-reason" value='@F("Reason")' @oninput='e => Type("Reason", e)' @onblur='() => Leave("Reason")' disabled='@ReadOnly("Reason")' maxlength="400" /><TypingNote By='@TypingBy("Reason")' /></div>
+                    <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><LiveInput Field="Reason" id="c-reason" maxlength="400" /></div>
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-subj" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="S" /><span class="vd-section-title" style="margin:0">Subjective</span><span class="vd-small vd-muted">History from owner</span></label>
-                    <textarea id="c-subj" class="vd-input" rows="3" value='@F("Subjective")' @oninput='e => Type("Subjective", e)' @onblur='() => Leave("Subjective")' disabled='@ReadOnly("Subjective")'></textarea>
-                    <TypingNote By='@TypingBy("Subjective")' />
+                    <LiveTextArea Field="Subjective" id="c-subj" class="vd-input" rows="3" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <div class="vd-row" style="gap:10px;margin-bottom:4px"><SoapLetter L="O" /><h2 class="vd-section-title" style="margin:0">Objective</h2><span class="vd-small vd-muted">Examination</span></div>
                     <div class="vd-form-grid-3" style="grid-template-columns:repeat(6,minmax(0,1fr))">
-                        <Vital Label="Temperature" Unit="°C" Id="v-temp" Value='@F("TemperatureC")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("TemperatureC")' OnLeave='() => Leave("TemperatureC")' Changed='v => Type("TemperatureC", v)' />
-                        <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Value='@F("HeartRate")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("HeartRate")' OnLeave='() => Leave("HeartRate")' Changed='v => Type("HeartRate", v)' />
-                        <Vital Label="Resp. rate" Unit="/min" Id="v-rr" Value='@F("RespiratoryRate")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("RespiratoryRate")' OnLeave='() => Leave("RespiratoryRate")' Changed='v => Type("RespiratoryRate", v)' />
-                        <Vital Label="Weight" Unit="kg" Id="v-wt" Value='@F("WeightKg")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("WeightKg")' OnLeave='() => Leave("WeightKg")' Changed='v => Type("WeightKg", v)' />
-                        <Vital Label="Mucous membr." Unit="" Id="v-mm" Value='@F("MucousMembranes")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("MucousMembranes")' OnLeave='() => Leave("MucousMembranes")' Text="true" Changed='v => Type("MucousMembranes", v)' />
-                        <Vital Label="CRT" Unit="sec" Id="v-crt" Value='@F("CapillaryRefill")' Disabled="_c.IsLocked || _form?.FrozenBy is not null" TypingBy='@TypingBy("CapillaryRefill")' OnLeave='() => Leave("CapillaryRefill")' Text="true" Changed='v => Type("CapillaryRefill", v)' />
+                        <Vital Label="Temperature" Unit="°C" Id="v-temp" Field="TemperatureC" />
+                        <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Field="HeartRate" />
+                        <Vital Label="Resp. rate" Unit="/min" Id="v-rr" Field="RespiratoryRate" />
+                        <Vital Label="Weight" Unit="kg" Id="v-wt" Field="WeightKg" />
+                        <Vital Label="Mucous membr." Unit="" Id="v-mm" Field="MucousMembranes" Text="true" />
+                        <Vital Label="CRT" Unit="sec" Id="v-crt" Field="CapillaryRefill" Text="true" />
                     </div>
-                    @if (VitalsError is { } vitalsError)
+                    @if (VitalsError(note) is { } vitalsError)
                     {
                         <div class="vd-error-text">@vitalsError</div>
                     }
                     <label for="c-obj" class="vd-label" style="display:block;margin-top:12px">Findings</label>
-                    <textarea id="c-obj" class="vd-input" rows="3" value='@F("Objective")' @oninput='e => Type("Objective", e)' @onblur='() => Leave("Objective")' disabled='@ReadOnly("Objective")'></textarea>
-                    <TypingNote By='@TypingBy("Objective")' />
+                    <LiveTextArea Field="Objective" id="c-obj" class="vd-input" rows="3" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-assess" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="A" /><span class="vd-section-title" style="margin:0">Assessment</span></label>
-                    <textarea id="c-assess" class="vd-input" rows="2" value='@F("Assessment")' @oninput='e => Type("Assessment", e)' @onblur='() => Leave("Assessment")' disabled='@ReadOnly("Assessment")'></textarea>
-                    <TypingNote By='@TypingBy("Assessment")' />
+                    <LiveTextArea Field="Assessment" id="c-assess" class="vd-input" rows="2" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-plan" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="P" /><span class="vd-section-title" style="margin:0">Plan</span></label>
-                    <textarea id="c-plan" class="vd-input" rows="3" value='@F("Plan")' @oninput='e => Type("Plan", e)' @onblur='() => Leave("Plan")' disabled='@ReadOnly("Plan")'></textarea>
-                    <TypingNote By='@TypingBy("Plan")' />
+                    <LiveTextArea Field="Plan" id="c-plan" class="vd-input" rows="3" />
                     <div class="vd-actions" style="margin-top:12px">
                         <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _summaryOpen = true" aria-haspopup="dialog"><Icon Name="print" Size="16" /> Print owner summary</button>
                     </div>
@@ -210,8 +208,9 @@ else
     }
     @if (_summaryOpen)
     {
-        <OwnerSummaryDialog Consultation="_c" Notes="Notes(out _)" OnClose="() => _summaryOpen = false" />
+        <OwnerSummaryDialog Consultation="_c" Notes="Notes(note, out _)" OnClose="() => _summaryOpen = false" />
     }
+    </LiveEditForm>
 }
 
 @code {
@@ -227,9 +226,8 @@ else
     private bool _missing, _saving, _addOpen, _completeOpen, _summaryOpen;
     private ChargeForm.PendingCharge? _pending;
 
-    // The note is a live draft shared with every desk that has this consultation open: what anyone types shows on the
-    // others' screens as they type it, and is saved after a pause. _editing is whether this desk typed since the last save.
-    private LiveForm? _form;
+    // _editing is whether this desk typed since the note was last saved.
+    private LiveEditForm? _note;
     private bool _editing;
     private string? _saveError;
     private string? _lost;
@@ -240,9 +238,9 @@ else
     // Charges added and allergies or alerts changed elsewhere show here too.
     private IReadOnlyCollection<string> WatchTopics => _c is null ? [Topic] : [Topic, RecordChange.Topic("Patient", _c.PatientId)];
 
-    private bool Dirty => _form?.IsDirty == true;
+    private bool Dirty => _note?.IsDirty == true;
 
-    /// <summary>What the vet has typed, read from the draft when it is needed (the owner summary, saving).</summary>
+    /// <summary>What the vet has typed, converted from the boxes' text (the owner summary, saving).</summary>
     public class NoteDraft
     {
         public string? Reason, Subjective, Objective, Assessment, Plan, MucousMembranes, CapillaryRefill;
@@ -258,8 +256,9 @@ else
     {
         if (_c?.Id == Id)
             return;
+        _autosave?.Cancel();
         _c = null;
-        _missing = _addOpen = _completeOpen = _summaryOpen = false;
+        _missing = _addOpen = _completeOpen = _summaryOpen = _editing = false;
         _pending = null;
         _saveError = _lost = null;
         await LoadAsync();
@@ -279,24 +278,16 @@ else
             return;
         }
 
-        _c = result.Value;
-        OpenPatients.Show(_c.PatientId, _c.PatientName, _c.OwnerName, $"consultations/{_c.Id}");
-        if (_form is not null && _form.Draft.Topic != Topic)
-            CloseForm();
-
-        if (_c.IsLocked)
+        // Completed at another desk while this one had typing that hadn't been saved yet: show it rather than lose it.
+        if (result.Value.IsLocked && _c is { IsLocked: false } && _editing && _note is { Unsaved.Count: > 0 } note)
         {
-            // Completed at another desk while this one had typing that hadn't been saved yet: show it rather than lose it.
-            if (_form is not null && _editing && _form.Draft.Unsaved is { Count: > 0 } unsaved)
-                _lost = string.Join("\n", unsaved.Select(f => $"{Label(f)}: {_form[f]}"));
-            CloseForm();
-            return;
+            _lost = string.Join("\n", note.Unsaved.Select(f => $"{Label(f)}: {note[f]}"));
+            _autosave?.Cancel();
+            _editing = false;
         }
 
-        if (_form is null)
-            _form = new LiveForm(Drafts, Desk, Session, Topic, Saved(_c), _c.Version, OnDraftChanged);
-        else
-            _form.Draft.Reset(Saved(_c), _c.Version);
+        _c = result.Value;
+        OpenPatients.Show(_c.PatientId, _c.PatientName, _c.OwnerName, $"consultations/{_c.Id}");
     }
 
     private static Dictionary<string, string?> Saved(ConsultationDetail c) => new()
@@ -327,27 +318,13 @@ else
         _ => field
     };
 
-    // Locked consultations have no draft: show the record as saved.
-    private string? F(string field) => _form is not null ? _form[field] : _c is null ? null : Saved(_c)[field];
-
-    private string? TypingBy(string field) => _form?.TypingBy(field);
-
-    private bool ReadOnly(string field) => _c!.IsLocked || _form?.FrozenBy is not null || TypingBy(field) is not null;
-
     private static string? Num(decimal? v) => v?.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private void Type(string field, ChangeEventArgs e) => Type(field, e.Value?.ToString() ?? "");
-
-    private void Type(string field, string? value)
+    private void Typed()
     {
-        // Refused when someone else took the box a moment earlier: the next render puts their text back.
-        if (_form is null || !_form.Type(field, value))
-            return;
         _editing = true;
         _ = AutosaveLaterAsync();
     }
-
-    private void Leave(string field) => _form?.Release(field);
 
     private async Task AutosaveLaterAsync()
     {
@@ -366,37 +343,34 @@ else
         StateHasChanged();
     }
 
-    // Another desk typed, saved, or started or stopped completing: show it.
-    private Task OnDraftChanged(LiveDraftEvent e) => InvokeAsync(() =>
+    private void OnOtherDesk(LiveDraftEvent e)
     {
-        if (e.Kind == LiveDraftEventKind.Saved && _form?.IsDirty == false)
+        if (e.Kind == LiveDraftEventKind.Saved && _note?.IsDirty == false)
             _editing = false; // they saved what was typed here too
-        StateHasChanged();
-    });
+    }
 
     private Task OtherDeskSaved(RecordChange change) => LoadAsync();
 
     /// <summary>The note as typed. <paramref name="error"/> says which vital isn't a number, if one isn't.</summary>
-    private NoteDraft Notes(out string? error)
+    private static NoteDraft Notes(IReadOnlyDictionary<string, string?> v, out string? error)
     {
         error = null;
-        var n = new NoteDraft
+        string? F(string field) => v.GetValueOrDefault(field);
+        return new NoteDraft
         {
             Reason = F("Reason"), Subjective = F("Subjective"), Objective = F("Objective"), Assessment = F("Assessment"), Plan = F("Plan"),
             MucousMembranes = F("MucousMembranes"), CapillaryRefill = F("CapillaryRefill"),
             TemperatureC = Dec(F("TemperatureC"), ref error), WeightKg = Dec(F("WeightKg"), ref error),
             HeartRate = Int(F("HeartRate"), ref error), RespiratoryRate = Int(F("RespiratoryRate"), ref error),
         };
-        return n;
     }
 
-    private string? VitalsError
+    private static NoteDraft Notes(LiveEditForm note, out string? error) => Notes(note.Values, out error);
+
+    private static string? VitalsError(LiveEditForm note)
     {
-        get
-        {
-            Notes(out var error);
-            return error;
-        }
+        Notes(note, out var error);
+        return error;
     }
 
     private static decimal? Dec(string? text, ref string? error)
@@ -419,56 +393,49 @@ else
         return null;
     }
 
-    /// <summary>Saves the shared draft. <paramref name="quiet"/> (autosave, leaving) reports a failure on the page, not as a toast.</summary>
+    /// <summary>Saves the shared note. <paramref name="quiet"/> (autosave, leaving) reports a failure on the page, not as a toast.</summary>
     private async Task<bool> SaveNotesAsync(bool quiet)
     {
-        if (_c is null || _c.IsLocked || _form is not { } form || !form.IsDirty)
+        if (_c is null || _c.IsLocked || _note is not { IsDirty: true } note)
             return true;
-        var draft = form.Draft;
-        _saving = true;
-        await draft.SaveGate.WaitAsync();
-        try
+        if (VitalsError(note) is { } error)
         {
-            if (!draft.IsDirty)
-                return true; // another desk saved it while this one waited its turn
-            var values = draft.Values;
-            var n = Notes(out var error);
-            if (error is not null)
-            {
-                _saveError = error;
-                if (!quiet)
-                    Toasts.Error(error);
-                return false;
-            }
+            _saveError = error;
+            if (!quiet)
+                Toasts.Error(error);
+            return false;
+        }
 
-            var result = await Backend.Send(new SaveConsultationNotesCommand
+        _saving = true;
+        var result = await note.SaveAsync((values, version) =>
+        {
+            var n = Notes(values, out _);
+            return Backend.Send(new SaveConsultationNotesCommand
             {
                 Id = _c.Id, Reason = n.Reason, Subjective = n.Subjective, Objective = n.Objective, Assessment = n.Assessment, Plan = n.Plan,
                 TemperatureC = n.TemperatureC, HeartRate = n.HeartRate, RespiratoryRate = n.RespiratoryRate, WeightKg = n.WeightKg,
-                MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = draft.Version
+                MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = version ?? _c.Version
             });
-            if (!result.IsSuccess)
-            {
-                _saveError = result.ToString();
-                if (!quiet)
-                    Toasts.Check(result);
-                if (Equals(result.ErrorCode, SaveConsultationNotesError.Locked))
-                    await LoadAsync();
-                return false;
-            }
-
-            form.MarkSaved(values, result.Value);
-            _editing = draft.IsDirty;
-            _saveError = null;
-            if (!quiet)
-                Toasts.Success("Draft saved");
-            return true;
-        }
-        finally
+        });
+        _saving = false;
+        if (result is { IsSuccess: false })
         {
-            draft.SaveGate.Release();
-            _saving = false;
+            _saveError = result.ToString();
+            if (!quiet)
+                Toasts.Check(result);
+            if (Equals(result.ErrorCode, SaveConsultationNotesError.Locked))
+                await LoadAsync();
+            return false;
         }
+
+        // Null: another desk saved this desk's typing while it waited its turn.
+        _editing = note.IsDirty;
+        _saveError = null;
+        if (!quiet)
+            Toasts.Success("Draft saved");
+        // The record's own copy (what completing checks, e.g. that the SOAP note is filled in) catches up too.
+        await LoadAsync();
+        return true;
     }
 
     private Task SaveDraft() => SaveNotesAsync(quiet: false);
@@ -498,11 +465,11 @@ else
     // Nobody else can type while the note is being completed, so everything typed is in the note that gets locked.
     private async Task OpenComplete()
     {
-        if (_form is null)
+        if (_note is null)
             return;
-        if (!_form.Freeze())
+        if (!_note.Freeze())
         {
-            Toasts.Warning($"{_form.FrozenBy} is already completing this consultation.");
+            Toasts.Warning($"{_note.FrozenBy} is already completing this consultation.");
             return;
         }
 
@@ -510,13 +477,13 @@ else
         if (await SaveNotesAsync(quiet: false))
             _completeOpen = true;
         else
-            _form.Unfreeze();
+            _note.Unfreeze();
     }
 
     private void CloseComplete()
     {
         _completeOpen = false;
-        _form?.Unfreeze();
+        _note?.Unfreeze();
     }
 
     private void PickCharge(ProductDto p) => _pending = new ChargeForm.PendingCharge(p, false, p.AllergyConflicts);
@@ -562,17 +529,9 @@ else
             _lost = null;
     }
 
-    private void CloseForm()
-    {
-        _autosave?.Cancel();
-        _form?.Dispose();
-        _form = null;
-        _editing = false;
-    }
-
     public void Dispose()
     {
         Hotkeys.Pressed -= OnHotkey;
-        CloseForm();
+        _autosave?.Cancel();
     }
 }

@@ -1,9 +1,10 @@
-@* One vital sign box on the consultation note: label, value, unit. Reports each keystroke, so other desks see it typed. *@
+@* One vital sign box on the consultation note: label, value, unit. A live box, so other desks see it typed. *@
+@inherits VetDesk.UI.Shared.Live.LiveField
 <div class="vd-field">
     <label for="@Id">@Label</label>
     <div style="position:relative">
         <input id="@Id" class="vd-mono" style="width:100%;padding-right:@(string.IsNullOrEmpty(Unit) ? "12px" : "40px")" inputmode="@(Text ? "text" : "decimal")"
-               value="@Value" @oninput="e => Changed.InvokeAsync(e.Value?.ToString())" @onblur="OnLeave" disabled="@(Disabled || TypingBy is not null)" maxlength="40" />
+               value="@Value" @oninput="Type" @onblur="Leave" disabled="@ReadOnly" maxlength="40" />
         @if (!string.IsNullOrEmpty(Unit))
         {
             <span class="vd-small vd-muted" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none">@Unit</span>
@@ -16,13 +17,5 @@
     [Parameter, EditorRequired] public string Label { get; set; } = "";
     [Parameter] public string Unit { get; set; } = "";
     [Parameter, EditorRequired] public string Id { get; set; } = "";
-    [Parameter] public string? Value { get; set; }
-    [Parameter] public bool Disabled { get; set; }
     [Parameter] public bool Text { get; set; }
-    [Parameter] public EventCallback<string?> Changed { get; set; }
-
-    /// <summary>Someone at another desk is typing in this box: it is read-only here meanwhile.</summary>
-    [Parameter] public string? TypingBy { get; set; }
-
-    [Parameter] public EventCallback OnLeave { get; set; }
 }

@@ -1,0 +1,7 @@
+@* Kept as "true" or "false" in the form. *@
+@inherits LiveField
+<input type="checkbox" @attributes="Attributes" checked="@(Value == "true")" @onchange="Toggle" disabled="@ReadOnly" />
+
+@code {
+    private Task Toggle(ChangeEventArgs e) => Form.Type(Field, e.Value is true ? "true" : "false");
+}
