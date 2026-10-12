@@ -4,6 +4,7 @@
 @inject UserSession Session
 
 <ScreenTitle Text="Schedule" />
+<LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
 
 <div class="vd-toolbar">
     <div class="vd-row" style="gap:6px">
@@ -218,6 +219,11 @@
         _today = _date = ClinicTime.Today(DateTime.UtcNow);
         await LoadAsync();
     }
+
+    // Bookings, moves, cancellations and check-ins at other desks appear at once (and changes to hours or types).
+    private static readonly string[] LiveTopics = ["Appointment", "AppointmentType", "ClinicSettings"];
+
+    private Task OtherDeskSaved(RecordChange change) => LoadAsync();
 
     private async Task LoadAsync()
     {

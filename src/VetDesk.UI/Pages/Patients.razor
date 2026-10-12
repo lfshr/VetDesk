@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 
 <ScreenTitle Text="Patients" />
+<LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
 
 <div class="vd-page">
     <div class="vd-page-head">
@@ -117,6 +118,15 @@
     protected override async Task OnInitializedAsync()
     {
         _text = Query ?? "";
+        await LoadAsync();
+        await LoadCountsAsync();
+    }
+
+    // New pets, edits and visits at other desks show at once.
+    private static readonly string[] LiveTopics = ["Patient", "Client", "Consultation"];
+
+    private async Task OtherDeskSaved(RecordChange change)
+    {
         await LoadAsync();
         await LoadCountsAsync();
     }

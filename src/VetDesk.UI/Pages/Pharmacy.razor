@@ -5,6 +5,7 @@
 @inject DialogService Dialogs
 
 <ScreenTitle Text="Pharmacy" />
+<LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
 
 <div class="vd-toolbar">
     <div class="vd-search-box">
@@ -203,6 +204,11 @@
         s.ReorderLevel <= 0 ? 100 : (int)Math.Clamp(s.OnHand / (s.ReorderLevel * 2) * 100, 0, 100);
 
     protected override Task OnInitializedAsync() => LoadAsync();
+
+    // Dispensing, deliveries, stock takes and controlled-drug entries at other desks show at once.
+    private static readonly string[] LiveTopics = ["Product", "StockBatch", "StockMovement", "DispenseItem", "ControlledDrugEntry", "PurchaseOrder", "ConsultationCharge"];
+
+    private Task OtherDeskSaved(RecordChange change) => LoadAsync();
 
     private async Task LoadAsync()
     {

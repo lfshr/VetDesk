@@ -1,44 +1,55 @@
-@* Add a pet to an owner, or edit an existing patient's details. *@
+@* Add a pet to an owner, or edit an existing patient's details. Editing is live: everyone with this patient's details
+   open types into the same form and sees the others' typing as it happens. *@
+@implements IDisposable
 @inject Backend Backend
 @inject ToastService Toasts
+@inject LiveDrafts Drafts
+@inject Desk Desk
+@inject UserSession Session
 
 <Modal Title="@(Patient is null ? (OwnerName is null ? "Add a pet" : $"Add pet for {OwnerName}") : $"Edit {Patient.Name}")"
        Subtitle="@(Patient is null ? "The pet gets its own patient record and PT number." : null)" OnClose="OnClose" Size="@(Patient is null ? "560" : "wide")">
     <ChildContent>
+        @if (Patient is not null)
+        {
+            <PresenceBar Topic="@Topic" Editing="true" />
+        }
         <div class="@(Patient is null ? "vd-form-grid" : "vd-form-grid-3")">
-            <div class="vd-field"><label for="pd-name">Pet name</label><input id="pd-name" @bind="_name" maxlength="100" placeholder="e.g. Pip" /></div>
+            <div class="vd-field"><label for="pd-name">Pet name</label><input id="pd-name" value="@F(Name)" @oninput="e => Set(Name, e)" @onblur="() => Leave(Name)" disabled="@Held(Name)" maxlength="100" placeholder="e.g. Pip" /><TypingNote By="@TypingBy(Name)" /></div>
             <div class="vd-field">
                 <label for="pd-species">Species</label>
-                <select id="pd-species" @bind="_species">
-                    @foreach (var s in VetDesk.Domain.Entities.Patients.Patient.SpeciesOptions.Union([_species]))
+                <select id="pd-species" value="@F(Species)" @onchange="e => Set(Species, e)" disabled="@Held(Species)">
+                    @foreach (var s in VetDesk.Domain.Entities.Patients.Patient.SpeciesOptions.Union([F(Species) ?? "Dog"]))
                     {
                         <option>@s</option>
                     }
                 </select>
+                <TypingNote By="@TypingBy(Species)" />
             </div>
-            <div class="vd-field"><label for="pd-breed">Breed</label><input id="pd-breed" @bind="_breed" maxlength="100" placeholder="Optional" /></div>
+            <div class="vd-field"><label for="pd-breed">Breed</label><input id="pd-breed" value="@F(Breed)" @oninput="e => Set(Breed, e)" @onblur="() => Leave(Breed)" disabled="@Held(Breed)" maxlength="100" placeholder="Optional" /><TypingNote By="@TypingBy(Breed)" /></div>
             <div class="vd-field">
                 <label for="pd-sex">Sex</label>
-                <select id="pd-sex" @bind="_sex">
+                <select id="pd-sex" value="@F(SexField)" @onchange="e => Set(SexField, e)" disabled="@Held(SexField)">
                     @foreach (var s in Enum.GetValues<Sex>())
                     {
                         <option value="@s">@s</option>
                     }
                 </select>
+                <TypingNote By="@TypingBy(SexField)" />
             </div>
-            <div class="vd-field"><label for="pd-dob">Date of birth</label><input id="pd-dob" type="date" @bind="_dob" /></div>
-            <div class="vd-field"><label for="pd-chip">Microchip</label><input id="pd-chip" class="vd-mono" @bind="_chip" maxlength="40" placeholder="15 digits, optional" /></div>
+            <div class="vd-field"><label for="pd-dob">Date of birth</label><input id="pd-dob" type="date" value="@F(Dob)" @onchange="e => Set(Dob, e)" disabled="@Held(Dob)" /><TypingNote By="@TypingBy(Dob)" /></div>
+            <div class="vd-field"><label for="pd-chip">Microchip</label><input id="pd-chip" class="vd-mono" value="@F(Chip)" @oninput="e => Set(Chip, e)" @onblur="() => Leave(Chip)" disabled="@Held(Chip)" maxlength="40" placeholder="15 digits, optional" /><TypingNote By="@TypingBy(Chip)" /></div>
         </div>
-        <label class="vd-check"><input type="checkbox" @bind="_neutered" /> Neutered</label>
+        <label class="vd-check"><input type="checkbox" checked="@Bool(Neutered)" @onchange="e => SetBool(Neutered, e)" disabled="@Held(Neutered)" /> Neutered</label>
         @if (Patient is not null)
         {
-            <label class="vd-check" style="margin-left:24px"><input type="checkbox" @bind="_deceased" /> Deceased</label>
+            <label class="vd-check" style="margin-left:24px"><input type="checkbox" checked="@Bool(Deceased)" @onchange="e => SetBool(Deceased, e)" disabled="@Held(Deceased)" /> Deceased</label>
             <div class="vd-hint">Marking a pet deceased stops reminders and hides them from booking.</div>
         }
     </ChildContent>
     <Footer>
         <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
-        <button type="button" class="vd-btn vd-btn-primary" disabled="@(string.IsNullOrWhiteSpace(_name) || _saving)" @onclick="Save">@(Patient is null ? "Add pet" : "Save")</button>
+        <button type="button" class="vd-btn vd-btn-primary" disabled="@(string.IsNullOrWhiteSpace(F(Name)) || _saving)" @onclick="Save">@(Patient is null ? "Add pet" : "Save")</button>
     </Footer>
 </Modal>
 
@@ -50,36 +61,91 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    private string _name = "", _species = "Dog";
-    private string? _breed, _chip;
-    private Sex _sex;
-    private DateOnly? _dob;
-    private bool _neutered, _deceased, _saving;
+    private const string Name = "Name", Species = "Species", Breed = "Breed", SexField = "Sex", Dob = "DateOfBirth",
+        Chip = "Microchip", Neutered = "IsNeutered", Deceased = "IsDeceased";
+
+    // A new pet's form is this desk's own; an existing patient's is shared live with every desk editing it.
+    private readonly Dictionary<string, string?> _local = new() { [Species] = "Dog", [SexField] = default(Sex).ToString(), [Neutered] = "false", [Deceased] = "false" };
+    private LiveForm? _form;
+    private bool _saving;
+
+    private string Topic => RecordChange.Topic(nameof(VetDesk.Domain.Entities.Patients.Patient), Patient!.Id) + "/details";
 
     protected override void OnInitialized()
     {
-        if (Patient is not { } p)
-            return;
-        _name = p.Name;
-        _species = p.Species;
-        _breed = p.Breed;
-        _sex = p.Sex;
-        _dob = p.DateOfBirth;
-        _chip = p.Microchip;
-        _neutered = p.IsNeutered;
-        _deceased = p.IsDeceased;
+        if (Patient is { } p)
+            _form = new LiveForm(Drafts, Desk, Session, Topic, Saved(p), p.Version, OnOtherDesk);
     }
+
+    // The record screen reloads when the patient is saved elsewhere (e.g. by a desk without this form open).
+    protected override void OnParametersSet()
+    {
+        if (Patient is { } p)
+            _form?.Draft.Reset(Saved(p), p.Version);
+    }
+
+    private static Dictionary<string, string?> Saved(PatientDetail p) => new()
+    {
+        [Name] = p.Name, [Species] = p.Species, [Breed] = p.Breed, [SexField] = p.Sex.ToString(),
+        [Dob] = p.DateOfBirth?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), [Chip] = p.Microchip,
+        [Neutered] = p.IsNeutered ? "true" : "false", [Deceased] = p.IsDeceased ? "true" : "false",
+    };
+
+    private string? F(string field) => _form is not null ? _form[field] : _local.GetValueOrDefault(field);
+
+    private bool Bool(string field) => F(field) == "true";
+
+    private string? TypingBy(string field) => _form?.TypingBy(field);
+
+    private bool Held(string field) => TypingBy(field) is not null;
+
+    private void Set(string field, ChangeEventArgs e) => Set(field, e.Value?.ToString());
+
+    private void SetBool(string field, ChangeEventArgs e) => Set(field, e.Value is true ? "true" : "false");
+
+    private void Set(string field, string? value)
+    {
+        if (_form is null)
+            _local[field] = value;
+        else
+            _form.Type(field, value);
+    }
+
+    private void Leave(string field) => _form?.Release(field);
+
+    private Task OnOtherDesk(LiveDraftEvent e) => InvokeAsync(async () =>
+    {
+        // Saved at another desk with nothing else typed since: the details here are now the record's, so close.
+        if (e.Kind == LiveDraftEventKind.Saved && _form?.IsDirty == false)
+        {
+            Toasts.Success($"{e.Name} saved {Patient?.Name}'s details");
+            await OnSaved.InvokeAsync();
+            return;
+        }
+
+        StateHasChanged();
+    });
 
     private async Task Save()
     {
         _saving = true;
+        var values = _form?.Draft.Values ?? _local;
+        DateOnly? dob = DateOnly.TryParse(values.GetValueOrDefault(Dob), CultureInfo.InvariantCulture, out var d) ? d : null;
         var result = await Backend.Send(new SavePatientCommand
         {
-            Id = Patient?.Id, ClientId = Patient?.Owner.Id ?? ClientId, Name = _name, Species = _species, Breed = _breed, Sex = _sex,
-            IsNeutered = _neutered, DateOfBirth = _dob, Microchip = _chip, IsDeceased = _deceased, Version = Patient?.Version
+            Id = Patient?.Id, ClientId = Patient?.Owner.Id ?? ClientId, Name = values.GetValueOrDefault(Name) ?? "",
+            Species = values.GetValueOrDefault(Species) ?? "Dog", Breed = values.GetValueOrDefault(Breed),
+            Sex = Enum.TryParse<Sex>(values.GetValueOrDefault(SexField), out var sex) ? sex : default,
+            IsNeutered = values.GetValueOrDefault(Neutered) == "true", DateOfBirth = dob, Microchip = values.GetValueOrDefault(Chip),
+            IsDeceased = values.GetValueOrDefault(Deceased) == "true", Version = _form?.Draft.Version ?? Patient?.Version
         });
         _saving = false;
-        if (Toasts.Check(result, Patient is null ? $"{_name.Trim()} added" : "Details saved"))
-            await OnSaved.InvokeAsync();
+        if (!Toasts.Check(result, Patient is null ? $"{values.GetValueOrDefault(Name)?.Trim()} added" : "Details saved"))
+            return;
+        // Tells the other desks it was saved; they close their copy of the form.
+        _form?.MarkSaved(values, _form.Draft.Version);
+        await OnSaved.InvokeAsync();
     }
+
+    public void Dispose() => _form?.Dispose();
 }

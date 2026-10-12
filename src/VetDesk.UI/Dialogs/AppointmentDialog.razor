@@ -13,6 +13,19 @@
         }
         else
         {
+            <LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
+            @if (IsEdit)
+            {
+                <PresenceBar Topic='@RecordChange.Topic("Appointment", AppointmentId!.Value)' Editing="true" />
+            }
+            @if (_changedBy is not null)
+            {
+                <div class="vd-banner vd-banner-warning" style="margin-bottom:12px" role="alert">
+                    <Icon Name="warning" Size="18" />
+                    <span style="flex:1">@_changedBy changed this appointment while you had it open. Saving here would undo that, so it's refused until you look at their changes.</span>
+                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="ShowTheirChanges">Show their changes</button>
+                </div>
+            }
             <div class="vd-field" style="margin-top:0">
                 <span class="vd-label">Patient</span>
                 <PatientPicker @bind-Selected="_patient" Locked="IsEdit" InputId="appt-patient" />
@@ -193,7 +206,7 @@
 
     private string SaveLabel => _approval is not null ? (IsEdit ? "Approve and save" : "Approve and book") : IsEdit ? "Save changes" : "Book appointment";
 
-    private bool CanBook => _patient is not null && _typeId > 0 && _startUtc is not null && !string.IsNullOrWhiteSpace(_reason);
+    private bool CanBook => _changedBy is null && _patient is not null && _typeId > 0 && _startUtc is not null && !string.IsNullOrWhiteSpace(_reason);
 
     private IEnumerable<(string, DateOnly)> QuickDates =>
     [
@@ -274,17 +287,10 @@
                 return;
             }
 
-            var a = _existing = found.Value;
-            var patient = await Backend.Send(new GetPatientQuery { Id = a.PatientId });
+            var patient = await Backend.Send(new GetPatientQuery { Id = found.Value.PatientId });
             if (patient.IsSuccess)
                 _patient = PatientPicker.PatientRowFrom(patient.Value);
-            _typeId = a.TypeId;
-            _minutes = a.Minutes;
-            _clinicianId = a.ClinicianId;
-            _date = DateOnly.FromDateTime(Fmt.Local(a.StartUtc));
-            _startUtc = a.StartUtc;
-            _reason = a.Reason;
-            _sms = a.SmsReminder;
+            Fill(found.Value);
         }
         else
         {
@@ -298,6 +304,45 @@
 
         await LoadSlots();
         _loading = false;
+    }
+
+    private void Fill(AppointmentDto a)
+    {
+        _existing = a;
+        _typeId = a.TypeId;
+        _minutes = a.Minutes;
+        _clinicianId = a.ClinicianId;
+        _date = DateOnly.FromDateTime(Fmt.Local(a.StartUtc));
+        _startUtc = a.StartUtc;
+        _reason = a.Reason;
+        _sms = a.SmsReminder;
+    }
+
+    // Bookings at other desks change which times are free, so the grid follows them as they happen.
+    private static readonly string[] LiveTopics = ["Appointment", "ClinicSettings"];
+
+    // Set when another desk saved this appointment while it is open here; their version waits in _theirs.
+    private string? _changedBy;
+    private AppointmentDto? _theirs;
+
+    private async Task OtherDeskSaved(RecordChange change)
+    {
+        await LoadSlots();
+        if (AppointmentId is not { } id || !change.Topics.Contains(RecordChange.Topic("Appointment", id)))
+            return;
+        var found = await Backend.Send(new GetAppointmentQuery { Id = id });
+        if (found.IsSuccess && found.Value.Version != _existing?.Version)
+            (_changedBy, _theirs) = (change.ByName, found.Value);
+    }
+
+    private async Task ShowTheirChanges()
+    {
+        if (_theirs is null)
+            return;
+        Fill(_theirs);
+        (_changedBy, _theirs) = (null, null);
+        ClearApproval();
+        await LoadSlots();
     }
 
     private async Task LoadSlots()

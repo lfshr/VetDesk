@@ -614,3 +614,13 @@ h1:focus { outline: none; }
 
 /* Sits under an open popover so a click anywhere else closes it. */
 .vd-click-away { position: fixed; inset: 0; z-index: 59; }
+
+/* Live editing: who else has a record open, and who is typing in a box (read-only here meanwhile). */
+.vd-presence { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--vd-text-secondary); }
+.vd-presence-person { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--vd-info-bg); color: var(--vd-info-text); font-weight: 500; }
+.vd-presence-editing { background: var(--vd-warning-bg); color: var(--vd-warning-text); }
+.vd-presence-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.vd-typing { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--vd-warning-text); }
+.vd-typing .vd-presence-dot { animation: vd-typing-pulse 1.2s ease-in-out infinite; }
+@keyframes vd-typing-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .vd-typing .vd-presence-dot { animation: none; } }

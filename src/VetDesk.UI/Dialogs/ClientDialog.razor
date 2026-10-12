@@ -1,18 +1,27 @@
-@* New client, or edit an existing one. A phone number already on another client is flagged before saving. *@
+@* New client, or edit an existing one. A phone number already on another client is flagged before saving. Editing is
+   live: everyone with this client's details open types into the same form and sees the others' typing as it happens. *@
+@implements IDisposable
 @inject Backend Backend
 @inject ToastService Toasts
+@inject LiveDrafts Drafts
+@inject Desk Desk
+@inject UserSession Session
 
 <Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : "Changes are saved to the client record and audit log.")" Size="@(Client is null ? "620" : "560")" OnClose="OnClose">
     <ChildContent>
+        @if (Client is not null)
+        {
+            <PresenceBar Topic="@Topic" Editing="true" />
+        }
         <div class="vd-form-grid">
-            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" @bind="_first" @bind:event="oninput" maxlength="100" placeholder="e.g. Sam" /></div>
-            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" @bind="_last" @bind:event="oninput" maxlength="100" placeholder="e.g. Taylor" /></div>
-            <div class="vd-field"><label for="cd-phone">Mobile</label><input id="cd-phone" type="tel" value="@_phone" @onchange="OnPhone" placeholder="07…" maxlength="40" /></div>
-            <div class="vd-field"><label for="cd-email">Email</label><input id="cd-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
-            <div class="vd-field"><label for="cd-postcode">Postcode</label><input id="cd-postcode" @bind="_postcode" placeholder="e.g. BS6 5QT" maxlength="12" /></div>
-            <div class="vd-field"><label for="cd-address">Address</label><input id="cd-address" @bind="_address" placeholder="Optional" maxlength="400" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" value="@F(First)" @oninput="e => Set(First, e)" @onblur="() => Leave(First)" disabled="@Held(First)" maxlength="100" placeholder="e.g. Sam" /><TypingNote By="@TypingBy(First)" /></div>
+            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" value="@F(Last)" @oninput="e => Set(Last, e)" @onblur="() => Leave(Last)" disabled="@Held(Last)" maxlength="100" placeholder="e.g. Taylor" /><TypingNote By="@TypingBy(Last)" /></div>
+            <div class="vd-field"><label for="cd-phone">Mobile</label><input id="cd-phone" type="tel" value="@F(Phone)" @oninput="e => Set(Phone, e)" @onchange="CheckPhone" @onblur="() => Leave(Phone)" disabled="@Held(Phone)" placeholder="07…" maxlength="40" /><TypingNote By="@TypingBy(Phone)" /></div>
+            <div class="vd-field"><label for="cd-email">Email</label><input id="cd-email" type="email" value="@F(Email)" @oninput="e => Set(Email, e)" @onblur="() => Leave(Email)" disabled="@Held(Email)" placeholder="Optional" maxlength="200" /><TypingNote By="@TypingBy(Email)" /></div>
+            <div class="vd-field"><label for="cd-postcode">Postcode</label><input id="cd-postcode" value="@F(Postcode)" @oninput="e => Set(Postcode, e)" @onblur="() => Leave(Postcode)" disabled="@Held(Postcode)" placeholder="e.g. BS6 5QT" maxlength="12" /><TypingNote By="@TypingBy(Postcode)" /></div>
+            <div class="vd-field"><label for="cd-address">Address</label><input id="cd-address" value="@F(Address)" @oninput="e => Set(Address, e)" @onblur="() => Leave(Address)" disabled="@Held(Address)" placeholder="Optional" maxlength="400" /><TypingNote By="@TypingBy(Address)" /></div>
         </div>
-        <label class="vd-check"><input type="checkbox" @bind="_reminders" /> Send reminders by text and email</label>
+        <label class="vd-check"><input type="checkbox" checked="@RemindersOn" @onchange="SetReminders" disabled="@Held(Reminders)" /> Send reminders by text and email</label>
         @if (_match is not null)
         {
             <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> That number belongs to @_match.FullName (@_match.ClientNumber). Each client needs their own number.</div>
@@ -29,43 +38,100 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<int> OnSaved { get; set; }
 
-    private string _first = "", _last = "", _phone = "";
-    private string? _email, _address, _postcode;
-    private bool _reminders = true, _saving;
+    private const string First = "FirstName", Last = "LastName", Phone = "Phone", Email = "Email", Address = "Address",
+        Postcode = "Postcode", Reminders = "RemindersOptIn";
+
+    // A new client's form is this desk's own; an existing client's is shared live with every desk editing it.
+    private readonly Dictionary<string, string?> _local = new() { [Reminders] = "true" };
+    private LiveForm? _form;
+    private bool _saving;
     private ClientMatch? _match;
 
-    private bool CanSave => !string.IsNullOrWhiteSpace(_first) && !string.IsNullOrWhiteSpace(_last) && !string.IsNullOrWhiteSpace(_phone) && _match is null;
+    private string Topic => RecordChange.Topic(nameof(VetDesk.Domain.Entities.Clients.Client), Client!.Id) + "/details";
+
+    private bool CanSave => !string.IsNullOrWhiteSpace(F(First)) && !string.IsNullOrWhiteSpace(F(Last)) && !string.IsNullOrWhiteSpace(F(Phone)) && _match is null;
 
     protected override void OnInitialized()
     {
-        if (Client is not { } c)
-            return;
-        _first = c.FirstName;
-        _last = c.LastName;
-        _phone = c.Phone;
-        _email = c.Email;
-        _address = c.Address;
-        _postcode = c.Postcode;
-        _reminders = c.RemindersOptIn;
+        if (Client is { } c)
+            _form = new LiveForm(Drafts, Desk, Session, Topic, Saved(c), c.Version, OnOtherDesk);
     }
 
-    private async Task OnPhone(ChangeEventArgs e)
+    // The clients screen reloads when the client is saved elsewhere (e.g. by a desk without this form open).
+    protected override void OnParametersSet()
     {
-        _phone = e.Value?.ToString() ?? "";
-        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = _phone, ExcludeClientId = Client?.Id });
+        if (Client is { } c)
+            _form?.Draft.Reset(Saved(c), c.Version);
+    }
+
+    private static Dictionary<string, string?> Saved(ClientDetail c) => new()
+    {
+        [First] = c.FirstName, [Last] = c.LastName, [Phone] = c.Phone, [Email] = c.Email, [Address] = c.Address,
+        [Postcode] = c.Postcode, [Reminders] = c.RemindersOptIn ? "true" : "false",
+    };
+
+    private string? F(string field) => _form is not null ? _form[field] : _local.GetValueOrDefault(field);
+
+    private string? TypingBy(string field) => _form?.TypingBy(field);
+
+    private bool Held(string field) => TypingBy(field) is not null;
+
+    private void Set(string field, ChangeEventArgs e) => Set(field, e.Value?.ToString());
+
+    private void Set(string field, string? value)
+    {
+        if (_form is null)
+            _local[field] = value;
+        else
+            _form.Type(field, value);
+    }
+
+    private void Leave(string field) => _form?.Release(field);
+
+    private bool RemindersOn => F(Reminders) == "true";
+
+    private void SetReminders(ChangeEventArgs e) => Set(Reminders, e.Value is true ? "true" : "false");
+
+    private async Task CheckPhone()
+    {
+        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = F(Phone) ?? "", ExcludeClientId = Client?.Id });
         _match = found.IsSuccess ? found.Value : null;
     }
+
+    private Task OnOtherDesk(LiveDraftEvent e) => InvokeAsync(async () =>
+    {
+        // Saved at another desk with nothing else typed since: the details here are now the record's, so close.
+        if (e.Kind == LiveDraftEventKind.Saved && _form?.IsDirty == false)
+        {
+            Toasts.Success($"{e.Name} saved {Client?.FullName}'s details");
+            await OnSaved.InvokeAsync(Client!.Id);
+            return;
+        }
+
+        // Someone else changed the number: check it here too.
+        if (e.Kind == LiveDraftEventKind.Released && e.Field == Phone)
+            await CheckPhone();
+        StateHasChanged();
+    });
 
     private async Task Save()
     {
         _saving = true;
+        var values = _form?.Draft.Values ?? _local;
         var result = await Backend.Send(new SaveClientCommand
         {
-            Id = Client?.Id, FirstName = _first, LastName = _last, Phone = _phone, Email = _email, Address = _address, Postcode = _postcode,
-            RemindersOptIn = _reminders, Version = Client?.Version
+            Id = Client?.Id, FirstName = values.GetValueOrDefault(First) ?? "", LastName = values.GetValueOrDefault(Last) ?? "",
+            Phone = values.GetValueOrDefault(Phone) ?? "", Email = values.GetValueOrDefault(Email), Address = values.GetValueOrDefault(Address),
+            Postcode = values.GetValueOrDefault(Postcode), RemindersOptIn = values.GetValueOrDefault(Reminders) == "true",
+            Version = _form?.Draft.Version ?? Client?.Version
         });
         _saving = false;
-        if (Toasts.Check(result, Client is null ? $"{_first.Trim()} {_last.Trim()} added" : "Client saved"))
-            await OnSaved.InvokeAsync(result.Value);
+        if (!Toasts.Check(result, Client is null ? $"{values.GetValueOrDefault(First)?.Trim()} {values.GetValueOrDefault(Last)?.Trim()} added" : "Client saved"))
+            return;
+        // Tells the other desks it was saved; they close their copy of the form.
+        _form?.MarkSaved(values, _form.Draft.Version);
+        await OnSaved.InvokeAsync(result.Value);
     }
+
+    public void Dispose() => _form?.Dispose();
 }

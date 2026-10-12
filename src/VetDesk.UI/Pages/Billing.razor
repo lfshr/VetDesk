@@ -5,6 +5,7 @@
 @inject IJSRuntime JS
 
 <ScreenTitle Text="Billing" />
+<LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
 
 <div class="vd-toolbar">
     <div class="vd-search-box">
@@ -201,6 +202,17 @@
             await Select(id);
         else if (_rows?.FirstOrDefault(r => r.AmountDue > 0) is { } first)
             await Select(first.Id);
+    }
+
+    // New invoices, payments, refunds and claims at other desks show at once, in the list and the open invoice (a payment
+    // dialog open on it then checks against the new amount due).
+    private static readonly string[] LiveTopics = ["Invoice", "InvoiceLine", "Payment", "InsuranceClaim", "DayClose"];
+
+    private async Task OtherDeskSaved(RecordChange change)
+    {
+        await LoadAsync();
+        if (_selected is { } s)
+            await Select(s.Id);
     }
 
     private async Task LoadAsync()

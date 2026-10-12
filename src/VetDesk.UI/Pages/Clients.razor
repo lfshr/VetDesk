@@ -7,6 +7,8 @@
 
 <ScreenTitle Text="@(_selected is null ? "Clients" : $"Clients › {_selected.FullName}")" />
 
+<LiveWatch Topics="ListTopics" OnChange="OtherDeskSaved" />
+
 <div class="vd-page">
     <div class="vd-page-head">
         <div>
@@ -87,6 +89,7 @@
                     <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _dialog = Dialog.Edit" aria-haspopup="dialog"><Icon Name="edit" Size="14" /> Edit</button>
                 </div>
                 <div class="vd-card-body">
+                    <PresenceBar Topic='@RecordChange.Topic("Client", s.Id)' Editing="_dialog is Dialog.Edit or Dialog.AddPet" />
                     <div class="vd-small vd-muted"><span class="vd-mono">@s.ClientNumber</span></div>
                     <dl style="display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:12px 0 0">
                         <dt class="vd-muted">Mobile</dt><dd style="margin:0"><a href="tel:@s.Phone">@s.Phone</a></dd>
@@ -146,6 +149,10 @@
     private Dialog _dialog;
     private CancellationTokenSource? _debounce;
 
+    // Names, pets, balances and last visits all show in the list, so a client, pet, invoice or payment saved at another
+    // desk refreshes it (and the selected client).
+    private static readonly string[] ListTopics = ["Client", "Patient", "Invoice", "Payment"];
+
     private string CountLabel => _rows is null ? "" : _rows.Count >= Limit ? $"Showing the first {Limit}" : _rows.Count == 1 ? "1 client" : $"{_rows.Count} clients";
 
     private static string FilterLabel(ClientFilter f) => f switch
@@ -187,6 +194,14 @@
         var result = await Backend.Send(new GetClientQuery { Id = id });
         if (Toasts.Check(result))
             _selected = result.Value;
+    }
+
+    private async Task OtherDeskSaved(RecordChange change)
+    {
+        await LoadAsync();
+        await LoadCountsAsync();
+        if (_selected is { } s)
+            await Select(s.Id);
     }
 
     private void Open(int id) => Nav.NavigateTo($"clients/{id}");

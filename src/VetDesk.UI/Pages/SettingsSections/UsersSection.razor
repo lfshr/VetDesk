@@ -2,6 +2,9 @@
 @inject ToastService Toasts
 @inject UserSession Session
 
+@* Changes to staff and permissions at other desks show here at once. *@
+<LiveWatch Topics='["StaffMember", "RolePermission"]' OnChange="LoadAsync" />
+
 <section class="vd-card" aria-labelledby="users-title">
     <div class="vd-card-head">
         <h2 id="users-title" class="vd-section-title">Users</h2>

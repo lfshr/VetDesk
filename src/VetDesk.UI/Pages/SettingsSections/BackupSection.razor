@@ -2,6 +2,9 @@
 @inject ToastService Toasts
 @inject IJSRuntime JS
 
+@* Changes to backups and the backup settings at other desks show here at once. *@
+<LiveWatch Topics='["BackupRecord", "ClinicSettings"]' OnChange="OtherDeskSaved" />
+
 <section class="vd-card" aria-labelledby="bk-title">
     <div class="vd-card-head"><h2 id="bk-title" class="vd-section-title">Backup and data</h2></div>
     @if (_s is null)
@@ -54,6 +57,19 @@
     private bool _running;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    // Keeps a folder or time being typed here; only boxes still showing the old saved value take the new one.
+    private async Task OtherDeskSaved(RecordChange change)
+    {
+        var (before, folder, time) = (_s, _folder, _time);
+        await LoadAsync();
+        if (before is null)
+            return;
+        if (folder != before.BackupFolder)
+            _folder = folder;
+        if (time != before.BackupTime)
+            _time = time;
+    }
 
     private async Task LoadAsync()
     {
