@@ -9,7 +9,10 @@
                     <div class="vd-modal-sub">@Subtitle</div>
                 }
             </div>
-            <button type="button" class="vd-icon-btn vd-modal-close" aria-label="Close" @onclick="Close"><Icon Name="close" Size="16" /></button>
+            <div class="vd-row" style="gap:12px">
+                @HeaderExtra
+                <button type="button" class="vd-icon-btn vd-modal-close" aria-label="Close" @onclick="Close"><Icon Name="close" Size="16" /></button>
+            </div>
         </div>
         <div class="vd-modal-body @(Flush ? "vd-modal-body-flush" : "")">
             @ChildContent
@@ -27,6 +30,7 @@
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     [Parameter] public string? Subtitle { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? HeaderExtra { get; set; }
     [Parameter] public RenderFragment? Footer { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     /// <summary>"narrow", "wide", "xwide", or a width in pixels ("480") to match a dialog in the design exactly.</summary>

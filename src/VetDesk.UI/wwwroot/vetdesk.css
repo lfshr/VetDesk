@@ -602,6 +602,74 @@ h1:focus { outline: none; }
 #blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 16px; background: var(--vd-danger-bg); color: var(--vd-danger-text); z-index: 1000; }
 #blazor-error-ui .dismiss { cursor: pointer; float: right; }
 
+/* ---------- Reconnecting overlay ---------- */
+#components-reconnect-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    background: var(--vd-overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+#components-reconnect-modal.components-reconnect-show,
+#components-reconnect-modal.components-reconnect-retrying,
+#components-reconnect-modal.components-reconnect-paused,
+#components-reconnect-modal.components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-resume-failed,
+#components-reconnect-modal.components-reconnect-rejected {
+    display: flex;
+}
+
+.vd-reconnect-dialog {
+    background: var(--vd-surface);
+    border: 1px solid var(--vd-border-strong);
+    border-radius: var(--vd-radius);
+    box-shadow: 0 24px 64px rgba(14, 42, 42, .28);
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: min(320px, 100%);
+    text-align: center;
+}
+
+.vd-reconnect-spinner {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid var(--vd-border-strong);
+    border-top-color: var(--vd-accent);
+    animation: vd-reconnect-spin .8s linear infinite;
+}
+
+.vd-reconnect-text { color: var(--vd-text); font-weight: 500; }
+.vd-reconnect-text-failed, .vd-reconnect-reload { display: none; }
+
+#components-reconnect-modal.components-reconnect-failed .vd-reconnect-spinner,
+#components-reconnect-modal.components-reconnect-resume-failed .vd-reconnect-spinner,
+#components-reconnect-modal.components-reconnect-rejected .vd-reconnect-spinner,
+#components-reconnect-modal.components-reconnect-failed .vd-reconnect-text:not(.vd-reconnect-text-failed),
+#components-reconnect-modal.components-reconnect-resume-failed .vd-reconnect-text:not(.vd-reconnect-text-failed),
+#components-reconnect-modal.components-reconnect-rejected .vd-reconnect-text:not(.vd-reconnect-text-failed) {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-failed .vd-reconnect-text-failed,
+#components-reconnect-modal.components-reconnect-resume-failed .vd-reconnect-text-failed,
+#components-reconnect-modal.components-reconnect-rejected .vd-reconnect-text-failed,
+#components-reconnect-modal.components-reconnect-failed .vd-reconnect-reload,
+#components-reconnect-modal.components-reconnect-resume-failed .vd-reconnect-reload,
+#components-reconnect-modal.components-reconnect-rejected .vd-reconnect-reload {
+    display: block;
+}
+
+@keyframes vd-reconnect-spin { to { transform: rotate(360deg); } }
+
 @media (max-width: 1100px) {
     .vd-grid-main, .vd-grid-main-wide { grid-template-columns: 1fr; }
     .vd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -86,10 +86,12 @@
             {
                 <div class="vd-card-head">
                     <h2 id="cl-name" class="vd-section-title">@s.FullName</h2>
-                    <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _dialog = Dialog.Edit" aria-haspopup="dialog"><Icon Name="edit" Size="14" /> Edit</button>
+                    <div class="vd-row" style="gap:12px">
+                        <PresenceBar Topic='@RecordChange.Topic("Client", s.Id)' Editing="_dialog is Dialog.Edit or Dialog.AddPet" />
+                        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _dialog = Dialog.Edit" aria-haspopup="dialog"><Icon Name="edit" Size="14" /> Edit</button>
+                    </div>
                 </div>
                 <div class="vd-card-body">
-                    <PresenceBar Topic='@RecordChange.Topic("Client", s.Id)' Editing="_dialog is Dialog.Edit or Dialog.AddPet" />
                     <div class="vd-small vd-muted"><span class="vd-mono">@s.ClientNumber</span></div>
                     <dl style="display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:12px 0 0">
                         <dt class="vd-muted">Mobile</dt><dd style="margin:0"><a href="tel:@s.Phone">@s.Phone</a></dd>

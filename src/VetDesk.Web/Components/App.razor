@@ -12,6 +12,14 @@
 
 <body>
     <Routes @rendermode="RenderModeNoPrerender" />
+    <div id="components-reconnect-modal">
+        <div class="vd-reconnect-dialog">
+            <div class="vd-reconnect-spinner"></div>
+            <p class="vd-reconnect-text">Reconnecting&hellip;</p>
+            <p class="vd-reconnect-text vd-reconnect-text-failed">Couldn't reconnect.</p>
+            <button type="button" class="vd-btn vd-btn-secondary vd-reconnect-reload" onclick="location.reload()">Reload</button>
+        </div>
+    </div>
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/VetDesk.UI/vetdesk.js"></script>
 </body>

@@ -6,11 +6,13 @@
 <LiveEditForm @ref="_form" Topic="@Topic" Saved="Saved" Version="Patient?.Version" OnOtherDesk="OnOtherDesk" Context="form">
     <Modal Title="@(Patient is null ? (OwnerName is null ? "Add a pet" : $"Add pet for {OwnerName}") : $"Edit {Patient.Name}")"
            Subtitle="@(Patient is null ? "The pet gets its own patient record and PT number." : null)" OnClose="OnClose" Size="@(Patient is null ? "560" : "wide")">
-        <ChildContent>
+        <HeaderExtra>
             @if (Topic is not null)
             {
                 <PresenceBar Topic="@Topic" Editing="true" />
             }
+        </HeaderExtra>
+        <ChildContent>
             <div class="@(Patient is null ? "vd-form-grid" : "vd-form-grid-3")">
                 <div class="vd-field"><label for="pd-name">Pet name</label><LiveInput Field="Name" id="pd-name" maxlength="100" placeholder="e.g. Pip" /></div>
                 <div class="vd-field">

@@ -19,14 +19,16 @@
     else
     {
         <LiveWatch Topics='[Topic, RecordChange.Topic("Client", _p.Owner.Id)]' OnChange="OtherDeskSaved" />
-        <PresenceBar Topic="@Topic" Editing="_editing || _noteOpen || _alert is not null" />
         <div class="vd-row" style="align-items:flex-start;gap:20px;margin:12px 0 20px;flex-wrap:wrap">
             <span class="vd-avatar vd-avatar-lg"><Icon Name="paw" Size="30" /></span>
             <div style="flex:1;min-width:280px">
-                <div class="vd-row" style="gap:10px;align-items:baseline">
+                <div class="vd-row" style="gap:10px;align-items:baseline;flex-wrap:wrap">
                     <h1 class="vd-page-title" style="margin:0">@_p.Name</h1>
                     <span class="vd-mono vd-muted">@_p.PatientNumber</span>
                     @if (_p.IsDeceased) { <span class="vd-chip">Deceased</span> }
+                    <div style="margin-left:auto">
+                        <PresenceBar Topic="@Topic" Editing="_editing || _noteOpen || _alert is not null" />
+                    </div>
                 </div>
                 <div class="vd-facts" style="margin-top:4px">
                     <span>@_p.SpeciesAndBreed</span><span>@_p.SexLabel</span><span>@_p.Age</span>

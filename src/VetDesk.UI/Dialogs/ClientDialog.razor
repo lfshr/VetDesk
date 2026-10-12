@@ -5,11 +5,13 @@
 
 <LiveEditForm @ref="_form" Topic="@Topic" Saved="Saved" Version="Client?.Version" OnOtherDesk="OnOtherDesk" Context="form">
     <Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : "Changes are saved to the client record and audit log.")" Size="@(Client is null ? "620" : "560")" OnClose="OnClose">
-        <ChildContent>
+        <HeaderExtra>
             @if (Topic is not null)
             {
                 <PresenceBar Topic="@Topic" Editing="true" />
             }
+        </HeaderExtra>
+        <ChildContent>
             <div class="vd-form-grid">
                 <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><LiveInput Field="FirstName" id="cd-first" maxlength="100" placeholder="e.g. Sam" /></div>
                 <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><LiveInput Field="LastName" id="cd-last" maxlength="100" placeholder="e.g. Taylor" /></div>
