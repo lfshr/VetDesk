@@ -18,6 +18,8 @@
     }
     else
     {
+        <LiveWatch Topics='[Topic, RecordChange.Topic("Client", _p.Owner.Id)]' OnChange="OtherDeskSaved" />
+        <PresenceBar Topic="@Topic" Editing="_editing || _noteOpen || _alert is not null" />
         <div class="vd-row" style="align-items:flex-start;gap:20px;margin:12px 0 20px;flex-wrap:wrap">
             <span class="vd-avatar vd-avatar-lg"><Icon Name="paw" Size="30" /></span>
             <div style="flex:1;min-width:280px">
@@ -322,6 +324,10 @@
 
     private bool CanEdit => Session.Can(Permission.ViewClinicalRecords);
 
+    // Notes, alerts, allergies, weights, vaccinations, consultations and invoices all belong to the patient (and the owner
+    // card to the client), so a save of any of them at another desk shows here straight away. Whatever is being typed here is kept apart from the record.
+    private string Topic => RecordChange.Topic("Patient", Id);
+
     private string PetCount => _p!.Owner.Pets.Count == 1 ? "1 pet" : $"{_p.Owner.Pets.Count} pets";
 
     protected override async Task OnParametersSetAsync()
@@ -364,6 +370,8 @@
         else
             Toasts.Check(result);
     }
+
+    private Task OtherDeskSaved(RecordChange change) => LoadAsync();
 
     private static string DotCss(HistoryKind kind) => kind switch
     {

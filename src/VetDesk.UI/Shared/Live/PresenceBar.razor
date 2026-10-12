@@ -1,0 +1,90 @@
+@* "Also open: Heather (typing), Lorna" for a record, so people know who else is working on it. Joins the record's
+   presence while shown. Renders nothing while nobody else has it open. *@
+@implements IDisposable
+@inject Presence Presence
+@inject Desk Desk
+@inject UserSession Session
+
+@if (_others.Count > 0)
+{
+    <div class="vd-presence" role="status" aria-live="polite">
+        <Icon Name="owners" Size="14" />
+        <span>Also open:</span>
+        @foreach (var o in _others)
+        {
+            <span class="vd-presence-person @(o.Editing ? "vd-presence-editing" : "")" title="@(o.Editing ? $"{o.Name} is editing" : $"{o.Name} has this open")">
+                <span class="vd-presence-dot" aria-hidden="true"></span>@o.Name@(o.Editing ? " (editing)" : "")
+            </span>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The record, e.g. "Consultation:40".</summary>
+    [Parameter, EditorRequired] public string Topic { get; set; } = "";
+
+    /// <summary>This desk's person is changing the record (typing, or a form is open).</summary>
+    [Parameter] public bool Editing { get; set; }
+
+    private Presence.Entry? _entry;
+    private IReadOnlyList<Presence.Viewer> _others = [];
+
+    protected override void OnInitialized()
+    {
+        Presence.Changed += OnPresence;
+        Session.Changed += OnSession;
+        Desk.ConnectionChanged += OnConnection;
+    }
+
+    protected override void OnParametersSet() => Join();
+
+    private void Join()
+    {
+        // A dropped desk still re-renders when others type or save; it mustn't rejoin until it is back.
+        if (!Desk.IsConnected)
+            return;
+        if (_entry?.Topic != Topic)
+        {
+            _entry?.Dispose();
+            _entry = Presence.Join(Topic, Desk.Id, Session.Staff?.ShortName ?? "");
+        }
+
+        _entry.SetEditing(Editing);
+        _others = Presence.Others(Topic, Desk.Id);
+    }
+
+    // A desk whose window closed or lost its network leaves at once, and comes back when it reconnects.
+    private void OnConnection() => _ = InvokeAsync(() =>
+    {
+        if (Desk.IsConnected)
+        {
+            Join();
+            StateHasChanged();
+        }
+        else
+        {
+            _entry?.Dispose();
+            _entry = null;
+        }
+    });
+
+    private void OnPresence(string topic)
+    {
+        if (topic == Topic)
+            _ = InvokeAsync(() =>
+            {
+                _others = Presence.Others(Topic, Desk.Id);
+                StateHasChanged();
+            });
+    }
+
+    private void OnSession() => _ = InvokeAsync(() => _entry?.SetName(Session.Staff?.ShortName ?? ""));
+
+    public void Dispose()
+    {
+        Presence.Changed -= OnPresence;
+        Session.Changed -= OnSession;
+        Desk.ConnectionChanged -= OnConnection;
+        _entry?.Dispose();
+    }
+}

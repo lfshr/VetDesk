@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SimpleResult;
+using VetDesk.UI.Services.Live;
 
 namespace VetDesk.UI.Services;
 
@@ -16,13 +17,15 @@ public class Backend
     private readonly IServiceScopeFactory _scopes;
     private readonly UserSession _session;
     private readonly DeviceAddress _device;
+    private readonly Desk _desk;
     private readonly ILogger<Backend> _logger;
 
-    public Backend(IServiceScopeFactory scopes, UserSession session, DeviceAddress device, ILogger<Backend> logger)
+    public Backend(IServiceScopeFactory scopes, UserSession session, DeviceAddress device, Desk desk, ILogger<Backend> logger)
     {
         _scopes = scopes;
         _session = session;
         _device = device;
+        _desk = desk;
         _logger = logger;
     }
 
@@ -59,6 +62,7 @@ public class Backend
         var scope = _scopes.CreateAsyncScope();
         scope.ServiceProvider.GetRequiredService<CurrentUser>().Set(_session.IsLocked ? null : _session.Staff);
         scope.ServiceProvider.GetRequiredService<DeviceAddress>().Address = _device.Address;
+        scope.ServiceProvider.GetRequiredService<Desk>().Id = _desk.Id;
         return scope;
     }
 

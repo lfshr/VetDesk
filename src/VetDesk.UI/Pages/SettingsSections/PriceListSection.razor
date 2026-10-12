@@ -1,6 +1,9 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
+@* Changes to prices and products at other desks show here at once. *@
+<LiveWatch Topics='["Product"]' OnChange="LoadAsync" />
+
 <section class="vd-card" aria-labelledby="prices-title">
     <div class="vd-card-head">
         <h2 id="prices-title" class="vd-section-title">Price list</h2>

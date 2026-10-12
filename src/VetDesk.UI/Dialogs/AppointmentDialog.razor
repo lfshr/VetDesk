@@ -13,6 +13,8 @@
         }
         else
         {
+            @* Bookings at other desks change which times are free, so the grid follows them as they happen. *@
+            <LiveWatch Topics='["Appointment", "ClinicSettings"]' OnChange="LoadSlots" />
             <div class="vd-field" style="margin-top:0">
                 <span class="vd-label">Patient</span>
                 <PatientPicker @bind-Selected="_patient" Locked="IsEdit" InputId="appt-patient" />

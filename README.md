@@ -97,6 +97,25 @@ That is the app's only setting. It holds no connection string, so nothing on a d
 database. Password and form autofill are off in the window, so PINs are never offered for saving. Opening
 `https://vetdesk.local` in a browser works too.
 
+## Several desks on one record
+
+Everyone at the practice can work on the same records at once, and sees the others' work as it happens:
+
+- **Live typing.** On a consultation, and in the patient and client details forms, what one person types shows
+  on everyone else's screen as they type it. A box someone is typing in shows "Heather is typing…" and is read-only
+  for the others until she moves on or pauses for a few seconds; the other boxes stay free. Consultation notes save
+  themselves two seconds after the last keystroke.
+- **Who else is here.** Each record shows who else has it open, and who is editing.
+- **Live lists.** Today, the schedule (and the free times when booking), patients, clients, billing, pharmacy and
+  settings refresh as soon as another desk saves something they show.
+- **Safety rules stay.** While someone completes a consultation nobody else can change its note, and once completed it
+  is locked. A save based on an out-of-date copy is still refused rather than overwriting anyone's work.
+
+It works because every desk is connected to the one VetDesk server: the drafts and the feed of changes live in that
+server's memory, and Blazor sends each desk its updated screen over the SignalR connection it already uses. Running two
+copies of VetDesk.Web against one database would need a shared backplane (for example Redis) before desks on different
+copies could see each other.
+
 ## Backups and restore
 
 Set the folder and time under Settings › Backup. The server checks every few minutes and takes the day's backup once

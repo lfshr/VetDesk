@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VetDesk.Application.Common.Interfaces;
+using VetDesk.Application.Common.Live;
 using VetDesk.Domain.Common;
 using VetDesk.Domain.Entities.Appointments;
 using VetDesk.Domain.Entities.Clients;
@@ -19,12 +20,17 @@ public class VetDeskDbContext : DbContext, IVetDeskDbContext
 {
     private readonly ICurrentUser? _user;
     private readonly IClock? _clock;
+    private readonly RecordChangeFeed? _feed;
+    private readonly IDesk? _desk;
 
-    public VetDeskDbContext(DbContextOptions<VetDeskDbContext> options, ICurrentUser? user = null, IClock? clock = null)
+    public VetDeskDbContext(DbContextOptions<VetDeskDbContext> options, ICurrentUser? user = null, IClock? clock = null,
+        RecordChangeFeed? feed = null, IDesk? desk = null)
         : base(options)
     {
         _user = user;
         _clock = clock;
+        _feed = feed;
+        _desk = desk;
     }
 
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
@@ -91,16 +97,31 @@ public class VetDeskDbContext : DbContext, IVetDeskDbContext
         }
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         Stamp();
-        return base.SaveChangesAsync(cancellationToken);
+        var topics = _feed is null ? null : ChangeTopics.Capture(ChangeTracker);
+        var saved = await base.SaveChangesAsync(cancellationToken);
+        Publish(topics);
+        return saved;
     }
 
     public override int SaveChanges()
     {
         Stamp();
-        return base.SaveChanges();
+        var topics = _feed is null ? null : ChangeTopics.Capture(ChangeTracker);
+        var saved = base.SaveChanges();
+        Publish(topics);
+        return saved;
+    }
+
+    // Only after the save succeeded, so no desk refreshes for a change that was refused (e.g. a version conflict).
+    private void Publish(ChangeTopics? topics)
+    {
+        if (topics is null)
+            return;
+        var who = _user?.StaffId is not null ? _user.Name : "System";
+        _feed!.Publish(new RecordChange(topics.Complete(), who, _desk?.DeskId));
     }
 
     private void Stamp()

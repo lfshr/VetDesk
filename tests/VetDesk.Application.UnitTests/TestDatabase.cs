@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using VetDesk.Application.Common.Interfaces;
+using VetDesk.Application.Common.Live;
 using VetDesk.Domain.Entities.Clients;
 using VetDesk.Domain.Entities.Patients;
 using VetDesk.Domain.Entities.Products;
@@ -35,6 +36,10 @@ public sealed class TestDatabase : IDisposable
 
     public VetDeskDbContext NewContext() =>
         new(new DbContextOptionsBuilder<VetDeskDbContext>().UseSqlite(_connection).Options, User, Clock);
+
+    /// <summary>A context that tells <paramref name="feed"/> about each save, as the app's do, made at <paramref name="desk"/>.</summary>
+    public VetDeskDbContext NewContext(RecordChangeFeed feed, IDesk desk) =>
+        new(new DbContextOptionsBuilder<VetDeskDbContext>().UseSqlite(_connection).Options, User, Clock, feed, desk);
 
     public static async Task<TestDatabase> CreateAsync(bool demoData = false)
     {
@@ -129,6 +134,11 @@ public class TestUser : ICurrentUser
 public class TestDevice : IDeviceAddress
 {
     public string? Address { get; set; } = "192.168.1.20";
+}
+
+public class TestDesk : IDesk
+{
+    public Guid? DeskId { get; } = Guid.NewGuid();
 }
 
 public class TestClock : IClock

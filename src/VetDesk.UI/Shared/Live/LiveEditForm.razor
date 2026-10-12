@@ -1,0 +1,166 @@
+@* A form shared live by every desk that has the same record's form open: what anyone types into the live boxes inside
+   it (LiveInput, LiveTextArea, LiveSelect, LiveCheckbox, Vital) shows on the others' screens as it's typed, and a box
+   someone is typing in is read-only for the others meanwhile (see LiveDraft). Without a Topic (a new record, or a locked
+   one) the form is this desk's alone. Values are the text in the boxes; the page converts them when it saves. *@
+@implements IDisposable
+@inject LiveDrafts Drafts
+@inject Desk Desk
+@inject UserSession Session
+
+@* Not fixed: every box re-renders with the form, so typing at another desk shows in every box. *@
+<CascadingValue Value="this">@ChildContent?.Invoke(this)</CascadingValue>
+
+@code {
+    /// <summary>The record and form, e.g. "Patient:12/details". Null keeps the form to this desk.</summary>
+    [Parameter] public string? Topic { get; set; }
+
+    /// <summary>The saved record's values. A new <see cref="Version"/> puts them in every box nobody has typed in.</summary>
+    [Parameter, EditorRequired] public IReadOnlyDictionary<string, string?> Saved { get; set; } = new Dictionary<string, string?>();
+
+    [Parameter] public Guid? Version { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Someone typed at this desk.</summary>
+    [Parameter] public EventCallback OnTyped { get; set; }
+
+    /// <summary>Another desk typed, saved, or started or stopped finishing the record.</summary>
+    [Parameter] public EventCallback<LiveDraftEvent> OnOtherDesk { get; set; }
+
+    [Parameter] public RenderFragment<LiveEditForm>? ChildContent { get; set; }
+
+    private LiveDraft? _draft;
+    private Dictionary<string, string?>? _local;
+    private Guid? _localVersion;
+    private bool _disposed;
+
+    private string Me => Session.Staff?.ShortName ?? "";
+
+    protected override void OnInitialized() => Desk.ConnectionChanged += OnConnectionChanged;
+
+    protected override void OnParametersSet()
+    {
+        if (_draft is not null && _draft.Topic != Topic)
+            CloseDraft();
+
+        if (Topic is null)
+        {
+            if (_local is null || _localVersion != Version)
+                (_local, _localVersion) = (new Dictionary<string, string?>(Saved), Version);
+        }
+        else if (_draft is null)
+        {
+            _draft = Drafts.Join(Topic, Saved, Version.GetValueOrDefault());
+            _draft.Changed += OnDraftChanged;
+            _local = null;
+        }
+        else
+            _draft.Reset(Saved, Version.GetValueOrDefault());
+    }
+
+    public string? this[string field] => _draft is not null ? _draft[field] : _local?.GetValueOrDefault(field);
+
+    public IReadOnlyDictionary<string, string?> Values => _draft?.Values ?? new Dictionary<string, string?>(_local ?? []);
+
+    /// <summary>Fields typed at any desk since the record was last saved. Only a shared form keeps track.</summary>
+    public IReadOnlyList<string> Unsaved => _draft?.Unsaved ?? [];
+
+    public bool IsDirty => Unsaved.Count > 0;
+
+    /// <summary>Who else is typing in the field (it is read-only here meanwhile), or null.</summary>
+    public string? TypingBy(string field) => _draft?.TypingBy(field, Desk.Id);
+
+    /// <summary>Who else is finishing the record (nobody else may type meanwhile), or null.</summary>
+    public string? FrozenBy => _draft?.FrozenBy(Desk.Id);
+
+    public bool IsReadOnly(string field) => Disabled || FrozenBy is not null || TypingBy(field) is not null;
+
+    public async Task Type(string field, string? value)
+    {
+        if (_draft is null)
+            _local![field] = value;
+        else if (!_draft.Type(field, value, Desk.Id, Me))
+        {
+            // Someone else took the box a moment earlier: re-rendering puts their text back.
+            StateHasChanged();
+            return;
+        }
+
+        StateHasChanged();
+        await OnTyped.InvokeAsync();
+    }
+
+    /// <summary>The person left the box, so others can type in it at once.</summary>
+    public void Leave(string field) => _draft?.Release(field, Desk.Id);
+
+    /// <summary>Stops everyone else typing while this desk finishes the record. False if another desk already is.</summary>
+    public bool Freeze() => _draft?.Freeze(Desk.Id, Me) ?? true;
+
+    public void Unfreeze() => _draft?.Unfreeze(Desk.Id);
+
+    /// <summary>
+    /// Sends the form with <paramref name="send"/> (given the values and the version they were typed on) and, once it
+    /// succeeds, tells the other desks it's saved. A shared form saves from one desk at a time: two desks saving together
+    /// would both send the version they started from, and the second would be refused. Returns null, sending nothing,
+    /// when another desk saved this desk's typing while it waited its turn.
+    /// </summary>
+    public async Task<Result<T>?> SaveAsync<T>(Func<IReadOnlyDictionary<string, string?>, Guid?, Task<Result<T>>> send)
+    {
+        if (_draft is not { } draft)
+            return await send(Values, Version);
+
+        var wasDirty = draft.IsDirty;
+        await draft.SaveGate.WaitAsync();
+        try
+        {
+            if (wasDirty && !draft.IsDirty)
+                return null;
+            var values = draft.Values;
+            var result = await send(values, draft.Version);
+            // Saves that return the record's new version (consultation notes) move the draft on to it.
+            if (result.IsSuccess)
+                draft.MarkSaved(values, result.Value is Guid version ? version : draft.Version, Desk.Id, Me);
+            return result;
+        }
+        finally
+        {
+            draft.SaveGate.Release();
+        }
+    }
+
+    // Raised on whichever desk made the change: hop onto this screen's thread.
+    private void OnDraftChanged(LiveDraftEvent e)
+    {
+        if (e.Desk == Desk.Id || _disposed)
+            return;
+        _ = InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            await OnOtherDesk.InvokeAsync(e);
+        });
+    }
+
+    // A desk that dropped off can't be typing or finishing the record: free its boxes for the others straight away.
+    private void OnConnectionChanged()
+    {
+        if (!Desk.IsConnected)
+            _draft?.ReleaseAll(Desk.Id);
+    }
+
+    private void CloseDraft()
+    {
+        if (_draft is null)
+            return;
+        _draft.Changed -= OnDraftChanged;
+        _draft.ReleaseAll(Desk.Id);
+        Drafts.Leave(_draft);
+        _draft = null;
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Desk.ConnectionChanged -= OnConnectionChanged;
+        CloseDraft();
+    }
+}

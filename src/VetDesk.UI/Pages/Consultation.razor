@@ -15,7 +15,12 @@
 }
 else
 {
-    <NavigationLock OnBeforeInternalNavigation="SaveBeforeLeaving" ConfirmExternalNavigation="_dirty" />
+    @* The note is shared live with every desk that has this consultation open (locked ones aren't): what anyone types
+       shows on the others' screens as it's typed, and saves itself after a pause. *@
+    <LiveEditForm @ref="_note" Topic="@(_c.IsLocked ? null : Topic)" Saved="Saved(_c)" Version="_c.Version" Disabled="_c.IsLocked"
+                  OnTyped="Typed" OnOtherDesk="OnOtherDesk" Context="note">
+    <NavigationLock OnBeforeInternalNavigation="SaveBeforeLeaving" ConfirmExternalNavigation="Dirty" />
+    <LiveWatch Topics="WatchTopics" OnChange="OtherDeskSaved" />
 
     @* As in the design, the header wraps: when the alerts need the room, the timer and buttons move to a second line
        rather than being overlapped. *@
@@ -46,8 +51,9 @@ else
         else
         {
             <div class="vd-row" style="gap:12px;flex:none;margin-left:auto">
+                <PresenceBar Topic="@Topic" Editing="_editing" />
                 <span class="vd-small vd-muted vd-mono" style="white-space:nowrap">Started @Fmt.Time(_c.StartedUtc) · @((int)(DateTime.UtcNow - _c.StartedUtc).TotalMinutes) min · @_c.ClinicianName</span>
-                <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_dirty ? "Save draft" : "Saved")</button>
+                <button type="button" class="vd-btn vd-btn-secondary" @onclick="SaveDraft" disabled="@_saving" title="Ctrl+S">@(_saving ? "Saving…" : note.IsDirty ? "Save draft" : "Saved")</button>
                 <button type="button" class="vd-btn vd-btn-primary" @onclick="OpenComplete" aria-haspopup="dialog" title="Ctrl+Enter">Complete and invoice</button>
             </div>
         }
@@ -58,39 +64,65 @@ else
         {
             <div class="vd-banner vd-banner-info" style="margin-bottom:16px"><Icon Name="lock" Size="18" /> This consultation is completed and locked. Add anything new as a clinical note on the patient record.</div>
         }
+        else if (note.FrozenBy is { } completing)
+        {
+            <div class="vd-banner vd-banner-info" style="margin-bottom:16px" role="status"><Icon Name="lock" Size="18" /> @completing is completing this consultation, so the note can't be changed meanwhile.</div>
+        }
+        @if (_lost is not null)
+        {
+            @* Locked from another desk between a keystroke here and its autosave: keep what was typed, never drop it. *@
+            <div class="vd-banner vd-banner-warning" style="margin-bottom:16px;align-items:flex-start" role="alert">
+                <Icon Name="warning" Size="18" />
+                <div style="flex:1">
+                    <div class="vd-strong">This consultation was completed at another desk before your last changes were saved.</div>
+                    <div style="white-space:pre-line;margin-top:6px">@_lost</div>
+                    <div class="vd-actions" style="margin-top:10px">
+                        @if (Session.Can(Permission.WriteClinicalNotes))
+                        {
+                            <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" @onclick="SaveLostAsNote">Add as a clinical note</button>
+                        }
+                        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _lost = null">Dismiss</button>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (_saveError is not null && !_c.IsLocked)
+        {
+            <div class="vd-banner vd-banner-warning" style="margin-bottom:16px" role="alert"><Icon Name="warning" Size="18" /> Not saved yet: @_saveError</div>
+        }
         <div class="vd-grid-main">
             <form aria-label="Consultation note" class="vd-stack" @onsubmit:preventDefault>
                 <section class="vd-card vd-card-body">
-                    <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><input id="c-reason" value="@_n.Reason" @oninput="e => Edit(() => _n.Reason = Str(e))" disabled="@_c.IsLocked" maxlength="400" /></div>
+                    <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><LiveInput Field="Reason" id="c-reason" maxlength="400" /></div>
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-subj" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="S" /><span class="vd-section-title" style="margin:0">Subjective</span><span class="vd-small vd-muted">History from owner</span></label>
-                    <textarea id="c-subj" class="vd-input" rows="3" value="@_n.Subjective" @oninput="e => Edit(() => _n.Subjective = Str(e))" disabled="@_c.IsLocked"></textarea>
+                    <LiveTextArea Field="Subjective" id="c-subj" class="vd-input" rows="3" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <div class="vd-row" style="gap:10px;margin-bottom:4px"><SoapLetter L="O" /><h2 class="vd-section-title" style="margin:0">Objective</h2><span class="vd-small vd-muted">Examination</span></div>
                     <div class="vd-form-grid-3" style="grid-template-columns:repeat(6,minmax(0,1fr))">
-                        <Vital Label="Temperature" Unit="°C" Id="v-temp" Value="@Num(_n.TemperatureC)" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.TemperatureC = Dec(v))" />
-                        <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Value="@_n.HeartRate?.ToString()" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.HeartRate = Int(v))" />
-                        <Vital Label="Resp. rate" Unit="/min" Id="v-rr" Value="@_n.RespiratoryRate?.ToString()" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.RespiratoryRate = Int(v))" />
-                        <Vital Label="Weight" Unit="kg" Id="v-wt" Value="@Num(_n.WeightKg)" Disabled="_c.IsLocked" Changed="v => Edit(() => _n.WeightKg = Dec(v))" />
-                        <Vital Label="Mucous membr." Unit="" Id="v-mm" Value="@_n.MucousMembranes" Disabled="_c.IsLocked" Text="true" Changed="v => Edit(() => _n.MucousMembranes = v)" />
-                        <Vital Label="CRT" Unit="sec" Id="v-crt" Value="@_n.CapillaryRefill" Disabled="_c.IsLocked" Text="true" Changed="v => Edit(() => _n.CapillaryRefill = v)" />
+                        <Vital Label="Temperature" Unit="°C" Id="v-temp" Field="TemperatureC" />
+                        <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Field="HeartRate" />
+                        <Vital Label="Resp. rate" Unit="/min" Id="v-rr" Field="RespiratoryRate" />
+                        <Vital Label="Weight" Unit="kg" Id="v-wt" Field="WeightKg" />
+                        <Vital Label="Mucous membr." Unit="" Id="v-mm" Field="MucousMembranes" Text="true" />
+                        <Vital Label="CRT" Unit="sec" Id="v-crt" Field="CapillaryRefill" Text="true" />
                     </div>
-                    @if (_vitalsError is not null)
+                    @if (VitalsError(note) is { } vitalsError)
                     {
-                        <div class="vd-error-text">@_vitalsError</div>
+                        <div class="vd-error-text">@vitalsError</div>
                     }
                     <label for="c-obj" class="vd-label" style="display:block;margin-top:12px">Findings</label>
-                    <textarea id="c-obj" class="vd-input" rows="3" value="@_n.Objective" @oninput="e => Edit(() => _n.Objective = Str(e))" disabled="@_c.IsLocked"></textarea>
+                    <LiveTextArea Field="Objective" id="c-obj" class="vd-input" rows="3" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-assess" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="A" /><span class="vd-section-title" style="margin:0">Assessment</span></label>
-                    <textarea id="c-assess" class="vd-input" rows="2" value="@_n.Assessment" @oninput="e => Edit(() => _n.Assessment = Str(e))" disabled="@_c.IsLocked"></textarea>
+                    <LiveTextArea Field="Assessment" id="c-assess" class="vd-input" rows="2" />
                 </section>
                 <section class="vd-card vd-card-body">
                     <label for="c-plan" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="P" /><span class="vd-section-title" style="margin:0">Plan</span></label>
-                    <textarea id="c-plan" class="vd-input" rows="3" value="@_n.Plan" @oninput="e => Edit(() => _n.Plan = Str(e))" disabled="@_c.IsLocked"></textarea>
+                    <LiveTextArea Field="Plan" id="c-plan" class="vd-input" rows="3" />
                     <div class="vd-actions" style="margin-top:12px">
                         <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _summaryOpen = true" aria-haspopup="dialog"><Icon Name="print" Size="16" /> Print owner summary</button>
                     </div>
@@ -172,12 +204,13 @@ else
 
     @if (_completeOpen)
     {
-        <CompleteConsultationDialog Consultation="_c" OnClose="() => _completeOpen = false" OnCompleted="Completed" />
+        <CompleteConsultationDialog Consultation="_c" OnClose="CloseComplete" OnCompleted="Completed" />
     }
     @if (_summaryOpen)
     {
-        <OwnerSummaryDialog Consultation="_c" Notes="_n" OnClose="() => _summaryOpen = false" />
+        <OwnerSummaryDialog Consultation="_c" Notes="Notes(note, out _)" OnClose="() => _summaryOpen = false" />
     }
+    </LiveEditForm>
 }
 
 @code {
@@ -186,13 +219,28 @@ else
     private static readonly ProductCategory[] ChargeCategories = [ProductCategory.Service, ProductCategory.Vaccine, ProductCategory.Retail, ProductCategory.Medicine];
     private static readonly ProductCategory[] MedicineOnly = [ProductCategory.Medicine];
 
+    /// <summary>A pause in typing this long saves the note, so nothing typed waits on someone pressing Save.</summary>
+    private static readonly TimeSpan AutosaveAfter = TimeSpan.FromSeconds(2);
+
     private ConsultationDetail? _c;
-    private NoteDraft _n = new();
-    private bool _missing, _dirty, _saving, _addOpen, _completeOpen, _summaryOpen;
-    private string? _vitalsError;
+    private bool _missing, _saving, _addOpen, _completeOpen, _summaryOpen;
     private ChargeForm.PendingCharge? _pending;
 
-    /// <summary>What the vet has typed, kept apart from the loaded record so reloading charges never loses it.</summary>
+    // _editing is whether this desk typed since the note was last saved.
+    private LiveEditForm? _note;
+    private bool _editing;
+    private string? _saveError;
+    private string? _lost;
+    private CancellationTokenSource? _autosave;
+
+    private string Topic => RecordChange.Topic(nameof(Consultation), Id);
+
+    // Charges added and allergies or alerts changed elsewhere show here too.
+    private IReadOnlyCollection<string> WatchTopics => _c is null ? [Topic] : [Topic, RecordChange.Topic("Patient", _c.PatientId)];
+
+    private bool Dirty => _note?.IsDirty == true;
+
+    /// <summary>What the vet has typed, converted from the boxes' text (the owner summary, saving).</summary>
     public class NoteDraft
     {
         public string? Reason, Subjective, Objective, Assessment, Plan, MucousMembranes, CapillaryRefill;
@@ -208,14 +256,15 @@ else
     {
         if (_c?.Id == Id)
             return;
+        _autosave?.Cancel();
         _c = null;
-        _missing = _addOpen = _completeOpen = _summaryOpen = false;
-        _vitalsError = null;
+        _missing = _addOpen = _completeOpen = _summaryOpen = _editing = false;
         _pending = null;
-        await LoadAsync(keepNotes: false);
+        _saveError = _lost = null;
+        await LoadAsync();
     }
 
-    private async Task LoadAsync(bool keepNotes)
+    private async Task LoadAsync()
     {
         var id = Id;
         var result = await Backend.Send(new GetConsultationQuery { Id = id });
@@ -229,81 +278,174 @@ else
             return;
         }
 
+        // Completed at another desk while this one had typing that hadn't been saved yet: show it rather than lose it.
+        if (result.Value.IsLocked && _c is { IsLocked: false } && _editing && _note is { Unsaved.Count: > 0 } note)
+        {
+            _lost = string.Join("\n", note.Unsaved.Select(f => $"{Label(f)}: {note[f]}"));
+            _autosave?.Cancel();
+            _editing = false;
+        }
+
         _c = result.Value;
         OpenPatients.Show(_c.PatientId, _c.PatientName, _c.OwnerName, $"consultations/{_c.Id}");
-        if (keepNotes && _dirty)
+    }
+
+    private static Dictionary<string, string?> Saved(ConsultationDetail c) => new()
+    {
+        [nameof(c.Reason)] = c.Reason,
+        [nameof(c.Subjective)] = c.Subjective,
+        [nameof(c.Objective)] = c.Objective,
+        [nameof(c.Assessment)] = c.Assessment,
+        [nameof(c.Plan)] = c.Plan,
+        [nameof(c.TemperatureC)] = Num(c.TemperatureC),
+        [nameof(c.HeartRate)] = c.HeartRate?.ToString(CultureInfo.InvariantCulture),
+        [nameof(c.RespiratoryRate)] = c.RespiratoryRate?.ToString(CultureInfo.InvariantCulture),
+        [nameof(c.WeightKg)] = Num(c.WeightKg),
+        [nameof(c.MucousMembranes)] = c.MucousMembranes,
+        [nameof(c.CapillaryRefill)] = c.CapillaryRefill,
+    };
+
+    private static string Label(string field) => field switch
+    {
+        "Reason" => "Reason for visit",
+        "TemperatureC" => "Temperature",
+        "HeartRate" => "Heart rate",
+        "RespiratoryRate" => "Resp. rate",
+        "WeightKg" => "Weight",
+        "MucousMembranes" => "Mucous membranes",
+        "CapillaryRefill" => "CRT",
+        "Objective" => "Findings",
+        _ => field
+    };
+
+    private static string? Num(decimal? v) => v?.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private void Typed()
+    {
+        _editing = true;
+        _ = AutosaveLaterAsync();
+    }
+
+    private async Task AutosaveLaterAsync()
+    {
+        _autosave?.Cancel();
+        var wait = _autosave = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(AutosaveAfter, wait.Token);
+        }
+        catch (TaskCanceledException)
+        {
             return;
-        _n = new NoteDraft
+        }
+
+        await SaveNotesAsync(quiet: true);
+        StateHasChanged();
+    }
+
+    private void OnOtherDesk(LiveDraftEvent e)
+    {
+        if (e.Kind == LiveDraftEventKind.Saved && _note?.IsDirty == false)
+            _editing = false; // they saved what was typed here too
+    }
+
+    private Task OtherDeskSaved(RecordChange change) => LoadAsync();
+
+    /// <summary>The note as typed. <paramref name="error"/> says which vital isn't a number, if one isn't.</summary>
+    private static NoteDraft Notes(IReadOnlyDictionary<string, string?> v, out string? error)
+    {
+        error = null;
+        string? F(string field) => v.GetValueOrDefault(field);
+        return new NoteDraft
         {
-            Reason = _c.Reason, Subjective = _c.Subjective, Objective = _c.Objective, Assessment = _c.Assessment, Plan = _c.Plan,
-            TemperatureC = _c.TemperatureC, HeartRate = _c.HeartRate, RespiratoryRate = _c.RespiratoryRate, WeightKg = _c.WeightKg,
-            MucousMembranes = _c.MucousMembranes, CapillaryRefill = _c.CapillaryRefill
+            Reason = F("Reason"), Subjective = F("Subjective"), Objective = F("Objective"), Assessment = F("Assessment"), Plan = F("Plan"),
+            MucousMembranes = F("MucousMembranes"), CapillaryRefill = F("CapillaryRefill"),
+            TemperatureC = Dec(F("TemperatureC"), ref error), WeightKg = Dec(F("WeightKg"), ref error),
+            HeartRate = Int(F("HeartRate"), ref error), RespiratoryRate = Int(F("RespiratoryRate"), ref error),
         };
-        _dirty = false;
     }
 
-    private static string Str(ChangeEventArgs e) => e.Value?.ToString() ?? "";
-    private static string? Num(decimal? v) => v?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    private static NoteDraft Notes(LiveEditForm note, out string? error) => Notes(note.Values, out error);
 
-    private decimal? Dec(string? text)
+    private static string? VitalsError(LiveEditForm note)
+    {
+        Notes(note, out var error);
+        return error;
+    }
+
+    private static decimal? Dec(string? text, ref string? error)
     {
         if (string.IsNullOrWhiteSpace(text))
             return null;
-        if (decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var v))
-        {
-            _vitalsError = null;
+        if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var v))
             return v;
-        }
-
-        _vitalsError = $"“{text}” isn't a number.";
+        error ??= $"“{text}” isn't a number.";
         return null;
     }
 
-    private int? Int(string? text)
+    private static int? Int(string? text, ref string? error)
     {
         if (string.IsNullOrWhiteSpace(text))
             return null;
-        if (int.TryParse(text, out var v))
-        {
-            _vitalsError = null;
+        if (int.TryParse(text, CultureInfo.InvariantCulture, out var v))
             return v;
-        }
-
-        _vitalsError = $"“{text}” isn't a whole number.";
+        error ??= $"“{text}” isn't a whole number.";
         return null;
     }
 
-    private void Edit(Action change)
-    {
-        change();
-        _dirty = true;
-    }
-
+    /// <summary>Saves the shared note. <paramref name="quiet"/> (autosave, leaving) reports a failure on the page, not as a toast.</summary>
     private async Task<bool> SaveNotesAsync(bool quiet)
     {
-        if (_c is null || _c.IsLocked || !_dirty)
+        if (_c is null || _c.IsLocked || _note is not { IsDirty: true } note)
             return true;
-        _saving = true;
-        var result = await Backend.Send(new SaveConsultationNotesCommand
+        if (VitalsError(note) is { } error)
         {
-            Id = _c.Id, Reason = _n.Reason, Subjective = _n.Subjective, Objective = _n.Objective, Assessment = _n.Assessment, Plan = _n.Plan,
-            TemperatureC = _n.TemperatureC, HeartRate = _n.HeartRate, RespiratoryRate = _n.RespiratoryRate, WeightKg = _n.WeightKg,
-            MucousMembranes = _n.MucousMembranes, CapillaryRefill = _n.CapillaryRefill, Version = _c.Version
+            _saveError = error;
+            if (!quiet)
+                Toasts.Error(error);
+            return false;
+        }
+
+        _saving = true;
+        var result = await note.SaveAsync((values, version) =>
+        {
+            var n = Notes(values, out _);
+            return Backend.Send(new SaveConsultationNotesCommand
+            {
+                Id = _c.Id, Reason = n.Reason, Subjective = n.Subjective, Objective = n.Objective, Assessment = n.Assessment, Plan = n.Plan,
+                TemperatureC = n.TemperatureC, HeartRate = n.HeartRate, RespiratoryRate = n.RespiratoryRate, WeightKg = n.WeightKg,
+                MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = version ?? _c.Version
+            });
         });
         _saving = false;
-        if (!Toasts.Check(result, quiet ? null : "Draft saved"))
+        if (result is { IsSuccess: false })
+        {
+            _saveError = result.ToString();
+            if (!quiet)
+                Toasts.Check(result);
+            if (Equals(result.ErrorCode, SaveConsultationNotesError.Locked))
+                await LoadAsync();
             return false;
-        _dirty = false;
-        await LoadAsync(keepNotes: true);
+        }
+
+        // Null: another desk saved this desk's typing while it waited its turn.
+        _editing = note.IsDirty;
+        _saveError = null;
+        if (!quiet)
+            Toasts.Success("Draft saved");
+        // The record's own copy (what completing checks, e.g. that the SOAP note is filled in) catches up too.
+        await LoadAsync();
         return true;
     }
 
     private Task SaveDraft() => SaveNotesAsync(quiet: false);
 
-    // Leaving the screen saves the draft rather than asking; only a failed save stops the navigation.
+    // Leaving the screen saves the draft rather than asking. Only a failed save of something typed here stops the
+    // navigation: someone else's half-typed vital mustn't keep this person on the screen.
     private async Task SaveBeforeLeaving(LocationChangingContext context)
     {
-        if (_dirty && !await SaveNotesAsync(quiet: true))
+        _autosave?.Cancel();
+        if (Dirty && !await SaveNotesAsync(quiet: true) && _editing)
             context.PreventNavigation();
     }
 
@@ -320,10 +462,28 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    // Nobody else can type while the note is being completed, so everything typed is in the note that gets locked.
     private async Task OpenComplete()
     {
-        if (await SaveNotesAsync(quiet: true))
+        if (_note is null)
+            return;
+        if (!_note.Freeze())
+        {
+            Toasts.Warning($"{_note.FrozenBy} is already completing this consultation.");
+            return;
+        }
+
+        _autosave?.Cancel();
+        if (await SaveNotesAsync(quiet: false))
             _completeOpen = true;
+        else
+            _note.Unfreeze();
+    }
+
+    private void CloseComplete()
+    {
+        _completeOpen = false;
+        _note?.Unfreeze();
     }
 
     private void PickCharge(ProductDto p) => _pending = new ChargeForm.PendingCharge(p, false, p.AllergyConflicts);
@@ -340,21 +500,38 @@ else
         if (!Toasts.Check(result, $"{input.Product.Name} added"))
             return;
         _pending = null;
-        await LoadAsync(keepNotes: true);
+        await LoadAsync();
     }
 
     private async Task RemoveCharge(ChargeDto charge)
     {
         if (Toasts.Check(await Backend.Send(new RemoveChargeCommand { ChargeId = charge.Id })))
-            await LoadAsync(keepNotes: true);
+            await LoadAsync();
     }
 
     private async Task Completed()
     {
         // "Pay later" or the close button after completing: the dialog goes, and the page shows the locked record.
         _completeOpen = false;
-        await LoadAsync(keepNotes: false);
+        _editing = false;
+        await LoadAsync();
     }
 
-    public void Dispose() => Hotkeys.Pressed -= OnHotkey;
+    private async Task SaveLostAsNote()
+    {
+        if (_c is null || _lost is null)
+            return;
+        var result = await Backend.Send(new AddClinicalNoteCommand
+        {
+            PatientId = _c.PatientId, Title = $"Added after consultation of {Fmt.Date(_c.StartedUtc)}", Body = _lost
+        });
+        if (Toasts.Check(result, "Added to the clinical history"))
+            _lost = null;
+    }
+
+    public void Dispose()
+    {
+        Hotkeys.Pressed -= OnHotkey;
+        _autosave?.Cancel();
+    }
 }

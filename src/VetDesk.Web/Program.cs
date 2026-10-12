@@ -20,6 +20,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddVetDeskUi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CircuitHandler, DeviceAddressCircuitHandler>();
+builder.Services.AddScoped<CircuitHandler, DeskConnectionCircuitHandler>();
 
 // On the practice server the keys that protect Blazor's circuit state and antiforgery tokens must survive a container
 // restart, or every open form breaks after an update. The Compose file points this at a volume.

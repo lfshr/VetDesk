@@ -7,6 +7,7 @@
 @inject Hotkeys Hotkeys
 
 <ScreenTitle Text="Today" />
+<LiveWatch Topics="LiveTopics" OnChange="OtherDeskSaved" />
 
 <div class="vd-toolbar">
     <PatientSearch />
@@ -188,6 +189,16 @@
         // Other desks check patients in and finish consultations; refresh so this list stays current.
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
         _poll = PollAsync(_stop.Token);
+    }
+
+    // Check-ins, consultations, payments, follow-ups and notices from other desks show at once; the timer above stays for
+    // what changes with the clock alone (who is late, minutes waiting).
+    private static readonly string[] LiveTopics = ["Appointment", "Consultation", "Invoice", "Payment", "FollowUp", "Notification", "Patient"];
+
+    private async Task OtherDeskSaved(RecordChange change)
+    {
+        if (!_booking)
+            await LoadAsync();
     }
 
     private async Task PollAsync(CancellationToken token)

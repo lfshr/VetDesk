@@ -1,71 +1,99 @@
-@* New client, or edit an existing one. A phone number already on another client is flagged before saving. *@
+@* New client, or edit an existing one. A phone number already on another client is flagged before saving. Editing is
+   live: everyone with this client's details open types into the same form and sees the others' typing as it happens. *@
 @inject Backend Backend
 @inject ToastService Toasts
 
-<Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : "Changes are saved to the client record and audit log.")" Size="@(Client is null ? "620" : "560")" OnClose="OnClose">
-    <ChildContent>
-        <div class="vd-form-grid">
-            <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><input id="cd-first" @bind="_first" @bind:event="oninput" maxlength="100" placeholder="e.g. Sam" /></div>
-            <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><input id="cd-last" @bind="_last" @bind:event="oninput" maxlength="100" placeholder="e.g. Taylor" /></div>
-            <div class="vd-field"><label for="cd-phone">Mobile</label><input id="cd-phone" type="tel" value="@_phone" @onchange="OnPhone" placeholder="07…" maxlength="40" /></div>
-            <div class="vd-field"><label for="cd-email">Email</label><input id="cd-email" type="email" @bind="_email" placeholder="Optional" maxlength="200" /></div>
-            <div class="vd-field"><label for="cd-postcode">Postcode</label><input id="cd-postcode" @bind="_postcode" placeholder="e.g. BS6 5QT" maxlength="12" /></div>
-            <div class="vd-field"><label for="cd-address">Address</label><input id="cd-address" @bind="_address" placeholder="Optional" maxlength="400" /></div>
-        </div>
-        <label class="vd-check"><input type="checkbox" @bind="_reminders" /> Send reminders by text and email</label>
-        @if (_match is not null)
-        {
-            <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> That number belongs to @_match.FullName (@_match.ClientNumber). Each client needs their own number.</div>
-        }
-    </ChildContent>
-    <Footer>
-        <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
-        <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave || _saving)" @onclick="Save">@(Client is null ? "Add client" : "Save")</button>
-    </Footer>
-</Modal>
+<LiveEditForm @ref="_form" Topic="@Topic" Saved="Saved" Version="Client?.Version" OnOtherDesk="OnOtherDesk" Context="form">
+    <Modal Title="@(Client is null ? "New client" : $"Edit {Client.FullName}")" Subtitle="@(Client is null ? "Add the owner first. You can add their pets straight after." : "Changes are saved to the client record and audit log.")" Size="@(Client is null ? "620" : "560")" OnClose="OnClose">
+        <ChildContent>
+            @if (Topic is not null)
+            {
+                <PresenceBar Topic="@Topic" Editing="true" />
+            }
+            <div class="vd-form-grid">
+                <div class="vd-field" style="margin-top:0"><label for="cd-first">First name</label><LiveInput Field="FirstName" id="cd-first" maxlength="100" placeholder="e.g. Sam" /></div>
+                <div class="vd-field" style="margin-top:0"><label for="cd-last">Last name</label><LiveInput Field="LastName" id="cd-last" maxlength="100" placeholder="e.g. Taylor" /></div>
+                <div class="vd-field"><label for="cd-phone">Mobile</label><LiveInput Field="Phone" id="cd-phone" type="tel" @onchange="CheckPhone" placeholder="07…" maxlength="40" /></div>
+                <div class="vd-field"><label for="cd-email">Email</label><LiveInput Field="Email" id="cd-email" type="email" placeholder="Optional" maxlength="200" /></div>
+                <div class="vd-field"><label for="cd-postcode">Postcode</label><LiveInput Field="Postcode" id="cd-postcode" placeholder="e.g. BS6 5QT" maxlength="12" /></div>
+                <div class="vd-field"><label for="cd-address">Address</label><LiveInput Field="Address" id="cd-address" placeholder="Optional" maxlength="400" /></div>
+            </div>
+            <label class="vd-check"><LiveCheckbox Field="RemindersOptIn" /> Send reminders by text and email</label>
+            @if (_match is not null)
+            {
+                <div class="vd-banner vd-banner-warning" style="margin-top:12px"><Icon Name="warning" Size="18" /> That number belongs to @_match.FullName (@_match.ClientNumber). Each client needs their own number.</div>
+            }
+        </ChildContent>
+        <Footer>
+            <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Cancel</button>
+            <button type="button" class="vd-btn vd-btn-primary" disabled="@(!CanSave(form) || _saving)" @onclick="Save">@(Client is null ? "Add client" : "Save")</button>
+        </Footer>
+    </Modal>
+</LiveEditForm>
 
 @code {
     [Parameter] public ClientDetail? Client { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<int> OnSaved { get; set; }
 
-    private string _first = "", _last = "", _phone = "";
-    private string? _email, _address, _postcode;
-    private bool _reminders = true, _saving;
+    private LiveEditForm _form = default!;
+    private bool _saving;
     private ClientMatch? _match;
 
-    private bool CanSave => !string.IsNullOrWhiteSpace(_first) && !string.IsNullOrWhiteSpace(_last) && !string.IsNullOrWhiteSpace(_phone) && _match is null;
+    // A new client's form is this desk's own; an existing client's is shared live with every desk editing it.
+    private string? Topic => Client is null ? null : RecordChange.Topic(nameof(VetDesk.Domain.Entities.Clients.Client), Client.Id) + "/details";
 
-    protected override void OnInitialized()
+    private Dictionary<string, string?> Saved => Client is not { } c
+        ? new() { ["RemindersOptIn"] = "true" }
+        : new()
+        {
+            ["FirstName"] = c.FirstName, ["LastName"] = c.LastName, ["Phone"] = c.Phone, ["Email"] = c.Email, ["Address"] = c.Address,
+            ["Postcode"] = c.Postcode, ["RemindersOptIn"] = c.RemindersOptIn ? "true" : "false",
+        };
+
+    private bool CanSave(LiveEditForm form) =>
+        !string.IsNullOrWhiteSpace(form["FirstName"]) && !string.IsNullOrWhiteSpace(form["LastName"]) && !string.IsNullOrWhiteSpace(form["Phone"]) && _match is null;
+
+    private async Task CheckPhone()
     {
-        if (Client is not { } c)
-            return;
-        _first = c.FirstName;
-        _last = c.LastName;
-        _phone = c.Phone;
-        _email = c.Email;
-        _address = c.Address;
-        _postcode = c.Postcode;
-        _reminders = c.RemindersOptIn;
+        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = _form["Phone"] ?? "", ExcludeClientId = Client?.Id });
+        _match = found.IsSuccess ? found.Value : null;
     }
 
-    private async Task OnPhone(ChangeEventArgs e)
+    private async Task OnOtherDesk(LiveDraftEvent e)
     {
-        _phone = e.Value?.ToString() ?? "";
-        var found = await Backend.Send(new FindClientByPhoneQuery { Phone = _phone, ExcludeClientId = Client?.Id });
-        _match = found.IsSuccess ? found.Value : null;
+        // Saved at another desk with nothing else typed since: the details here are now the record's, so close.
+        if (e.Kind == LiveDraftEventKind.Saved && !_form.IsDirty)
+        {
+            Toasts.Success($"{e.Name} saved {Client?.FullName}'s details");
+            await OnSaved.InvokeAsync(Client!.Id);
+            return;
+        }
+
+        // Someone else changed the number: check it here too.
+        if (e.Kind == LiveDraftEventKind.Released && e.Field == "Phone")
+            await CheckPhone();
     }
 
     private async Task Save()
     {
         _saving = true;
-        var result = await Backend.Send(new SaveClientCommand
+        string? first = null, last = null;
+        var result = await _form.SaveAsync((v, version) =>
         {
-            Id = Client?.Id, FirstName = _first, LastName = _last, Phone = _phone, Email = _email, Address = _address, Postcode = _postcode,
-            RemindersOptIn = _reminders, Version = Client?.Version
+            (first, last) = (v.GetValueOrDefault("FirstName"), v.GetValueOrDefault("LastName"));
+            return Backend.Send(new SaveClientCommand
+            {
+                Id = Client?.Id, FirstName = first ?? "", LastName = last ?? "", Phone = v.GetValueOrDefault("Phone") ?? "",
+                Email = v.GetValueOrDefault("Email"), Address = v.GetValueOrDefault("Address"), Postcode = v.GetValueOrDefault("Postcode"),
+                RemindersOptIn = v.GetValueOrDefault("RemindersOptIn") == "true", Version = version
+            });
         });
         _saving = false;
-        if (Toasts.Check(result, Client is null ? $"{_first.Trim()} {_last.Trim()} added" : "Client saved"))
+        // Null: another desk saved these details while this one waited, so they're saved.
+        if (result is null)
+            await OnSaved.InvokeAsync(Client!.Id);
+        else if (Toasts.Check(result, Client is null ? $"{first?.Trim()} {last?.Trim()} added" : "Client saved"))
             await OnSaved.InvokeAsync(result.Value);
     }
 }

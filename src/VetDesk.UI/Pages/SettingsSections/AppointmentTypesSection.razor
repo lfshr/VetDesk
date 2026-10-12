@@ -1,6 +1,9 @@
 @inject Backend Backend
 @inject ToastService Toasts
 
+@* Changes to appointment types at other desks show here at once. *@
+<LiveWatch Topics='["AppointmentType"]' OnChange="LoadAsync" />
+
 <section class="vd-card" aria-labelledby="types-title">
     <div class="vd-card-head">
         <h2 id="types-title" class="vd-section-title">Appointment types</h2>

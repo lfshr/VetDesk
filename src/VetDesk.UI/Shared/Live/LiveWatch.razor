@@ -1,0 +1,71 @@
+@* Calls OnChange when another desk saves something this screen shows, so it can reload it. Renders nothing.
+   Changes close together (one command saving twice, a burst of check-ins) arrive as one call. *@
+@implements IDisposable
+@inject RecordChangeFeed Feed
+@inject Desk Desk
+@inject UserSession Session
+
+@code {
+    /// <summary>What the screen shows: record types ("Appointment"), records ("Consultation:40") or both.</summary>
+    [Parameter, EditorRequired] public IReadOnlyCollection<string> Topics { get; set; } = [];
+
+    /// <summary>Also for this desk's own saves, for screens that a dialog changed without telling them.</summary>
+    [Parameter] public bool IncludeOwnDesk { get; set; }
+
+    [Parameter] public EventCallback<RecordChange> OnChange { get; set; }
+
+    private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(150);
+
+    private RecordChange? _pending;
+    private CancellationTokenSource? _wait;
+    private bool _disposed;
+
+    protected override void OnInitialized()
+    {
+        Feed.Changed += OnFeed;
+        Session.Changed += OnSession;
+    }
+
+    private void OnFeed(RecordChange change)
+    {
+        if ((!IncludeOwnDesk && change.DeskId == Desk.Id) || !change.Touches(Topics))
+            return;
+        _ = InvokeAsync(() => Queue(change));
+    }
+
+    private async Task Queue(RecordChange change)
+    {
+        _pending = change;
+        _wait?.Cancel();
+        _wait = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(Settle, _wait.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await Deliver();
+    }
+
+    // While the desk is locked nobody is looking and requests would be refused: catch up once someone unlocks it.
+    private async Task Deliver()
+    {
+        if (_disposed || _pending is not { } change || !Session.IsSignedIn || Session.IsLocked)
+            return;
+        _pending = null;
+        await OnChange.InvokeAsync(change);
+    }
+
+    private void OnSession() => _ = InvokeAsync(Deliver);
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _wait?.Cancel();
+        Feed.Changed -= OnFeed;
+        Session.Changed -= OnSession;
+    }
+}

@@ -1,0 +1,7 @@
+@inherits LiveField
+<select @attributes="Attributes" class="@Class" value="@Value" @onchange="Type" @onblur="Leave" disabled="@ReadOnly">@ChildContent</select>
+<TypingNote By="@TypingBy" />
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
