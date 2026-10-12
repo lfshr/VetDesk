@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DialogService>();
         services.AddScoped<Hotkeys>();
         services.AddScoped<Crumbs>();
+        services.AddScoped<OpenPatients>();
         return services;
     }
 }

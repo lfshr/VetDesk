@@ -24,7 +24,8 @@ window.vetdesk = (() => {
         const combo = (e.ctrlKey || e.metaKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + (e.shiftKey ? "Shift+" : "") + e.key;
         // Plain letters are ignored while typing; Ctrl/Alt combinations and Escape always count.
         if (typing && !(e.ctrlKey || e.metaKey || e.altKey) && e.key !== "Escape") return;
-        const handled = ["Ctrl+s", "Ctrl+Enter", "Alt+n", "Alt+p", "Alt+c"].includes(combo);
+        // Alt+1 to Alt+9 and Alt+W switch and close the open patient tabs.
+        const handled = ["Ctrl+s", "Ctrl+Enter", "Alt+n", "Alt+p", "Alt+c", "Alt+w"].includes(combo) || /^Alt\+[1-9]$/.test(combo);
         if (handled) e.preventDefault();
         hotkeys.invokeMethodAsync("OnHotkey", combo);
     });

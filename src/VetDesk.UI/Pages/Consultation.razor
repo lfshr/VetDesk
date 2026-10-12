@@ -5,6 +5,7 @@
 @inject UserSession Session
 @inject Hotkeys Hotkeys
 @inject NavigationManager Nav
+@inject OpenPatients OpenPatients
 
 <ScreenTitle Text="@($"Patients › {_c?.PatientName} › Consultation")" />
 
@@ -199,15 +200,27 @@ else
         public int? HeartRate, RespiratoryRate;
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized() => Hotkeys.Pressed += OnHotkey;
+
+    // Switching between two patients' open consultations reuses this screen, so load whenever the consultation
+    // changes (the last one's draft was saved on the way out) and drop anything left from it.
+    protected override async Task OnParametersSetAsync()
     {
-        Hotkeys.Pressed += OnHotkey;
+        if (_c?.Id == Id)
+            return;
+        _c = null;
+        _missing = _addOpen = _completeOpen = _summaryOpen = false;
+        _vitalsError = null;
+        _pending = null;
         await LoadAsync(keepNotes: false);
     }
 
     private async Task LoadAsync(bool keepNotes)
     {
-        var result = await Backend.Send(new GetConsultationQuery { Id = Id });
+        var id = Id;
+        var result = await Backend.Send(new GetConsultationQuery { Id = id });
+        if (id != Id)
+            return; // switched to another consultation while this one loaded
         if (!result.IsSuccess)
         {
             _missing = Equals(result.ErrorCode, GetConsultationError.NotFound);
@@ -217,6 +230,7 @@ else
         }
 
         _c = result.Value;
+        OpenPatients.Show(_c.PatientId, _c.PatientName, _c.OwnerName, $"consultations/{_c.Id}");
         if (keepNotes && _dirty)
             return;
         _n = new NoteDraft

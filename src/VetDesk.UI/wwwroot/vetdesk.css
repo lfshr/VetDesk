@@ -160,7 +160,40 @@ h1:focus { outline: none; }
 .vd-usercard-name { color: #fff; font-weight: 500; font-size: 13px; }
 .vd-usercard-role { font-size: 12.5px; }
 
-.vd-main { flex: 1; min-width: 0; overflow-y: auto; }
+.vd-main-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vd-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; }
+
+/* The patients open at this desk, as tabs above the screen. */
+.vd-patient-tabs {
+    flex: none;
+    display: flex;
+    gap: 2px;
+    padding: 6px 12px 0;
+    background: var(--vd-neutral-bg);
+    border-bottom: 1px solid var(--vd-border);
+    overflow-x: auto;
+}
+
+.vd-patient-tab {
+    display: flex;
+    align-items: center;
+    max-width: 200px;
+    flex: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--vd-radius-sm) var(--vd-radius-sm) 0 0;
+    margin-bottom: -1px;
+    color: var(--vd-text-secondary);
+}
+
+.vd-patient-tab:hover { background: var(--vd-surface-muted); color: var(--vd-text); }
+.vd-patient-tab-active, .vd-patient-tab-active:hover { background: var(--vd-surface); border-color: var(--vd-border); color: var(--vd-text); box-shadow: inset 0 2px 0 var(--vd-accent); }
+.vd-patient-tab-link { display: flex; align-items: center; gap: 6px; min-width: 0; height: 34px; padding: 0 4px 0 12px; color: inherit; text-decoration: none; font-weight: 500; font-size: 13px; }
+.vd-patient-tab-link:hover { color: inherit; }
+.vd-patient-tab-link svg { flex: none; color: var(--vd-accent); }
+.vd-patient-tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vd-patient-tab-close { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-right: 6px; border: none; border-radius: 4px; background: none; color: var(--vd-text-faint); cursor: pointer; }
+.vd-patient-tab-close:hover { background: var(--vd-neutral-bg); color: var(--vd-text); }
 .vd-page { padding: 20px 24px 40px; }
 
 /* Bar under the header on screens with a search box (Today) */

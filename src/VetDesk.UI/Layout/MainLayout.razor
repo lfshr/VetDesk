@@ -4,6 +4,7 @@
 @using VetDesk.Application.Pharmacy.Queries
 @inject UserSession Session
 @inject Crumbs Crumbs
+@inject OpenPatients OpenPatients
 @inject Backend Backend
 @inject Hotkeys Hotkeys
 @inject IJSRuntime JS
@@ -58,9 +59,12 @@ else
                     </div>
                 </div>
             </nav>
-            <main class="vd-main">
-                @Body
-            </main>
+            <div class="vd-main-column">
+                <PatientTabs />
+                <main class="vd-main">
+                    @Body
+                </main>
+            </div>
         </div>
     </div>
 
@@ -102,6 +106,8 @@ else
 
     private async void OnSessionChanged()
     {
+        if (!Session.IsSignedIn)
+            OpenPatients.Clear();
         if (Session.IsSignedIn && !Session.IsLocked)
         {
             var settings = await Backend.Send(new GetClinicSettingsQuery());
