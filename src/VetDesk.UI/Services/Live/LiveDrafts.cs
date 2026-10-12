@@ -9,12 +9,8 @@ namespace VetDesk.UI.Services.Live;
 /// </summary>
 public sealed class LiveDrafts
 {
-    /// <summary>
-    /// How long a field stays someone's after they last went into it or typed, if they don't move on first. Long enough
-    /// to stop and think mid-sentence; short enough that a box left with the cursor in it by someone who walked away
-    /// frees itself.
-    /// </summary>
-    public static readonly TimeSpan HoldFor = TimeSpan.FromSeconds(30);
+    /// <summary>How long a field stays someone's after their last keystroke, if they don't move on first.</summary>
+    public static readonly TimeSpan HoldFor = TimeSpan.FromSeconds(4);
 
     private readonly Dictionary<string, LiveDraft> _drafts = [];
     private readonly ILogger<LiveDrafts> _logger;
