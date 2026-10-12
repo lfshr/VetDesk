@@ -22,6 +22,11 @@ public abstract class LiveField : ComponentBase
 
     protected bool ReadOnly => Disabled || Form.IsReadOnly(Field);
 
+    /// <summary>The element's class, plus "vd-held" while someone else is typing in it so it looks locked, not just greyed.</summary>
+    protected string? Class => Held(Attributes?.GetValueOrDefault("class") as string);
+
+    protected string? Held(string? css) => TypingBy is null ? css : $"{css} vd-held".TrimStart();
+
     protected Task Type(ChangeEventArgs e) => Form.Type(Field, e.Value?.ToString());
 
     protected void Leave() => Form.Leave(Field);

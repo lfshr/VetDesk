@@ -621,6 +621,9 @@ h1:focus { outline: none; }
 .vd-presence-editing { background: var(--vd-warning-bg); color: var(--vd-warning-text); }
 .vd-presence-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
 .vd-typing { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--vd-warning-text); }
-.vd-typing .vd-presence-dot { animation: vd-typing-pulse 1.2s ease-in-out infinite; }
+.vd-typing svg { animation: vd-typing-pulse 1.2s ease-in-out infinite; }
+/* A box someone at another desk is typing in: plainly locked to everyone else, not just greyed out. Important because
+   the base box rules (".vd-field input:not(...)") outrank any class-plus-:disabled selector. */
+.vd-held:disabled { background: var(--vd-warning-bg) !important; border-color: var(--vd-warning-border) !important; box-shadow: 0 0 0 2px var(--vd-warning-border); color: var(--vd-text); cursor: not-allowed; }
 @keyframes vd-typing-pulse { 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .vd-typing .vd-presence-dot { animation: none; } }

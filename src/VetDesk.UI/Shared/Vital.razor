@@ -3,7 +3,7 @@
 <div class="vd-field">
     <label for="@Id">@Label</label>
     <div style="position:relative">
-        <input id="@Id" class="vd-mono" style="width:100%;padding-right:@(string.IsNullOrEmpty(Unit) ? "12px" : "40px")" inputmode="@(Text ? "text" : "decimal")"
+        <input id="@Id" class="@Held("vd-mono")" style="width:100%;padding-right:@(string.IsNullOrEmpty(Unit) ? "12px" : "40px")" inputmode="@(Text ? "text" : "decimal")"
                value="@Value" @oninput="Type" @onblur="Leave" disabled="@ReadOnly" maxlength="40" />
         @if (!string.IsNullOrEmpty(Unit))
         {
