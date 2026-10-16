@@ -96,11 +96,7 @@ else
                     <div class="vd-field" style="margin-top:0"><label for="c-reason">Reason for visit</label><LiveInput Field="Reason" id="c-reason" maxlength="400" /></div>
                 </section>
                 <section class="vd-card vd-card-body">
-                    <label for="c-subj" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="S" /><span class="vd-section-title" style="margin:0">Subjective</span><span class="vd-small vd-muted">History from owner</span></label>
-                    <LiveTextArea Field="Subjective" id="c-subj" class="vd-input" rows="3" />
-                </section>
-                <section class="vd-card vd-card-body">
-                    <div class="vd-row" style="gap:10px;margin-bottom:4px"><SoapLetter L="O" /><h2 class="vd-section-title" style="margin:0">Objective</h2><span class="vd-small vd-muted">Examination</span></div>
+                    <h2 class="vd-section-title" style="margin:0 0 4px">Examination</h2>
                     <div class="vd-form-grid-3" style="grid-template-columns:repeat(6,minmax(0,1fr))">
                         <Vital Label="Temperature" Unit="°C" Id="v-temp" Field="TemperatureC" />
                         <Vital Label="Heart rate" Unit="bpm" Id="v-hr" Field="HeartRate" />
@@ -113,16 +109,14 @@ else
                     {
                         <div class="vd-error-text">@vitalsError</div>
                     }
-                    <label for="c-obj" class="vd-label" style="display:block;margin-top:12px">Findings</label>
-                    <LiveTextArea Field="Objective" id="c-obj" class="vd-input" rows="3" />
                 </section>
                 <section class="vd-card vd-card-body">
-                    <label for="c-assess" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="A" /><span class="vd-section-title" style="margin:0">Assessment</span></label>
-                    <LiveTextArea Field="Assessment" id="c-assess" class="vd-input" rows="2" />
+                    <label for="c-notes" class="vd-section-title" style="display:block;margin:0 0 8px">Clinical notes</label>
+                    <LiveTextArea Field="Notes" id="c-notes" class="vd-input" rows="6" />
                 </section>
                 <section class="vd-card vd-card-body">
-                    <label for="c-plan" class="vd-row" style="gap:10px;margin-bottom:8px"><SoapLetter L="P" /><span class="vd-section-title" style="margin:0">Plan</span></label>
-                    <LiveTextArea Field="Plan" id="c-plan" class="vd-input" rows="3" />
+                    <label for="c-advice" class="vd-row" style="gap:10px;margin-bottom:8px"><span class="vd-section-title" style="margin:0">Advice for the owner</span><span class="vd-small vd-muted">Printed on the owner summary</span></label>
+                    <LiveTextArea Field="OwnerAdvice" id="c-advice" class="vd-input" rows="3" />
                     <div class="vd-actions" style="margin-top:12px">
                         <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="() => _summaryOpen = true" aria-haspopup="dialog"><Icon Name="print" Size="16" /> Print owner summary</button>
                     </div>
@@ -243,7 +237,7 @@ else
     /// <summary>What the vet has typed, converted from the boxes' text (the owner summary, saving).</summary>
     public class NoteDraft
     {
-        public string? Reason, Subjective, Objective, Assessment, Plan, MucousMembranes, CapillaryRefill;
+        public string? Reason, Notes, OwnerAdvice, MucousMembranes, CapillaryRefill;
         public decimal? TemperatureC, WeightKg;
         public int? HeartRate, RespiratoryRate;
     }
@@ -293,10 +287,8 @@ else
     private static Dictionary<string, string?> Saved(ConsultationDetail c) => new()
     {
         [nameof(c.Reason)] = c.Reason,
-        [nameof(c.Subjective)] = c.Subjective,
-        [nameof(c.Objective)] = c.Objective,
-        [nameof(c.Assessment)] = c.Assessment,
-        [nameof(c.Plan)] = c.Plan,
+        [nameof(c.Notes)] = c.Notes,
+        [nameof(c.OwnerAdvice)] = c.OwnerAdvice,
         [nameof(c.TemperatureC)] = Num(c.TemperatureC),
         [nameof(c.HeartRate)] = c.HeartRate?.ToString(CultureInfo.InvariantCulture),
         [nameof(c.RespiratoryRate)] = c.RespiratoryRate?.ToString(CultureInfo.InvariantCulture),
@@ -314,7 +306,8 @@ else
         "WeightKg" => "Weight",
         "MucousMembranes" => "Mucous membranes",
         "CapillaryRefill" => "CRT",
-        "Objective" => "Findings",
+        "Notes" => "Clinical notes",
+        "OwnerAdvice" => "Advice for the owner",
         _ => field
     };
 
@@ -358,7 +351,7 @@ else
         string? F(string field) => v.GetValueOrDefault(field);
         return new NoteDraft
         {
-            Reason = F("Reason"), Subjective = F("Subjective"), Objective = F("Objective"), Assessment = F("Assessment"), Plan = F("Plan"),
+            Reason = F("Reason"), Notes = F("Notes"), OwnerAdvice = F("OwnerAdvice"),
             MucousMembranes = F("MucousMembranes"), CapillaryRefill = F("CapillaryRefill"),
             TemperatureC = Dec(F("TemperatureC"), ref error), WeightKg = Dec(F("WeightKg"), ref error),
             HeartRate = Int(F("HeartRate"), ref error), RespiratoryRate = Int(F("RespiratoryRate"), ref error),
@@ -412,7 +405,7 @@ else
             var n = Notes(values, out _);
             return Backend.Send(new SaveConsultationNotesCommand
             {
-                Id = _c.Id, Reason = n.Reason, Subjective = n.Subjective, Objective = n.Objective, Assessment = n.Assessment, Plan = n.Plan,
+                Id = _c.Id, Reason = n.Reason, Notes = n.Notes, OwnerAdvice = n.OwnerAdvice,
                 TemperatureC = n.TemperatureC, HeartRate = n.HeartRate, RespiratoryRate = n.RespiratoryRate, WeightKg = n.WeightKg,
                 MucousMembranes = n.MucousMembranes, CapillaryRefill = n.CapillaryRefill, Version = version ?? _c.Version
             });
@@ -433,7 +426,7 @@ else
         _saveError = null;
         if (!quiet)
             Toasts.Success("Draft saved");
-        // The record's own copy (what completing checks, e.g. that the SOAP note is filled in) catches up too.
+        // The record's own copy (what completing checks, e.g. that the clinical notes are written) catches up too.
         await LoadAsync();
         return true;
     }

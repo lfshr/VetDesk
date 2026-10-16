@@ -20,8 +20,8 @@ public class ConsultationConfiguration : IEntityTypeConfiguration<Consultation>
 {
     public void Configure(EntityTypeBuilder<Consultation> builder)
     {
-        foreach (var soap in new[] { nameof(Consultation.Subjective), nameof(Consultation.Objective), nameof(Consultation.Assessment), nameof(Consultation.Plan) })
-            builder.Property(soap).HasMaxLength(8000);
+        builder.Property(c => c.Notes).HasMaxLength(8000);
+        builder.Property(c => c.OwnerAdvice).HasMaxLength(8000);
         builder.Property(c => c.TemperatureC).HasPrecision(4, 1);
         builder.Property(c => c.WeightKg).HasPrecision(7, 3);
         builder.Property(c => c.Status);

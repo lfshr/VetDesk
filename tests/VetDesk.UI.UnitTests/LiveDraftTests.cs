@@ -14,18 +14,18 @@ public class LiveDraftTests
     public void SetUp() => _drafts = new LiveDrafts(NullLogger<LiveDrafts>.Instance, _time);
 
     private LiveDraft Open(string plan = "Recheck") =>
-        _drafts.Join("Consultation:40", new Dictionary<string, string?> { ["Plan"] = plan, ["Assessment"] = null }, Guid.NewGuid());
+        _drafts.Join("Consultation:40", new Dictionary<string, string?> { ["Notes"] = plan, ["OwnerAdvice"] = null }, Guid.NewGuid());
 
     [Test]
     public void SecondDesk_JoinsTheSameDraft_AndSeesUnsavedTyping()
     {
         var first = Open();
-        first.Type("Plan", "Recheck in a w", Heather, "Heather");
+        first.Type("Notes", "Recheck in a w", Heather, "Heather");
 
         var second = Open("something stale");
 
         second.ShouldBeSameAs(first);
-        second["Plan"].ShouldBe("Recheck in a w");
+        second["Notes"].ShouldBe("Recheck in a w");
     }
 
     [Test]
@@ -35,61 +35,61 @@ public class LiveDraftTests
         var heard = new List<LiveDraftEvent>();
         draft.Changed += heard.Add;
 
-        draft.Type("Plan", "R", Heather, "Heather");
+        draft.Type("Notes", "R", Heather, "Heather");
 
-        heard.ShouldHaveSingleItem().ShouldBe(new LiveDraftEvent(LiveDraftEventKind.Typed, Heather, "Heather", "Plan"));
+        heard.ShouldHaveSingleItem().ShouldBe(new LiveDraftEvent(LiveDraftEventKind.Typed, Heather, "Heather", "Notes"));
     }
 
     [Test]
     public void ABoxSomeoneIsTypingIn_IsReadOnlyElsewhere_UntilTheyMoveOn()
     {
         var draft = Open();
-        draft.Type("Plan", "Heather's plan", Heather, "Heather");
+        draft.Type("Notes", "Heather's plan", Heather, "Heather");
 
-        draft.TypingBy("Plan", Douglas).ShouldBe("Heather");
-        draft.TypingBy("Plan", Heather).ShouldBeNull();
-        draft.Type("Plan", "Douglas's plan", Douglas, "Douglas").ShouldBeFalse();
-        draft["Plan"].ShouldBe("Heather's plan");
+        draft.TypingBy("Notes", Douglas).ShouldBe("Heather");
+        draft.TypingBy("Notes", Heather).ShouldBeNull();
+        draft.Type("Notes", "Douglas's plan", Douglas, "Douglas").ShouldBeFalse();
+        draft["Notes"].ShouldBe("Heather's plan");
 
         // Other boxes stay free.
-        draft.Type("Assessment", "Stable", Douglas, "Douglas").ShouldBeTrue();
+        draft.Type("OwnerAdvice", "Stable", Douglas, "Douglas").ShouldBeTrue();
 
-        draft.Release("Plan", Heather);
-        draft.Type("Plan", "Douglas's plan", Douglas, "Douglas").ShouldBeTrue();
+        draft.Release("Notes", Heather);
+        draft.Type("Notes", "Douglas's plan", Douglas, "Douglas").ShouldBeTrue();
     }
 
     [Test]
     public void ABox_IsFreedAfterAPauseInTyping()
     {
         var draft = Open();
-        draft.Type("Plan", "Heather's plan", Heather, "Heather");
+        draft.Type("Notes", "Heather's plan", Heather, "Heather");
 
         _time.Advance(LiveDrafts.HoldFor + TimeSpan.FromSeconds(1));
 
-        draft.TypingBy("Plan", Douglas).ShouldBeNull();
-        draft.Type("Plan", "Douglas's plan", Douglas, "Douglas").ShouldBeTrue();
+        draft.TypingBy("Notes", Douglas).ShouldBeNull();
+        draft.Type("Notes", "Douglas's plan", Douglas, "Douglas").ShouldBeTrue();
     }
 
     [Test]
     public void Saving_ClearsWhatWasSaved_ButNotWhatWasTypedWhileItSaved()
     {
         var draft = Open();
-        draft.Type("Plan", "Recheck in a week", Heather, "Heather");
+        draft.Type("Notes", "Recheck in a week", Heather, "Heather");
         var sent = draft.Values;
-        draft.Type("Assessment", "Stable", Douglas, "Douglas"); // typed while the save was on its way
+        draft.Type("OwnerAdvice", "Stable", Douglas, "Douglas"); // typed while the save was on its way
         var version = Guid.NewGuid();
 
         draft.MarkSaved(sent, version, Heather, "Heather");
 
         draft.Version.ShouldBe(version);
-        draft.Unsaved.ShouldBe(["Assessment"]);
+        draft.Unsaved.ShouldBe(["OwnerAdvice"]);
     }
 
     [Test]
     public void ClearingABox_ThatWasNeverFilledIn_IsNotAChange()
     {
         var draft = Open();
-        draft.Type("Assessment", "", Heather, "Heather");
+        draft.Type("OwnerAdvice", "", Heather, "Heather");
 
         draft.IsDirty.ShouldBeFalse();
     }
@@ -98,13 +98,13 @@ public class LiveDraftTests
     public void ASaveMadeElsewhere_UpdatesUntouchedBoxes_AndKeepsUnsavedTyping()
     {
         var draft = Open();
-        draft.Type("Assessment", "Stable", Heather, "Heather");
+        draft.Type("OwnerAdvice", "Stable", Heather, "Heather");
         var version = Guid.NewGuid();
 
-        draft.Reset(new Dictionary<string, string?> { ["Plan"] = "Saved elsewhere", ["Assessment"] = "Saved elsewhere" }, version);
+        draft.Reset(new Dictionary<string, string?> { ["Notes"] = "Saved elsewhere", ["OwnerAdvice"] = "Saved elsewhere" }, version);
 
-        draft["Plan"].ShouldBe("Saved elsewhere");
-        draft["Assessment"].ShouldBe("Stable");
+        draft["Notes"].ShouldBe("Saved elsewhere");
+        draft["OwnerAdvice"].ShouldBe("Stable");
         draft.Version.ShouldBe(version);
     }
 
@@ -115,12 +115,12 @@ public class LiveDraftTests
         draft.Freeze(Heather, "Heather").ShouldBeTrue();
 
         draft.Freeze(Douglas, "Douglas").ShouldBeFalse();
-        draft.Type("Assessment", "Stable", Douglas, "Douglas").ShouldBeFalse();
+        draft.Type("OwnerAdvice", "Stable", Douglas, "Douglas").ShouldBeFalse();
         draft.FrozenBy(Douglas).ShouldBe("Heather");
-        draft.TypingBy("Assessment", Douglas).ShouldBe("Heather");
+        draft.TypingBy("OwnerAdvice", Douglas).ShouldBe("Heather");
 
         draft.Unfreeze(Heather);
-        draft.Type("Assessment", "Stable", Douglas, "Douglas").ShouldBeTrue();
+        draft.Type("OwnerAdvice", "Stable", Douglas, "Douglas").ShouldBeTrue();
     }
 
     [Test]
@@ -128,14 +128,14 @@ public class LiveDraftTests
     {
         var first = Open();
         var second = Open();
-        first.Type("Plan", "Unsaved", Heather, "Heather");
+        first.Type("Notes", "Unsaved", Heather, "Heather");
 
         _drafts.Leave(first);
         Open().ShouldBeSameAs(first);
         _drafts.Leave(first);
         _drafts.Leave(second);
 
-        Open()["Plan"].ShouldBe("Recheck");
+        Open()["Notes"].ShouldBe("Recheck");
     }
 
     private sealed class ManualTime : TimeProvider

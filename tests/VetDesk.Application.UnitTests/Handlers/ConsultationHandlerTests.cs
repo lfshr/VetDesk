@@ -51,12 +51,12 @@ public class ConsultationHandlerTests
             ConsultationId = consultationId, ProductId = product.Id, Quantity = 1, AllergyOverrideReason = overrideReason, IsPrescription = prescription,
         }, CancellationToken.None);
 
-    private async Task<Guid> WriteNotesAsync(int consultationId)
+    private async Task<Guid> WriteNotesAsync(int consultationId, string? advice = "Booster due in a year")
     {
         var version = (await _database.Db.Consultations.AsNoTracking().FirstAsync(c => c.Id == consultationId)).Version;
         var result = await new SaveConsultationNotesCommandHandler(_database.Db, _database.User).Handle(new SaveConsultationNotesCommand
         {
-            Id = consultationId, Subjective = "Well", Objective = "Normal exam", Assessment = "Healthy", Plan = "Booster given", WeightKg = 31.2m, Version = version,
+            Id = consultationId, Notes = "Well. Normal exam. Booster given.", OwnerAdvice = advice, WeightKg = 31.2m, Version = version,
         }, CancellationToken.None);
         result.IsSuccess.ShouldBeTrue(result.ToString());
         return result.Value;
@@ -101,7 +101,7 @@ public class ConsultationHandlerTests
     }
 
     [Test]
-    public async Task Complete_WithoutAllFourSoapSections_IsRefused()
+    public async Task Complete_WithoutNotes_IsRefused()
     {
         var id = await StartAsync();
         var version = (await _database.Db.Consultations.AsNoTracking().FirstAsync(c => c.Id == id)).Version;
@@ -109,6 +109,18 @@ public class ConsultationHandlerTests
         var result = await CompleteAsync(id, version);
 
         result.ErrorCode.ShouldBe(CompleteConsultationError.IncompleteNotes);
+    }
+
+    [Test]
+    public async Task Complete_WithNotesButNoOwnerAdvice_Succeeds()
+    {
+        var id = await StartAsync();
+        await AddAsync(id, _consult);
+        var version = await WriteNotesAsync(id, advice: null);
+
+        var result = await CompleteAsync(id, version);
+
+        result.IsSuccess.ShouldBeTrue(result.ToString());
     }
 
     [Test]
@@ -151,7 +163,7 @@ public class ConsultationHandlerTests
         var lockedVersion = (await _database.Db.Consultations.AsNoTracking().FirstAsync(c => c.Id == id)).Version;
 
         var save = await new SaveConsultationNotesCommandHandler(_database.Db, _database.User)
-            .Handle(new SaveConsultationNotesCommand { Id = id, Subjective = "Changed later", Version = lockedVersion }, CancellationToken.None);
+            .Handle(new SaveConsultationNotesCommand { Id = id, Notes = "Changed later", Version = lockedVersion }, CancellationToken.None);
         var add = await AddAsync(id, _consult);
         var charge = await _database.Db.ConsultationCharges.FirstAsync();
         var remove = await new RemoveChargeCommandHandler(_database.Db, _database.User).Handle(new RemoveChargeCommand { ChargeId = charge.Id }, CancellationToken.None);
@@ -186,7 +198,7 @@ public class ConsultationHandlerTests
         await WriteNotesAsync(id);
 
         var result = await new SaveConsultationNotesCommandHandler(_database.Db, _database.User)
-            .Handle(new SaveConsultationNotesCommand { Id = id, Subjective = "Other desk", Version = stale }, CancellationToken.None);
+            .Handle(new SaveConsultationNotesCommand { Id = id, Notes = "Other desk", Version = stale }, CancellationToken.None);
 
         result.ErrorCode.ShouldBe(SaveConsultationNotesError.ChangedElsewhere);
     }
