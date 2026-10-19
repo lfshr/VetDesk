@@ -83,15 +83,18 @@ public class SearchClientsQueryHandler : IRequestHandler<SearchClientsQuery, Res
 
         var digits = Client.DigitsOf(text);
         var like = Search.Anywhere(text);
-        var postcode = Search.Anywhere(text.Replace(" ", ""));
+        // Postcodes and microchips are compared without spaces, so "BS65QT" finds "BS6 5QT" and a chip typed in groups
+        // of three finds the stored digits.
+        var compact = Search.Anywhere(text.Replace(" ", ""));
         var number = text.StartsWith("CL-", StringComparison.OrdinalIgnoreCase) && int.TryParse(text[3..], out var n) ? n : -1;
         return query.Where(c =>
             c.Id == number ||
             EF.Functions.Like(c.FirstName + " " + c.LastName, like, Search.EscapeText) ||
             (c.Email != null && EF.Functions.Like(c.Email, like, Search.EscapeText)) ||
-            (c.Postcode != null && EF.Functions.Like(c.Postcode.Replace(" ", ""), postcode, Search.EscapeText)) ||
+            (c.Postcode != null && EF.Functions.Like(c.Postcode.Replace(" ", ""), compact, Search.EscapeText)) ||
             (digits.Length >= 4 && c.PhoneDigits.Contains(digits)) ||
-            c.Patients.Any(p => EF.Functions.Like(p.Name, like, Search.EscapeText)));
+            c.Patients.Any(p => EF.Functions.Like(p.Name, like, Search.EscapeText) ||
+                (p.Microchip != null && EF.Functions.Like(p.Microchip, compact, Search.EscapeText))));
     }
 
     internal static DateTime StartOfYearUtc(IClock clock) =>
