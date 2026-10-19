@@ -12,7 +12,7 @@ using VetDesk.Infrastructure.Persistence;
 namespace VetDesk.Infrastructure.Migrations
 {
     [DbContext(typeof(VetDeskDbContext))]
-    [Migration("20261019134928_ConsultationChargePrices")]
+    [Migration("20261019195127_ConsultationChargePrices")]
     partial class ConsultationChargePrices
     {
         /// <inheritdoc />
@@ -222,10 +222,6 @@ namespace VetDesk.Infrastructure.Migrations
                     b.Property<int?>("AppointmentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Assessment")
-                        .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CapillaryRefill")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
@@ -260,16 +256,16 @@ namespace VetDesk.Infrastructure.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
-                    b.Property<string>("Objective")
+                    b.Property<string>("Notes")
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnerAdvice")
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Plan")
-                        .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Reason")
                         .HasMaxLength(400)
@@ -285,10 +281,6 @@ namespace VetDesk.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
-
-                    b.Property<string>("Subjective")
-                        .HasMaxLength(8000)
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("TemperatureC")
                         .HasPrecision(4, 1)
