@@ -39,10 +39,8 @@ public record ConsultationDetail(
     DateTime StartedUtc,
     DateTime? CompletedUtc,
     ConsultationStatus Status,
-    string? Subjective,
-    string? Objective,
-    string? Assessment,
-    string? Plan,
+    string? Notes,
+    string? OwnerAdvice,
     decimal? TemperatureC,
     int? HeartRate,
     int? RespiratoryRate,
@@ -59,9 +57,7 @@ public record ConsultationDetail(
 {
     public bool IsLocked => Status == ConsultationStatus.Completed;
 
-    public bool SoapComplete =>
-        !string.IsNullOrWhiteSpace(Subjective) && !string.IsNullOrWhiteSpace(Objective) &&
-        !string.IsNullOrWhiteSpace(Assessment) && !string.IsNullOrWhiteSpace(Plan);
+    public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
 
     public bool HasUnresolvedAllergyConflict => Charges.Any(c => c.AllergyConflicts.Count > 0 && c.AllergyOverrideReason is null);
 }

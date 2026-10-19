@@ -66,8 +66,8 @@ public class CompleteConsultationCommandHandler : IRequestHandler<CompleteConsul
             return Result.Failure(CompleteConsultationError.AlreadyCompleted, "This consultation is already completed.");
         if (consultation.Version != request.Version)
             return Result.Failure(CompleteConsultationError.ChangedElsewhere, Saving.ChangedElsewhere);
-        if (!consultation.SoapComplete)
-            return Result.Failure(CompleteConsultationError.IncompleteNotes, "Fill in all four SOAP sections before completing.");
+        if (!consultation.HasNotes)
+            return Result.Failure(CompleteConsultationError.IncompleteNotes, "Write the clinical notes before completing.");
 
         // Checked again here: an allergy may have been recorded after the item was added.
         var patient = consultation.Patient;

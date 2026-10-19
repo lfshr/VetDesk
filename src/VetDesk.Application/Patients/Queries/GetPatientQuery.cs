@@ -79,7 +79,7 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
                 Utc.Mark(c.StartedUtc),
                 c.Reason ?? c.Appointment?.Reason ?? "Consultation",
                 c.Clinician.ShortName,
-                Summary(c),
+                c.Notes,
                 c.WeightKg,
                 c.Id,
                 !c.IsLocked,
@@ -136,11 +136,5 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
             history, weightList, vaccinationList, medication, prescriptions, invoiceList,
             consultations.Where(c => !c.IsLocked).OrderByDescending(c => c.StartedUtc).Select(c => (int?)c.Id).FirstOrDefault(),
             patient.Version));
-    }
-
-    private static string? Summary(Consultation c)
-    {
-        var parts = new[] { c.Assessment, c.Plan }.Where(Text.Has).ToList();
-        return parts.Count == 0 ? c.Subjective : string.Join(" ", parts);
     }
 }

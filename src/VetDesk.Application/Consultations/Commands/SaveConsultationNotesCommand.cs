@@ -9,15 +9,13 @@ namespace VetDesk.Application.Consultations.Commands;
 
 public enum SaveConsultationNotesError { NotAllowed, NotFound, Locked, InvalidRequest, ChangedElsewhere }
 
-/// <summary>"Save draft": SOAP notes and vitals. Refused once the consultation is completed.</summary>
+/// <summary>"Save draft": clinical notes, advice for the owner and vitals. Refused once the consultation is completed.</summary>
 public class SaveConsultationNotesCommand : IRequest<Result<Guid>>
 {
     public int Id { get; init; }
     public string? Reason { get; init; }
-    public string? Subjective { get; init; }
-    public string? Objective { get; init; }
-    public string? Assessment { get; init; }
-    public string? Plan { get; init; }
+    public string? Notes { get; init; }
+    public string? OwnerAdvice { get; init; }
     public decimal? TemperatureC { get; init; }
     public int? HeartRate { get; init; }
     public int? RespiratoryRate { get; init; }
@@ -60,10 +58,8 @@ public class SaveConsultationNotesCommandHandler : IRequestHandler<SaveConsultat
             return Result.Failure(SaveConsultationNotesError.ChangedElsewhere, Saving.ChangedElsewhere);
 
         consultation.Reason = Text.Clean(request.Reason);
-        consultation.Subjective = Text.Clean(request.Subjective);
-        consultation.Objective = Text.Clean(request.Objective);
-        consultation.Assessment = Text.Clean(request.Assessment);
-        consultation.Plan = Text.Clean(request.Plan);
+        consultation.Notes = Text.Clean(request.Notes);
+        consultation.OwnerAdvice = Text.Clean(request.OwnerAdvice);
         consultation.TemperatureC = request.TemperatureC;
         consultation.HeartRate = request.HeartRate;
         consultation.RespiratoryRate = request.RespiratoryRate;

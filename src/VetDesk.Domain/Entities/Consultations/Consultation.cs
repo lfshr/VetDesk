@@ -20,10 +20,10 @@ public class Consultation : BaseAuditableEntity, IHasVersion
     public ConsultationStatus Status { get; private set; } = ConsultationStatus.Open;
 
     public string? Reason { get; set; }
-    public string? Subjective { get; set; }
-    public string? Objective { get; set; }
-    public string? Assessment { get; set; }
-    public string? Plan { get; set; }
+    public string? Notes { get; set; }
+
+    /// <summary>What the owner should do at home. The only clinical text printed on the owner summary.</summary>
+    public string? OwnerAdvice { get; set; }
 
     public decimal? TemperatureC { get; set; }
     public int? HeartRate { get; set; }
@@ -41,9 +41,7 @@ public class Consultation : BaseAuditableEntity, IHasVersion
 
     public bool IsLocked => Status == ConsultationStatus.Completed;
 
-    public bool SoapComplete =>
-        !string.IsNullOrWhiteSpace(Subjective) && !string.IsNullOrWhiteSpace(Objective) &&
-        !string.IsNullOrWhiteSpace(Assessment) && !string.IsNullOrWhiteSpace(Plan);
+    public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
 
     public void MarkCompleted(DateTime nowUtc, Invoice? invoice)
     {

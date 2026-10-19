@@ -178,7 +178,7 @@ public class DemoDataSeeder
 
         // History: completed consultations with invoices, some paid.
         var invoiceNumber = 1040;
-        Invoice History(Patient pet, StaffMember vet, int daysAgo, string reason, string s, string o, string a, string plan, decimal? weight,
+        Invoice History(Patient pet, StaffMember vet, int daysAgo, string reason, string notes, string advice, decimal? weight,
             IEnumerable<(Product Product, decimal Qty)> items, PaymentMethod? paidBy, string? type = "Consultation")
         {
             var started = At(-daysAgo, 10, 30);
@@ -193,7 +193,7 @@ public class DemoDataSeeder
             var consultation = new Consultation
             {
                 Patient = pet, Clinician = vet, Appointment = appointment, StartedUtc = started, Reason = reason,
-                Subjective = s, Objective = o, Assessment = a, Plan = plan, WeightKg = weight, TemperatureC = 38.4m, HeartRate = 96, RespiratoryRate = 24,
+                Notes = notes, OwnerAdvice = advice, WeightKg = weight, TemperatureC = 38.4m, HeartRate = 96, RespiratoryRate = 24,
                 MucousMembranes = "Pink, moist", CapillaryRefill = "< 2 s",
             };
             foreach (var (product, qty) in items)
@@ -223,26 +223,33 @@ public class DemoDataSeeder
             return invoice;
         }
 
-        History(biscuit, douglas, 352, "Annual booster", "Owner reports well. Eating and drinking normally.", "BCS 6/9. Heart and lungs normal. Teeth grade 1 tartar.",
-            "Healthy. Slightly overweight.", "Lepto 4 given. Diet advice. Recheck weight in 3 months.", 32.4m, [(consult, 1), (lepto, 1)], PaymentMethod.Card);
-        History(biscuit, heather, 180, "Ear infection", "Shaking head for 3 days, scratching left ear.", "Left ear canal erythematous, brown discharge. Right ear normal.",
-            "Otitis externa, left.", "Ear cleaner and drops. Avoid amoxicillin (allergy). Recheck in 10 days.", 31.8m, [(consult, 1), (chlorhex, 1)], PaymentMethod.Cash);
-        History(biscuit, douglas, 21, "Lameness, right fore", "Limping after a long walk, worse after rest.", "Mild pain on extension of right elbow. No swelling.",
-            "Suspect early elbow osteoarthritis.", "Meloxicam 21 days. Restricted exercise. Recheck in 3 weeks.", 31.2m, [(consult, 1), (meloxicam, 30)], PaymentMethod.Card);
-        History(mabel, jen, 330, "Vaccination", "Indoor/outdoor cat, well.", "Healthy exam.", "Healthy.", "Feline flu and enteritis vaccine given.", 4.1m, [(consult, 1), (catFlu, 1)], PaymentMethod.Card);
-        History(rufus, heather, 45, "Cough", "Soft cough at night for 2 weeks.", "Grade 3/6 left apical systolic murmur. Lungs clear.",
-            "Murmur, likely degenerative mitral valve disease.", "Refer for echo. Recheck in 4 weeks.", 14.6m, [(consult, 1)], null);
-        History(pepper, douglas, 12, "Vomiting", "Vomited 4 times yesterday, now bright.", "Mild abdominal discomfort. Temp 38.9.",
-            "Acute gastritis, likely dietary.", "Maropitant injection. Bland diet 3 days.", 19.2m, [(consult, 1), (maropitant, 2)], null);
-        History(luna, jen, 9, "Diabetic check", "Drinking less since insulin dose change.", "BCS 5/9. Hydrated.", "Diabetes well controlled.",
-            "Continue insulin. Fructosamine next visit.", 5.8m, [(consult, 1)], PaymentMethod.Transfer);
-        var overdue = History(max, heather, 40, "Skin itch", "Itchy paws and belly.", "Erythema on ventral abdomen, no parasites seen.",
-            "Suspect atopic dermatitis.", "Flea treatment. Diet trial discussed.", 36.0m, [(consult, 1), (flea, 1)], null);
-        var claimed = History(atlas, douglas, 5, "Wound on paw", "Cut pad on glass yesterday.", "2 cm laceration right hind pad, clean.", "Pad laceration.",
-            "Cleaned and dressed. Recheck in 3 days.", 38.5m, [(consult, 1), (chlorhex, 1)], null);
+        History(biscuit, douglas, 352, "Annual booster",
+            "Owner reports well, eating and drinking normally. BCS 6/9, heart and lungs normal, teeth grade 1 tartar. Healthy, slightly overweight. Lepto 4 given.",
+            "Cut his food by about a tenth and keep up the walks. We'll weigh him again in 3 months.", 32.4m, [(consult, 1), (lepto, 1)], PaymentMethod.Card);
+        History(biscuit, heather, 180, "Ear infection",
+            "Shaking head for 3 days, scratching left ear. Left canal erythematous with brown discharge, right normal. Otitis externa, left. Avoid amoxicillin (allergy).",
+            "Clean the left ear, then give the drops twice a day. Recheck in 10 days.", 31.8m, [(consult, 1), (chlorhex, 1)], PaymentMethod.Cash);
+        History(biscuit, douglas, 21, "Lameness, right fore",
+            "Limping after a long walk, worse after rest. Mild pain on extension of right elbow, no swelling. Suspect early elbow osteoarthritis.",
+            "Meloxicam with food once a day for 21 days. Lead walks only. Recheck in 3 weeks.", 31.2m, [(consult, 1), (meloxicam, 30)], PaymentMethod.Card);
+        History(mabel, jen, 330, "Vaccination", "Indoor/outdoor cat, well. Healthy exam. Feline flu and enteritis vaccine given.",
+            "She may be a little quiet for a day. Booster due in a year.", 4.1m, [(consult, 1), (catFlu, 1)], PaymentMethod.Card);
+        History(rufus, heather, 45, "Cough",
+            "Soft cough at night for 2 weeks. Grade 3/6 left apical systolic murmur, lungs clear. Likely degenerative mitral valve disease. Refer for echo.",
+            "We'll arrange a heart scan. Count his breathing rate while he sleeps and call us if it's over 40 a minute.", 14.6m, [(consult, 1)], null);
+        History(pepper, douglas, 12, "Vomiting",
+            "Vomited 4 times yesterday, now bright. Mild abdominal discomfort, temp 38.9. Acute gastritis, likely dietary. Maropitant given.",
+            "Small bland meals (chicken and rice) for 3 days, then mix back into her normal food.", 19.2m, [(consult, 1), (maropitant, 2)], null);
+        History(luna, jen, 9, "Diabetic check", "Drinking less since insulin dose change. BCS 5/9, hydrated. Diabetes well controlled. Fructosamine next visit.",
+            "Carry on with the same insulin dose.", 5.8m, [(consult, 1)], PaymentMethod.Transfer);
+        var overdue = History(max, heather, 40, "Skin itch",
+            "Itchy paws and belly. Erythema on ventral abdomen, no parasites seen. Suspect atopic dermatitis. Diet trial discussed.",
+            "Flea treatment today, then monthly. We'll talk about a food trial at the next visit.", 36.0m, [(consult, 1), (flea, 1)], null);
+        var claimed = History(atlas, douglas, 5, "Wound on paw", "Cut pad on glass yesterday. 2 cm laceration right hind pad, clean. Cleaned and dressed.",
+            "Keep the dressing clean and dry. Recheck in 3 days.", 38.5m, [(consult, 1), (chlorhex, 1)], null);
         claimed.Claim = new InsuranceClaim { Invoice = claimed, Insurer = "Petplan", PolicyNumber = "PP-4471902", Excess = 99m, Condition = "Pad laceration", CreatedUtc = now.AddDays(-4) };
-        var partPaid = History(bramble, jen, 3, "Dental check", "Bad breath.", "Grade 2 tartar, gingivitis.", "Periodontal disease.", "Book dental under GA.", 7.4m,
-            [(consult, 1), (chlorhex, 1)], null);
+        var partPaid = History(bramble, jen, 3, "Dental check", "Bad breath. Grade 2 tartar, gingivitis. Periodontal disease.",
+            "Book a dental under anaesthetic with reception.", 7.4m, [(consult, 1), (chlorhex, 1)], null);
         partPaid.Payments.Add(new Payment { Invoice = partPaid, Amount = 30m, Method = PaymentMethod.Cash, TakenBy = liam.ShortName, TakenUtc = At(-3, 11) });
         _ = overdue;
 
@@ -263,7 +270,7 @@ public class DemoDataSeeder
             _db.Consultations.Add(new Consultation
             {
                 Patient = biscuit, Appointment = inConsult, Clinician = douglas, StartedUtc = At(0, 9, 2), Reason = "Lameness recheck",
-                Subjective = "Much improved on meloxicam. Still a little stiff in the mornings.",
+                Notes = "Much improved on meloxicam. Still a little stiff in the mornings.",
                 Charges = { new ConsultationCharge { Product = recheck, Description = recheck.Name, Quantity = 1, UnitPrice = recheck.UnitPrice, VatRate = recheck.VatRate } },
             });
             var waiting = Book(miso, "Consultation", 0, 9, 15, "Vomiting since yesterday", heather);

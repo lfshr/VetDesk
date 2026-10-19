@@ -7,13 +7,9 @@
         <div class="vd-printable" style="line-height:1.55">
             <div class="vd-row-between vd-small vd-muted"><span>@(_clinic?.Name ?? "")</span><span>@Fmt.LongDate(ClinicTime.Today(Consultation.StartedUtc))</span></div>
             <p><strong>@Consultation.PatientName</strong> (@Consultation.SpeciesAndBreed)@(string.IsNullOrWhiteSpace(Notes.Reason) ? "" : $" — {Notes.Reason}") with @Consultation.ClinicianName.</p>
-            @if (!string.IsNullOrWhiteSpace(Notes.Assessment))
+            @if (!string.IsNullOrWhiteSpace(Notes.OwnerAdvice))
             {
-                <p><strong>How @Consultation.PatientName is doing:</strong> @Notes.Assessment</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(Notes.Plan))
-            {
-                <p><strong>What to do at home:</strong> @Notes.Plan</p>
+                <p><strong>What to do at home:</strong> @Notes.OwnerAdvice</p>
             }
             @if (Given.Count > 0)
             {
@@ -21,7 +17,7 @@
             }
             <p>Call us@(_clinic?.Phone is { } phone ? $" on {phone}" : "") if you have any concerns.</p>
         </div>
-        <div class="vd-hint">Edit the Assessment and Plan on the note to change this summary.</div>
+        <div class="vd-hint">Edit Advice for the owner on the note to change this summary.</div>
     </ChildContent>
     <Footer>
         <button type="button" class="vd-btn vd-btn-secondary" @onclick="OnClose">Close</button>

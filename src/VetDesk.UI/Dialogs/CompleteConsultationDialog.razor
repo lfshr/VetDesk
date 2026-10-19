@@ -10,7 +10,7 @@
         {
             <div class="vd-label">Checks</div>
             <ul class="vd-list" style="margin-bottom:12px">
-                <Check Ok="Consultation.SoapComplete" Text="@(Consultation.SoapComplete ? "Clinical note has all four sections filled in" : "Fill in all four SOAP sections first")" />
+                <Check Ok="Consultation.HasNotes" Text="@(Consultation.HasNotes ? "Clinical notes written" : "Write the clinical notes first")" />
                 <Check Ok="!Consultation.HasUnresolvedAllergyConflict" Text="@AllergyText" />
                 @if (Vaccines > 0)
                 {
@@ -96,7 +96,7 @@
 
     private int Vaccines => Consultation.Charges.Count(c => c.Category == ProductCategory.Vaccine);
     private int ToDispense => Consultation.Charges.Count(c => c.Category == ProductCategory.Medicine);
-    private bool CanComplete => Consultation.SoapComplete && !Consultation.HasUnresolvedAllergyConflict;
+    private bool CanComplete => Consultation.HasNotes && !Consultation.HasUnresolvedAllergyConflict;
 
     private string AllergyText => Consultation.Allergies.Count == 0 ? "No drug allergies recorded"
         : Consultation.HasUnresolvedAllergyConflict ? "A charged product conflicts with an allergy and has no override reason"

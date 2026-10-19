@@ -66,7 +66,7 @@ public class RecordChangeFeedTests
         _heard.Clear();
 
         var saved = await new SaveConsultationNotesCommandHandler(_db, _database.User)
-            .Handle(new SaveConsultationNotesCommand { Id = id, Plan = "Recheck in a week", Version = version }, CancellationToken.None);
+            .Handle(new SaveConsultationNotesCommand { Id = id, OwnerAdvice = "Recheck in a week", Version = version }, CancellationToken.None);
 
         saved.IsSuccess.ShouldBeTrue(saved.ToString());
         var change = _heard.ShouldHaveSingleItem();

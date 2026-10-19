@@ -66,7 +66,7 @@ public class GetConsultationQueryHandler : IRequestHandler<GetConsultationQuery,
             c.Patient.Allergies.Select(a => a.Substance).ToList(),
             c.Patient.Alerts.OrderBy(a => a.Severity).Select(a => (a.Text, a.Severity)).ToList(),
             c.Appointment?.Id, c.Reason, c.Clinician.ShortName, Utc.Mark(c.StartedUtc), Utc.Mark(c.CompletedUtc), c.Status,
-            c.Subjective, c.Objective, c.Assessment, c.Plan, c.TemperatureC, c.HeartRate, c.RespiratoryRate, c.WeightKg,
+            c.Notes, c.OwnerAdvice, c.TemperatureC, c.HeartRate, c.RespiratoryRate, c.WeightKg,
             c.MucousMembranes, c.CapillaryRefill, charges, totals.Net, totals.Vat, totals.Total, c.InvoiceId, invoiceNumber, c.Version));
     }
 }
