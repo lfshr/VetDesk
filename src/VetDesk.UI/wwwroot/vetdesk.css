@@ -283,6 +283,9 @@ h1:focus { outline: none; }
 .vd-btn-link { background: none; border: none; padding: 0; height: auto; color: var(--vd-accent); font-weight: 500; text-decoration: underline; cursor: pointer; }
 .vd-icon-btn { width: 32px; height: 32px; padding: 0; border-radius: var(--vd-radius-sm); border: none; background: transparent; color: var(--vd-text-secondary); display: inline-grid; place-items: center; cursor: pointer; }
 .vd-icon-btn:hover { background: var(--vd-neutral-bg); color: var(--vd-text); }
+/* A price on the consultation's Charges list that can be clicked to change it. */
+.vd-price-btn { border: none; background: none; padding: 0; font: inherit; font-family: var(--vd-font-mono); color: var(--vd-text); cursor: pointer; border-bottom: 1px dashed var(--vd-border-strong); }
+.vd-price-btn:hover { color: var(--vd-accent); border-bottom-color: var(--vd-accent); }
 
 .vd-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .vd-actions-end { justify-content: flex-end; }

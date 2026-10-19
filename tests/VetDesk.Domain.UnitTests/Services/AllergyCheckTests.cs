@@ -51,4 +51,16 @@ public class AllergyCheckTests
         conflicts.Count.ShouldBe(1);
         conflicts[0].Substance.ShouldBe("amoxicillin");
     }
+
+    [Test]
+    public void FreeTextNamingSubstance_Conflicts()
+    {
+        AllergyCheck.Conflicts("Amoxicillin ear drops (bought in)", [Allergy("amoxicillin")]).Count.ShouldBe(1);
+    }
+
+    [Test]
+    public void FreeTextNotNamingSubstance_DoesNotConflict()
+    {
+        AllergyCheck.Conflicts("Hydrotherapy session", [Allergy("amoxicillin", drugClass: "Penicillin")]).ShouldBeEmpty();
+    }
 }

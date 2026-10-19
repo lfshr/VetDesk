@@ -1,0 +1,78 @@
+@* Changing the price of a line already on the consultation, opened by clicking its price. Typed including VAT, like
+   ChargeForm; a price below the list price needs a reason. *@
+@using VetDesk.Domain.Services
+
+<div style="padding:10px 16px;border-bottom:1px solid var(--vd-border);background:var(--vd-surface-muted)">
+    <div class="vd-strong">@Charge.Description</div>
+    <div class="vd-cell-sub">qty @Fmt.Qty(Charge.Quantity) @Charge.Unit@(ListGross is { } listGross ? $" · list price {Fmt.Money(listGross)} incl. VAT" : "")</div>
+    <div class="vd-field">
+        <label for="cp-price-@Charge.Id">Price each incl. VAT</label>
+        <div style="position:relative">
+            <span class="vd-muted" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none">£</span>
+            <input id="cp-price-@Charge.Id" class="vd-mono" inputmode="decimal" style="padding-left:24px" @bind="_price" @bind:event="oninput" @onkeydown="OnKeyDown" />
+        </div>
+    </div>
+    @if (PriceError is { } error)
+    {
+        <div class="vd-error-text">@error</div>
+    }
+    else if (Net is { } net)
+    {
+        @if (ListGross is { } list && net != Charge.ListUnitPrice)
+        {
+            var difference = VatCalculator.Gross(net, Charge.VatRate) - list;
+            <div class="vd-hint">@Fmt.Money(Math.Abs(difference)) @(difference < 0 ? "below" : "above") the list price.</div>
+        }
+        @if (VatCalculator.Gross(net, Charge.VatRate) != Money.Round(Gross!.Value))
+        {
+            <div class="vd-hint">Prices are held to the penny before VAT, so this will be charged as @Fmt.Money(VatCalculator.Gross(net, Charge.VatRate)).</div>
+        }
+    }
+    @if (BelowList)
+    {
+        <div class="vd-field"><label for="cp-reason-@Charge.Id">Reason for the lower price</label><input id="cp-reason-@Charge.Id" @bind="_reason" @bind:event="oninput" @onkeydown="OnKeyDown" maxlength="400" /></div>
+    }
+    <div class="vd-actions vd-actions-end" style="margin-top:12px">
+        <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-primary vd-btn-sm" disabled="@(!CanSave)" @onclick="Save">Save price</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ChargeDto Charge { get; set; } = default!;
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>The new net unit price, and the reason when it's below the list price.</summary>
+    [Parameter] public EventCallback<(decimal UnitPrice, string? Reason)> OnSave { get; set; }
+
+    private string _price = "";
+    private string _reason = "";
+
+    protected override void OnInitialized() =>
+        _price = VatCalculator.Gross(Charge.UnitPrice, Charge.VatRate).ToString("0.00", CultureInfo.InvariantCulture);
+
+    private decimal? ListGross => Charge.ListUnitPrice is { } list ? VatCalculator.Gross(list, Charge.VatRate) : null;
+
+    private decimal? Gross => decimal.TryParse(_price.Trim().TrimStart('£'), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;
+
+    private decimal? Net => Gross is >= 0 and var gross ? VatCalculator.NetFromGross(gross, Charge.VatRate) : null;
+
+    private string? PriceError => string.IsNullOrWhiteSpace(_price) ? null
+        : Gross is null ? $"“{_price}” isn't a price."
+        : Gross < 0 ? "The price can't be less than zero."
+        : null;
+
+    private bool BelowList => Net is { } net && Charge.ListUnitPrice is { } list && net < list;
+
+    private bool CanSave => Net is not null && (!BelowList || !string.IsNullOrWhiteSpace(_reason));
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && CanSave)
+            await Save();
+        else if (e.Key == "Escape")
+            await OnCancel.InvokeAsync();
+    }
+
+    private Task Save() => OnSave.InvokeAsync((Net!.Value, BelowList ? _reason : null));
+}

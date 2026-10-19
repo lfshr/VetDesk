@@ -1,4 +1,5 @@
-@* Searches the price list. With a patient, each match shows any conflict with that patient's allergies. *@
+@* Searches the price list. With a patient, each match shows any conflict with that patient's allergies. With
+   OnFreeText, the last row adds whatever was typed as an item that isn't on the price list. *@
 @inject Backend Backend
 
 <div style="position:relative">
@@ -33,6 +34,13 @@
             {
                 <div class="vd-dropdown-item vd-muted">Nothing on the price list matches.</div>
             }
+            @if (OnFreeText.HasDelegate)
+            {
+                <button type="button" class="vd-dropdown-foot @(_active == _results.Count ? "active" : "")" role="option" aria-selected="@Aria.Bool(_active == _results.Count)"
+                        style="justify-content:flex-start;gap:8px;text-align:left" @onmousedown="PickFreeText">
+                    <Icon Name="plus" Size="16" /><span>Add “@_query.Trim()” at your own price</span>
+                </button>
+            }
         </div>
     }
 </div>
@@ -44,6 +52,7 @@
     [Parameter] public string Placeholder { get; set; } = "Search the price list";
     [Parameter] public string InputId { get; set; } = "product-search";
     [Parameter] public EventCallback<ProductDto> OnPick { get; set; }
+    [Parameter] public EventCallback<string> OnFreeText { get; set; }
 
     private string _query = "";
     private bool _open;
@@ -82,18 +91,25 @@
             _results = result.IsSuccess ? result.Value.Where(p => !StockedOnly || p.IsStocked).ToList() : new();
     }
 
+    // The free-text row, when there is one, comes after the matches.
+    private int Rows => _results.Count + (OnFreeText.HasDelegate && _query.Trim().Length >= 2 ? 1 : 0);
+
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
         switch (e.Key)
         {
-            case "ArrowDown" when _results.Count > 0:
-                _active = (_active + 1) % _results.Count;
+            case "ArrowDown" when Rows > 0:
+                _active = (_active + 1) % Rows;
                 break;
-            case "ArrowUp" when _results.Count > 0:
-                _active = _active <= 0 ? _results.Count - 1 : _active - 1;
+            case "ArrowUp" when Rows > 0:
+                _active = _active <= 0 ? Rows - 1 : _active - 1;
                 break;
-            case "Enter" when _results.Count > 0:
-                await Pick(_results[Math.Max(0, _active)]);
+            case "Enter" when Rows > 0:
+                var row = Math.Max(0, _active);
+                if (row < _results.Count)
+                    await Pick(_results[row]);
+                else
+                    await PickFreeText();
                 break;
             case "Escape":
                 _open = false;
@@ -105,6 +121,15 @@
     {
         await Task.Delay(150);
         _open = false;
+    }
+
+    private async Task PickFreeText()
+    {
+        var text = _query.Trim();
+        _open = false;
+        _query = "";
+        _results.Clear();
+        await OnFreeText.InvokeAsync(text);
     }
 
     private async Task Pick(ProductDto product)

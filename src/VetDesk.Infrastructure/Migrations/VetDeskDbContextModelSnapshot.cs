@@ -341,7 +341,19 @@ namespace VetDesk.Infrastructure.Migrations
                     b.Property<bool>("IsPrescription")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ProductId")
+                    b.Property<decimal?>("ListUnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PriceChangeReason")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("PriceChangedBy")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Quantity")
@@ -1681,8 +1693,7 @@ namespace VetDesk.Infrastructure.Migrations
                     b.HasOne("VetDesk.Domain.Entities.Products.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Consultation");
 

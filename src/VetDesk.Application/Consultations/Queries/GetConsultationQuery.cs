@@ -18,6 +18,9 @@ public class GetConsultationQuery : IRequest<Result<ConsultationDetail>>
 
 public class GetConsultationQueryHandler : IRequestHandler<GetConsultationQuery, Result<ConsultationDetail>>
 {
+    /// <summary>A free-text line reads like a service on the price list ("qty 1 item").</summary>
+    private const string FreeTextUnit = "item";
+
     private readonly IVetDeskDbContext _dbContext;
     private readonly ICurrentUser _user;
     private readonly IClock _clock;
@@ -51,9 +54,10 @@ public class GetConsultationQueryHandler : IRequestHandler<GetConsultationQuery,
             : null;
 
         var charges = c.Charges.OrderBy(ch => ch.Id).Select(ch => new ChargeDto(
-            ch.Id, ch.Product.Id, ch.Description, ch.Product.Category, ch.Quantity, ch.Product.Unit, ch.UnitPrice, ch.VatRate, ch.Net,
-            ch.IsPrescription, ch.Directions, ch.Product.IsControlledDrug, ch.AllergyOverrideReason,
-            AllergyCheck.Conflicts(ch.Product, c.Patient.Allergies).Select(a => a.Substance).ToList())).ToList();
+            ch.Id, ch.Product?.Id, ch.Description, ch.Product?.Category, ch.Quantity, ch.Product?.Unit ?? FreeTextUnit, ch.UnitPrice, ch.VatRate,
+            ch.Net, ch.IsPrescription, ch.Directions, ch.Product?.IsControlledDrug == true, ch.AllergyOverrideReason,
+            AllergyCheck.Conflicts(ch, c.Patient.Allergies).Select(a => a.Substance).ToList(),
+            ch.ListUnitPrice ?? (ch.Product is null ? null : ch.UnitPrice))).ToList();
         var totals = VatCalculator.Calculate(c.Charges.Select(ch => (ch.Net, ch.VatRate)));
 
         return Result.Success(new ConsultationDetail(
