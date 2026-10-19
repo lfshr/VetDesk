@@ -29,4 +29,10 @@ public static class VatCalculator
 
     /// <summary>A single price including VAT, for showing gross prices next to a product.</summary>
     public static decimal Gross(decimal net, VatRate rate) => Money.Round(net) + Money.Round(Money.Round(net) * rate.Percentage());
+
+    /// <summary>
+    /// The net unit price for a price typed including VAT. Prices are held to the penny, so now and then (e.g. £10.05
+    /// at 20%) no net price gives exactly the typed gross; <see cref="Gross"/> of the result is then a penny out.
+    /// </summary>
+    public static decimal NetFromGross(decimal gross, VatRate rate) => Money.Round(gross / (1 + rate.Percentage()));
 }

@@ -3,11 +3,13 @@ using VetDesk.Domain.Entities.Products;
 
 namespace VetDesk.Application.Consultations;
 
+/// <param name="ProductId">Null for a free-text line.</param>
+/// <param name="ListUnitPrice">The net list price, to compare a changed price with; null for a free-text line.</param>
 public record ChargeDto(
     int Id,
-    int ProductId,
+    int? ProductId,
     string Description,
-    ProductCategory Category,
+    ProductCategory? Category,
     decimal Quantity,
     string Unit,
     decimal UnitPrice,
@@ -17,7 +19,8 @@ public record ChargeDto(
     string? Directions,
     bool IsControlledDrug,
     string? AllergyOverrideReason,
-    IReadOnlyList<string> AllergyConflicts);
+    IReadOnlyList<string> AllergyConflicts,
+    decimal? ListUnitPrice);
 
 public record ConsultationDetail(
     int Id,

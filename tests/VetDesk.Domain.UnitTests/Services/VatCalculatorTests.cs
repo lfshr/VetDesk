@@ -63,4 +63,29 @@ public class VatCalculatorTests
         VatCalculator.Gross(52m, VatRate.Standard).ShouldBe(62.40m);
         VatCalculator.Gross(24m, VatRate.Zero).ShouldBe(24m);
     }
+
+    [TestCase(35.00, 29.17)]
+    [TestCase(26.40, 22.00)]
+    [TestCase(1.14, 0.95)]
+    [TestCase(0, 0)]
+    public void NetFromGross_StandardRate_GivesNetThatChargesTheTypedPrice(decimal gross, decimal net)
+    {
+        VatCalculator.NetFromGross(gross, VatRate.Standard).ShouldBe(net);
+        VatCalculator.Gross(net, VatRate.Standard).ShouldBe(gross);
+    }
+
+    [Test]
+    public void NetFromGross_PriceNoPennyNetReaches_IsAPennyOut()
+    {
+        // £8.37 + £1.67 = £10.04 and £8.38 + £1.68 = £10.06: nothing to the penny makes £10.05 at 20%.
+        var net = VatCalculator.NetFromGross(10.05m, VatRate.Standard);
+
+        Math.Abs(VatCalculator.Gross(net, VatRate.Standard) - 10.05m).ShouldBe(0.01m);
+    }
+
+    [Test]
+    public void NetFromGross_ZeroRated_IsTheSamePrice()
+    {
+        VatCalculator.NetFromGross(12.50m, VatRate.Zero).ShouldBe(12.50m);
+    }
 }

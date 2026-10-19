@@ -72,11 +72,11 @@ public class CompleteConsultationCommandHandler : IRequestHandler<CompleteConsul
         // Checked again here: an allergy may have been recorded after the item was added.
         var patient = consultation.Patient;
         var unresolved = consultation.Charges
-            .Where(ch => ch.AllergyOverrideReason is null && AllergyCheck.Conflicts(ch.Product, patient.Allergies).Count > 0)
+            .Where(ch => ch.AllergyOverrideReason is null && AllergyCheck.Conflicts(ch, patient.Allergies).Count > 0)
             .ToList();
         if (unresolved.Count > 0)
             return Result.Failure(CompleteConsultationError.AllergyConflict,
-                $"{AllergyCheck.Describe(unresolved[0].Product, AllergyCheck.Conflicts(unresolved[0].Product, patient.Allergies))}. Remove it or have a vet override it.");
+                $"{AllergyCheck.Describe(unresolved[0].Description, AllergyCheck.Conflicts(unresolved[0], patient.Allergies))}. Remove it or have a vet override it.");
 
         var now = _clock.UtcNow;
         var today = ClinicTime.Today(now);
@@ -96,12 +96,13 @@ public class CompleteConsultationCommandHandler : IRequestHandler<CompleteConsul
         }
 
         var vaccinations = 0;
-        foreach (var charge in consultation.Charges.Where(ch => ch.Product.Category == ProductCategory.Vaccine))
+        // Free-text lines have no product: they go on the invoice only.
+        foreach (var charge in consultation.Charges.Where(ch => ch.Product?.Category == ProductCategory.Vaccine))
         {
             _dbContext.Vaccinations.Add(new Vaccination
             {
                 Patient = patient,
-                VaccineName = charge.Product.Name,
+                VaccineName = charge.Product!.Name,
                 GivenUtc = now,
                 GivenBy = consultation.Clinician.ShortName,
                 DueDate = charge.Product.BoosterMonths is { } months ? today.AddMonths(months) : null,
@@ -116,12 +117,12 @@ public class CompleteConsultationCommandHandler : IRequestHandler<CompleteConsul
                 Patient = patient, Kg = kg, RecordedUtc = now, Context = consultation.Reason ?? "Consultation", RecordedBy = _user.Name,
             });
 
-        var toDispense = consultation.Charges.Where(ch => ch.Product.IsStocked).ToList();
+        var toDispense = consultation.Charges.Where(ch => ch.Product is { IsStocked: true }).ToList();
         foreach (var charge in toDispense)
             _dbContext.DispenseItems.Add(new DispenseItem
             {
                 Patient = patient,
-                Product = charge.Product,
+                Product = charge.Product!,
                 Consultation = consultation,
                 Quantity = charge.Quantity,
                 Directions = charge.Directions,

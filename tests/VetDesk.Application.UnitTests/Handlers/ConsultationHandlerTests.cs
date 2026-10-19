@@ -233,4 +233,181 @@ public class ConsultationHandlerTests
 
         result.ErrorCode.ShouldBe(CreateInvoiceError.NotAllowed);
     }
+
+    private Task<SimpleResult.Result<int>> AddFreeTextAsync(int consultationId, string description, decimal unitPrice, VatRate vat = VatRate.Standard,
+        string? overrideReason = null, bool prescription = false) =>
+        new AddChargeCommandHandler(_database.Db, _database.User).Handle(new AddChargeCommand
+        {
+            ConsultationId = consultationId, Description = description, UnitPrice = unitPrice, VatRate = vat, Quantity = 1,
+            AllergyOverrideReason = overrideReason, IsPrescription = prescription,
+        }, CancellationToken.None);
+
+    private Task<SimpleResult.Result<int>> AddAtPriceAsync(int consultationId, Product product, decimal unitPrice, string? reason = null) =>
+        new AddChargeCommandHandler(_database.Db, _database.User).Handle(new AddChargeCommand
+        {
+            ConsultationId = consultationId, ProductId = product.Id, Quantity = 1, UnitPrice = unitPrice, PriceChangeReason = reason,
+        }, CancellationToken.None);
+
+    private Task<SimpleResult.Result> ChangePriceAsync(int chargeId, decimal unitPrice, string? reason = null) =>
+        new ChangeChargePriceCommandHandler(_database.Db, _database.User).Handle(new ChangeChargePriceCommand
+        {
+            ChargeId = chargeId, UnitPrice = unitPrice, Reason = reason,
+        }, CancellationToken.None);
+
+    [Test]
+    public async Task FreeTextItem_InvoicesLikeAnyLine_AndSkipsStockAndVaccinations()
+    {
+        var id = await StartAsync();
+        await AddAsync(id, _consult);
+        (await AddFreeTextAsync(id, "Hydrotherapy session (Aqua Paws)", 29.17m)).IsSuccess.ShouldBeTrue();
+        var detail = await new GetConsultationQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new GetConsultationQuery { Id = id }, CancellationToken.None);
+        var version = await WriteNotesAsync(id);
+
+        var result = await CompleteAsync(id, version);
+
+        result.IsSuccess.ShouldBeTrue(result.ToString());
+        result.Value.Total.ShouldBe(97.40m); // (52 + 29.17) net, £16.23 VAT
+        result.Value.Total.ShouldBe(detail.Value.Total);
+        var line = (await _database.Db.Invoices.Include(i => i.Lines).ThenInclude(l => l.Product).SingleAsync()).Lines
+            .Single(l => l.Description == "Hydrotherapy session (Aqua Paws)");
+        line.Product.ShouldBeNull();
+        line.UnitPrice.ShouldBe(29.17m);
+        line.VatRate.ShouldBe(VatRate.Standard);
+        _database.Db.DispenseItems.Count().ShouldBe(0);
+        _database.Db.Vaccinations.Count().ShouldBe(0);
+    }
+
+    [Test]
+    public async Task FreeTextItem_ShowsAsAnItemWithNoListPrice()
+    {
+        var id = await StartAsync();
+        await AddFreeTextAsync(id, "Hydrotherapy session", 29.17m);
+
+        var detail = await new GetConsultationQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new GetConsultationQuery { Id = id }, CancellationToken.None);
+
+        var charge = detail.Value.Charges.Single();
+        charge.ProductId.ShouldBeNull();
+        charge.Unit.ShouldBe("item");
+        charge.ListUnitPrice.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task FreeTextItem_NamingAnAllergy_NeedsAVetsReason()
+    {
+        var id = await StartAsync();
+
+        var refused = await AddFreeTextAsync(id, "Amoxicillin ear drops (bought in)", 12m);
+        var overridden = await AddFreeTextAsync(id, "Amoxicillin ear drops (bought in)", 12m, overrideReason: "Topical only; owner informed");
+
+        refused.ErrorCode.ShouldBe(AddChargeError.AllergyConflict);
+        overridden.IsSuccess.ShouldBeTrue(overridden.ToString());
+        (await _database.Db.ConsultationCharges.SingleAsync()).AllergyOverrideReason.ShouldBe("Topical only; owner informed (Asha)");
+    }
+
+    [Test]
+    public async Task FreeTextItem_CannotBePrescribed()
+    {
+        var id = await StartAsync();
+
+        var result = await AddFreeTextAsync(id, "Meloxicam (bought in)", 10m, prescription: true);
+
+        result.ErrorCode.ShouldBe(AddChargeError.InvalidRequest);
+    }
+
+    [Test]
+    public async Task FreeTextItem_WithoutAPrice_IsRefused()
+    {
+        var id = await StartAsync();
+
+        var result = await new AddChargeCommandHandler(_database.Db, _database.User).Handle(new AddChargeCommand
+        {
+            ConsultationId = id, Description = "Hydrotherapy session", VatRate = VatRate.Standard,
+        }, CancellationToken.None);
+
+        result.ErrorCode.ShouldBe(AddChargeError.InvalidRequest);
+    }
+
+    [Test]
+    public async Task AddCharge_BelowListPrice_NeedsAReason_AndKeepsTheListPriceAndWho()
+    {
+        var id = await StartAsync();
+
+        var refused = await AddAtPriceAsync(id, _consult, 40m);
+        var added = await AddAtPriceAsync(id, _consult, 40m, reason: "Second pet seen");
+
+        refused.ErrorCode.ShouldBe(AddChargeError.InvalidRequest);
+        added.IsSuccess.ShouldBeTrue(added.ToString());
+        var charge = await _database.Db.ConsultationCharges.SingleAsync();
+        charge.UnitPrice.ShouldBe(40m);
+        charge.ListUnitPrice.ShouldBe(52m);
+        charge.PriceChangedBy.ShouldBe("Asha");
+        charge.PriceChangeReason.ShouldBe("Second pet seen");
+        (await _database.Db.Products.SingleAsync(p => p.Id == _consult.Id)).UnitPrice.ShouldBe(52m); // the price list is untouched
+    }
+
+    [Test]
+    public async Task AddCharge_AboveListPrice_NeedsNoReason()
+    {
+        var id = await StartAsync();
+
+        var result = await AddAtPriceAsync(id, _consult, 60m);
+
+        result.IsSuccess.ShouldBeTrue(result.ToString());
+        var charge = await _database.Db.ConsultationCharges.SingleAsync();
+        charge.UnitPrice.ShouldBe(60m);
+        charge.ListUnitPrice.ShouldBe(52m);
+        charge.PriceChangeReason.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task ChangePrice_InvoiceUsesTheNewPrice_AndBackToListClearsTheChange()
+    {
+        var id = await StartAsync();
+        var chargeId = (await AddAsync(id, _consult)).Value;
+
+        (await ChangePriceAsync(chargeId, 30m)).ErrorCode.ShouldBe(ChangeChargePriceError.InvalidRequest);
+        (await ChangePriceAsync(chargeId, 30m, "Recheck within a week")).IsSuccess.ShouldBeTrue();
+        var detail = await new GetConsultationQueryHandler(_database.Db, _database.User, _database.Clock)
+            .Handle(new GetConsultationQuery { Id = id }, CancellationToken.None);
+        detail.Value.Charges.Single().ListUnitPrice.ShouldBe(52m);
+        detail.Value.Total.ShouldBe(36m);
+
+        (await ChangePriceAsync(chargeId, 52m)).IsSuccess.ShouldBeTrue();
+        var charge = await _database.Db.ConsultationCharges.AsNoTracking().SingleAsync();
+        charge.ListUnitPrice.ShouldBeNull();
+        charge.PriceChangedBy.ShouldBeNull();
+        charge.PriceChangeReason.ShouldBeNull();
+
+        (await ChangePriceAsync(chargeId, 30m, "Recheck within a week")).IsSuccess.ShouldBeTrue();
+        var version = await WriteNotesAsync(id);
+        var completed = await CompleteAsync(id, version);
+        completed.Value.Total.ShouldBe(36m);
+        (await _database.Db.Invoices.Include(i => i.Lines).SingleAsync()).Lines.Single().UnitPrice.ShouldBe(30m);
+    }
+
+    [Test]
+    public async Task ChangePrice_OnACompletedConsultation_IsRefused()
+    {
+        var id = await StartAsync();
+        var chargeId = (await AddAsync(id, _consult)).Value;
+        var version = await WriteNotesAsync(id);
+        await CompleteAsync(id, version);
+
+        var result = await ChangePriceAsync(chargeId, 60m);
+
+        result.ErrorCode.ShouldBe(ChangeChargePriceError.Locked);
+    }
+
+    [Test]
+    public async Task ChangePrice_Negative_IsRefused()
+    {
+        var id = await StartAsync();
+        var chargeId = (await AddAsync(id, _consult)).Value;
+
+        var result = await ChangePriceAsync(chargeId, -1m, "Refund");
+
+        result.ErrorCode.ShouldBe(ChangeChargePriceError.InvalidRequest);
+    }
 }

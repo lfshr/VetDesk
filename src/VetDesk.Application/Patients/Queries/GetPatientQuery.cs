@@ -83,8 +83,8 @@ public class GetPatientQueryHandler : IRequestHandler<GetPatientQuery, Result<Pa
                 c.WeightKg,
                 c.Id,
                 !c.IsLocked,
-                c.Charges.Where(ch => ch.Product.Category is ProductCategory.Medicine or ProductCategory.Vaccine)
-                    .Select(ch => new AdministeredDrug(ch.Description, $"{ch.Quantity:0.##} {ch.Product.Unit}", ch.Product.IsControlledDrug))
+                c.Charges.Where(ch => ch.Product?.Category is ProductCategory.Medicine or ProductCategory.Vaccine)
+                    .Select(ch => new AdministeredDrug(ch.Description, $"{ch.Quantity:0.##} {ch.Product!.Unit}", ch.Product.IsControlledDrug))
                     .ToList()))
             .Concat(notes.Select(n => new HistoryEntry(HistoryKind.Note, Utc.Mark(n.WrittenUtc), n.Title, n.Author, n.Body, null, null, false, [])))
             .Concat(vaccinations.Where(v => v.ConsultationId is null).Select(v => new HistoryEntry(

@@ -1,23 +1,84 @@
-@* Quantity (and for a prescription, directions) for a product picked on the consultation. An allergy conflict
-   needs a written reason before it can be added. *@
+@* Quantity and price (and for a prescription, directions) for a product picked on the consultation, or the same for
+   an item typed in that isn't on the price list. Prices are typed including VAT, as the client is told them. A price
+   below the list price needs a reason, and an allergy conflict needs a written reason before it can be added. *@
+@using VetDesk.Domain.Services
 @inject UserSession Session
 
 <div class="vd-card" style="margin-top:10px;padding:12px;background:var(--vd-surface-muted)">
-    <div class="vd-strong">@Pending.Product.Name @if (Pending.Product.IsControlledDrug) { <span class="vd-cd">CD</span> }</div>
-    <div class="vd-cell-sub">@Fmt.Money(Pending.Product.GrossPrice) per @Pending.Product.Unit incl. VAT@(Pending.Product.IsStocked ? $" · {Fmt.Qty(Pending.Product.OnHand)} in stock" : "")</div>
-    @if (Pending.Conflicts.Count > 0)
+    @if (Pending.Product is { } product)
+    {
+        <div class="vd-strong">@product.Name @if (product.IsControlledDrug) { <span class="vd-cd">CD</span> }</div>
+        <div class="vd-cell-sub">@Fmt.Money(product.GrossPrice) per @product.Unit incl. VAT@(product.IsStocked ? $" · {Fmt.Qty(product.OnHand)} in stock" : "")</div>
+    }
+    else
+    {
+        <div class="vd-strong">New item</div>
+        <div class="vd-field"><label for="cf-desc">Description for the invoice</label><input id="cf-desc" @bind="_description" @bind:event="oninput" maxlength="400" /></div>
+    }
+    @if (Conflicts.Count > 0)
     {
         <div class="vd-banner vd-banner-danger" style="margin-top:10px">
             <Icon Name="alert" Size="18" />
-            <span>This conflicts with the patient's allergy to <strong>@string.Join(", ", Pending.Conflicts)</strong>.</span>
+            <span>@(Pending.Product is null ? "This mentions" : "This conflicts with") the patient's allergy to <strong>@string.Join(", ", Conflicts)</strong>.</span>
         </div>
     }
-    <div class="vd-field" style="max-width:140px"><label for="cf-qty">Quantity (@Pending.Product.Unit)</label><input id="cf-qty" type="number" min="0.01" step="any" @bind="_qty" /></div>
+    <div style="display:grid;grid-template-columns:90px minmax(0,1fr);gap:10px">
+        <div class="vd-field"><label for="cf-qty">@(Pending.Product is { } p ? $"Qty ({p.Unit})" : "Quantity")</label><input id="cf-qty" type="number" min="0.01" step="any" @bind="_qty" /></div>
+        <div class="vd-field">
+            <label for="cf-price">Price each incl. VAT</label>
+            <div style="position:relative">
+                <span class="vd-muted" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none">£</span>
+                <input id="cf-price" class="vd-mono" inputmode="decimal" style="padding-left:24px" @bind="_price" @bind:event="oninput" />
+            </div>
+        </div>
+    </div>
+    @if (Pending.Product is null)
+    {
+        <div class="vd-field"><label for="cf-vat">VAT</label>
+            <select id="cf-vat" @bind="_vat">
+                @foreach (var rate in Enum.GetValues<VatRate>())
+                {
+                    <option value="@rate">@rate.Label()</option>
+                }
+            </select>
+        </div>
+    }
+    @if (PriceError is { } priceError)
+    {
+        <div class="vd-error-text">@priceError</div>
+    }
+    else if (Net is { } net)
+    {
+        @if (Pending.Product is { } listed && net != listed.UnitPrice)
+        {
+            var difference = VatCalculator.Gross(net, Rate) - listed.GrossPrice;
+            <div class="vd-hint" style="margin-top:8px">
+                @Fmt.Money(Math.Abs(difference)) @(difference < 0 ? "below" : "above") the list price.
+                <button type="button" class="vd-btn-link" style="font-size:12.5px" @onclick="UseListPrice">Use list price</button>
+            </div>
+        }
+        else if (Pending.Product is null)
+        {
+            <div class="vd-hint vd-mono" style="margin-top:8px">@Fmt.Money(net) + @Fmt.Money(VatCalculator.Gross(net, Rate) - net) VAT = @Fmt.Money(VatCalculator.Gross(net, Rate))</div>
+        }
+        @if (PennyOut)
+        {
+            <div class="vd-hint">Prices are held to the penny before VAT, so this will be charged as @Fmt.Money(VatCalculator.Gross(net, Rate)).</div>
+        }
+    }
     @if (Pending.IsPrescription)
     {
         <div class="vd-field"><label for="cf-dir">Directions for the label</label><input id="cf-dir" @bind="_directions" @bind:event="oninput" placeholder="e.g. 1 tablet twice daily with food" maxlength="400" /></div>
     }
-    @if (Pending.Conflicts.Count > 0)
+    @if (BelowList)
+    {
+        <div class="vd-field"><label for="cf-price-reason">Reason for the lower price</label><input id="cf-price-reason" @bind="_priceReason" @bind:event="oninput" maxlength="400" /></div>
+    }
+    @if (Pending.Product is null)
+    {
+        <p class="vd-hint" style="margin-top:8px">Not checked against allergies by drug class or taken off stock. Medicines go through Prescribe.</p>
+    }
+    @if (Conflicts.Count > 0)
     {
         @if (Session.Can(Permission.Prescribe))
         {
@@ -30,28 +91,85 @@
     }
     <div class="vd-actions vd-actions-end" style="margin-top:12px">
         <button type="button" class="vd-btn vd-btn-secondary vd-btn-sm" @onclick="OnCancel">Cancel</button>
-        <button type="button" class="vd-btn @(Pending.Conflicts.Count > 0 ? "vd-btn-danger" : "vd-btn-primary") vd-btn-sm" disabled="@(!CanAdd)" @onclick="Add">
-            @(Pending.Conflicts.Count > 0 ? "Override and add" : Pending.IsPrescription ? "Prescribe" : "Add")
+        <button type="button" class="vd-btn @(Conflicts.Count > 0 ? "vd-btn-danger" : "vd-btn-primary") vd-btn-sm" disabled="@(!CanAdd)" @onclick="Add">
+            @(Conflicts.Count > 0 ? "Override and add" : Pending.IsPrescription ? "Prescribe" : "Add")
         </button>
     </div>
 </div>
 
 @code {
-    public record PendingCharge(ProductDto Product, bool IsPrescription, IReadOnlyList<string> Conflicts);
-    public record ChargeInput(ProductDto Product, decimal Quantity, bool IsPrescription, string? Directions, string? OverrideReason);
+    /// <summary>A product from the price list, or (Product null) an item typed in as <paramref name="FreeText"/>.</summary>
+    public record PendingCharge(ProductDto? Product, bool IsPrescription, IReadOnlyList<string> Conflicts, string? FreeText = null);
+
+    /// <param name="UnitPrice">Net; null to charge the list price.</param>
+    /// <param name="VatRate">Free-text items only.</param>
+    public record ChargeInput(ProductDto? Product, string Description, decimal Quantity, decimal? UnitPrice, VatRate? VatRate, bool IsPrescription,
+        string? Directions, string? OverrideReason, string? PriceReason);
 
     [Parameter, EditorRequired] public PendingCharge Pending { get; set; } = default!;
+
+    /// <summary>The patient's allergy substances, to check a typed-in item's description against as it's typed.</summary>
+    [Parameter] public IReadOnlyList<string> Allergies { get; set; } = [];
+
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback<ChargeInput> OnAdd { get; set; }
 
     private decimal _qty = 1;
     private string _directions = "";
     private string _reason = "";
+    private string _priceReason = "";
+    private string _description = "";
+    private string _price = "";
+    private VatRate _vat = VatRate.Standard;
+    private PendingCharge? _for;
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_for, Pending))
+            return;
+        _for = Pending;
+        _description = Pending.FreeText ?? "";
+        _price = Pending.Product is { } p ? p.GrossPrice.ToString("0.00", CultureInfo.InvariantCulture) : "";
+    }
+
+    private VatRate Rate => Pending.Product?.VatRate ?? _vat;
+
+    private IReadOnlyList<string> Conflicts => Pending.Product is not null
+        ? Pending.Conflicts
+        : Allergies.Where(a => AllergyCheck.Mentions(_description, a)).ToList();
+
+    private decimal? Gross => decimal.TryParse(_price.Trim().TrimStart('£'), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;
+
+    private decimal? Net => Gross is >= 0 and var gross ? VatCalculator.NetFromGross(gross, Rate) : null;
+
+    private string? PriceError => string.IsNullOrWhiteSpace(_price) ? null
+        : Gross is null ? $"“{_price}” isn't a price."
+        : Gross < 0 ? "The price can't be less than zero."
+        : null;
+
+    private bool PennyOut => Net is { } net && Gross is { } gross && VatCalculator.Gross(net, Rate) != Money.Round(gross);
+
+    private bool BelowList => Pending.Product is { } p && Net is { } net && net < p.UnitPrice;
 
     private bool CanAdd => _qty > 0
+                           && Net is not null
+                           && (Pending.Product is not null || !string.IsNullOrWhiteSpace(_description))
                            && (!Pending.IsPrescription || !string.IsNullOrWhiteSpace(_directions))
-                           && (Pending.Conflicts.Count == 0 || (Session.Can(Permission.Prescribe) && !string.IsNullOrWhiteSpace(_reason)));
+                           && (!BelowList || !string.IsNullOrWhiteSpace(_priceReason))
+                           && (Conflicts.Count == 0 || (Session.Can(Permission.Prescribe) && !string.IsNullOrWhiteSpace(_reason)));
 
-    private Task Add() => OnAdd.InvokeAsync(new ChargeInput(Pending.Product, _qty, Pending.IsPrescription,
-        Pending.IsPrescription ? _directions : null, Pending.Conflicts.Count > 0 ? _reason : null));
+    private void UseListPrice()
+    {
+        if (Pending.Product is { } p)
+            _price = p.GrossPrice.ToString("0.00", CultureInfo.InvariantCulture);
+    }
+
+    private Task Add()
+    {
+        var net = Net!.Value;
+        var unitPrice = Pending.Product is { } p && net == p.UnitPrice ? (decimal?)null : net;
+        return OnAdd.InvokeAsync(new ChargeInput(Pending.Product, Pending.Product?.Name ?? _description.Trim(), _qty, unitPrice,
+            Pending.Product is null ? _vat : null, Pending.IsPrescription, Pending.IsPrescription ? _directions : null,
+            Conflicts.Count > 0 ? _reason : null, BelowList ? _priceReason : null));
+    }
 }

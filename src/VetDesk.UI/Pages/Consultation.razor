@@ -135,15 +135,20 @@ else
                     @if (_addOpen && !_c.IsLocked)
                     {
                         <div class="vd-card-body" style="border-bottom:1px solid var(--vd-border)">
-                            <ProductSearch PatientId="_c.PatientId" Categories="ChargeCategories" Placeholder="Search services, vaccines and products" InputId="add-item" OnPick="PickCharge" />
+                            <ProductSearch PatientId="_c.PatientId" Categories="ChargeCategories" Placeholder="Search services, vaccines and products" InputId="add-item" OnPick="PickCharge" OnFreeText="PickFreeText" />
                             @if (_pending is { IsPrescription: false } pending)
                             {
-                                <ChargeForm Pending="pending" OnCancel="() => _pending = null" OnAdd="AddCharge" />
+                                <ChargeForm Pending="pending" Allergies="_c.Allergies" OnCancel="() => _pending = null" OnAdd="AddCharge" />
                             }
                         </div>
                     }
                     @foreach (var ch in _c.Charges)
                     {
+                        @if (_pricing == ch.Id && !_c.IsLocked)
+                        {
+                            <ChargePriceEditor @key="ch.Id" Charge="ch" OnCancel="() => _pricing = null" OnSave="p => ChangePrice(ch, p)" />
+                            continue;
+                        }
                         <div class="vd-row" style="padding:10px 16px;border-bottom:1px solid var(--vd-border);align-items:flex-start">
                             <div style="flex:1;min-width:0">
                                 <div class="vd-strong">@ch.Description @if (ch.IsControlledDrug) { <span class="vd-cd">CD</span> } @if (ch.IsPrescription) { <span class="vd-chip vd-chip-info" style="height:18px;font-size:11px">Rx</span> }</div>
@@ -153,9 +158,14 @@ else
                                     <div class="vd-small" style="color:var(--vd-danger-text);margin-top:2px"><Icon Name="alert" Size="13" /> Allergy override: @(ch.AllergyOverrideReason ?? "no reason given")</div>
                                 }
                             </div>
-                            <span class="vd-mono">@Fmt.Money(ch.Net)</span>
-                            @if (!_c.IsLocked)
+                            @if (_c.IsLocked)
                             {
+                                <span class="vd-mono">@Fmt.Money(ch.Net)</span>
+                            }
+                            else
+                            {
+                                @* The price is a button: click (or Enter) to charge a different price for this visit. *@
+                                <button type="button" class="vd-price-btn vd-mono" title="Change price" aria-label="Change the price of @ch.Description, @Fmt.Money(ch.Net)" @onclick="() => _pricing = ch.Id">@Fmt.Money(ch.Net)</button>
                                 <button type="button" class="vd-icon-btn" aria-label="Remove @ch.Description" title="Remove" @onclick="() => RemoveCharge(ch)"><Icon Name="close" Size="16" /></button>
                             }
                         </div>
@@ -178,7 +188,7 @@ else
                         <ProductSearch PatientId="_c.PatientId" Categories="MedicineOnly" Placeholder="Search formulary" InputId="rx-search" OnPick="PickPrescription" />
                         @if (_pending is { IsPrescription: true } rx)
                         {
-                            <ChargeForm Pending="rx" OnCancel="() => _pending = null" OnAdd="AddCharge" />
+                            <ChargeForm Pending="rx" Allergies="_c.Allergies" OnCancel="() => _pending = null" OnAdd="AddCharge" />
                         }
                         <p class="vd-hint">
                             @if (_c.Allergies.Count > 0)
@@ -220,6 +230,9 @@ else
     private bool _missing, _saving, _addOpen, _completeOpen, _summaryOpen;
     private ChargeForm.PendingCharge? _pending;
 
+    /// <summary>The charge whose price is being changed, if any.</summary>
+    private int? _pricing;
+
     // _editing is whether this desk typed since the note was last saved.
     private LiveEditForm? _note;
     private bool _editing;
@@ -254,6 +267,7 @@ else
         _c = null;
         _missing = _addOpen = _completeOpen = _summaryOpen = _editing = false;
         _pending = null;
+        _pricing = null;
         _saveError = _lost = null;
         await LoadAsync();
     }
@@ -483,16 +497,28 @@ else
 
     private void PickPrescription(ProductDto p) => _pending = new ChargeForm.PendingCharge(p, true, p.AllergyConflicts);
 
+    private void PickFreeText(string text) => _pending = new ChargeForm.PendingCharge(null, false, [], text);
+
     private async Task AddCharge(ChargeForm.ChargeInput input)
     {
         var result = await Backend.Send(new AddChargeCommand
         {
-            ConsultationId = Id, ProductId = input.Product.Id, Quantity = input.Quantity, IsPrescription = input.IsPrescription,
-            Directions = input.Directions, AllergyOverrideReason = input.OverrideReason
+            ConsultationId = Id, ProductId = input.Product?.Id, Description = input.Product is null ? input.Description : null,
+            Quantity = input.Quantity, UnitPrice = input.UnitPrice, PriceChangeReason = input.PriceReason, VatRate = input.VatRate,
+            IsPrescription = input.IsPrescription, Directions = input.Directions, AllergyOverrideReason = input.OverrideReason
         });
-        if (!Toasts.Check(result, $"{input.Product.Name} added"))
+        if (!Toasts.Check(result, $"{input.Description} added"))
             return;
         _pending = null;
+        await LoadAsync();
+    }
+
+    private async Task ChangePrice(ChargeDto charge, (decimal UnitPrice, string? Reason) price)
+    {
+        var result = await Backend.Send(new ChangeChargePriceCommand { ChargeId = charge.Id, UnitPrice = price.UnitPrice, Reason = price.Reason });
+        if (!Toasts.Check(result))
+            return;
+        _pricing = null;
         await LoadAsync();
     }
 
