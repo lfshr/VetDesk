@@ -4,6 +4,9 @@ using VetDesk.Application.Patients.Queries;
 using VetDesk.Application.Reports;
 using VetDesk.Application.Reports.Queries;
 using VetDesk.Application.Today.Queries;
+using VetDesk.Domain.Common;
+using VetDesk.Domain.Entities.Appointments;
+using VetDesk.Domain.Services;
 
 namespace VetDesk.Application.UnitTests.Handlers;
 
@@ -114,6 +117,51 @@ public class DemoDataTests
             counts.Value[filter].ShouldBe(rows.Value.Count, filter.ToString());
         }
         counts.Value[SpeciesFilter.Dogs].ShouldBeGreaterThan(0);
+    }
+
+    [Test]
+    public async Task Appointments_AreInOpeningHoursAndNoClinicianIsDoubleBooked()
+    {
+        var settings = await _database.Db.ClinicSettings.SingleAsync();
+        var appointments = (await _database.Db.Appointments.Include(a => a.Patient).Include(a => a.Clinician).ToListAsync())
+            .Where(a => a.Status is not (AppointmentStatus.Cancelled or AppointmentStatus.NoShow))
+            .ToList();
+
+        var problems = new List<string>();
+        foreach (var a in appointments)
+        {
+            var start = ClinicTime.ToLocal(a.StartUtc);
+            var hours = settings.HoursOn(start.DayOfWeek);
+            if (hours is null || TimeOnly.FromDateTime(start) < hours.Value.Open || TimeOnly.FromDateTime(ClinicTime.ToLocal(a.EndUtc)) > hours.Value.Close)
+                problems.Add($"{a.Patient.Name} is booked out of hours, {start:ddd d MMM HH:mm}");
+        }
+        foreach (var day in appointments.Where(a => a.Clinician is not null).GroupBy(a => (a.Clinician!.Id, ClinicTime.ToLocal(a.StartUtc).Date)))
+        {
+            var ordered = day.OrderBy(a => a.StartUtc).ToList();
+            for (var i = 1; i < ordered.Count; i++)
+                if (ordered[i].StartUtc < ordered[i - 1].EndUtc)
+                    problems.Add($"{ordered[i].Clinician!.FirstName} has {ordered[i - 1].Patient.Name} and {ordered[i].Patient.Name} at once, {ClinicTime.ToLocal(ordered[i].StartUtc):ddd d MMM HH:mm}");
+        }
+
+        problems.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Invoices_MatchTheirLinesAndConsultations()
+    {
+        var invoices = await _database.Db.Invoices.Include(i => i.Lines).Include(i => i.Payments).ToListAsync();
+        var consultations = await _database.Db.Consultations.Include(c => c.Charges).Where(c => c.InvoiceId != null).ToListAsync();
+
+        invoices.Select(i => i.Number).ShouldBeUnique();
+        foreach (var invoice in invoices)
+        {
+            invoice.Lines.ShouldNotBeEmpty(invoice.Number);
+            invoice.Total.ShouldBe(VatCalculator.For(invoice.Lines).Total, invoice.Number);
+            invoice.Paid.ShouldBeLessThanOrEqualTo(invoice.Total, invoice.Number);
+            invoice.Paid.ShouldBeGreaterThanOrEqualTo(0m, invoice.Number);
+        }
+        foreach (var consultation in consultations)
+            consultation.Charges.Sum(ch => ch.Net).ShouldBe(invoices.Single(i => i.Id == consultation.InvoiceId).Net);
     }
 
     [TestCase(null)]
